@@ -1,0 +1,164 @@
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from '~/stores/auth'
+
+export function useReceptionDetails() {
+  const route = useRoute()
+  const router = useRouter()
+  const $q = useQuasar()
+  const auth = useAuthStore()
+
+  const id = route.params.id
+  const transaction = ref<any>(null)
+  const loading = ref(true)
+  const saving = ref(false)
+  const isEditing = ref(false)
+
+  const canApprove = computed(() => {
+    return auth.user?.role?.name === 'ADMIN' || auth.user?.role?.name === 'GERENTE'
+  })
+
+  const grandTotal = computed(() => {
+    if (!transaction.value?.details) return 0
+    return transaction.value.details.reduce((total: number, row: any) => {
+      return total + (Number(row.quantity) * Number(row.unitPrice))
+    }, 0)
+  })
+
+  const columns = computed(() => {
+    const cols = [
+      { name: 'code', label: 'Código', field: (row: any) => row.product?.code, align: 'left' as const },
+      { name: 'product', label: 'Producto', field: (row: any) => row.product?.name, align: 'left' as const },
+      { name: 'quantity', label: 'Cantidad', field: 'quantity', align: 'center' as const },
+      { name: 'price', label: 'Precio', field: 'unitPrice', align: 'center' as const, format: (val: number) => `$${val}` },
+      { name: 'exp', label: 'Vencimiento', field: 'expirationDate', align: 'center' as const, format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' }
+    ]
+    if (isEditing.value) {
+      cols.push({ name: 'actions', label: '', field: 'actions', align: 'center' as const, format: () => '' })
+    }
+    return cols
+  })
+
+  const fetchDetails = async () => {
+    try {
+      const data = await $fetch(`/api/receptions/${id}`)
+      transaction.value = data
+    } catch (error) {
+      $q.notify({ type: 'negative', message: 'No se pudo cargar la recepción' })
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const updateStatus = async (status: string, notes?: string) => {
+    let message = '¿Estás seguro de avanzar la transacción?'
+    if (status === 'PENDING') message = '¿Enviar a aprobación gerencial?'
+    if (status === 'APPROVED') message = '¿Aprobar esta recepción?'
+    if (status === 'CONFIRMED') message = '¿Confirmar recepción? ESTO ACTUALIZARÁ EL STOCK FÍSICO Y ES IRREVERSIBLE.'
+
+    $q.dialog({ title: 'Confirmar Acción', message, cancel: true }).onOk(async () => {
+      saving.value = true
+      try {
+        await $fetch(`/api/receptions/${id}/status`, {
+          method: 'PUT',
+          body: { status, notes }
+        })
+        $q.notify({ type: 'positive', message: 'Estado actualizado correctamente' })
+        await fetchDetails()
+      } catch (error: any) {
+        $q.notify({ type: 'negative', message: error.data?.message || 'Error al actualizar' })
+      } finally {
+        saving.value = false
+      }
+    })
+  }
+
+  const deleteDraft = () => {
+    $q.dialog({ title: 'Eliminar Borrador', message: '¿Estás seguro de eliminar completamente esta recepción y todos sus productos? Esta acción es irreversible.', color: 'negative', cancel: true }).onOk(async () => {
+      saving.value = true
+      try {
+        await $fetch(`/api/receptions/${id}`, { method: 'DELETE' })
+        $q.notify({ type: 'positive', message: 'Borrador eliminado' })
+        router.push('/inventory/receptions')
+      } catch (error: any) {
+        $q.notify({ type: 'negative', message: error.data?.message || 'Error al eliminar borrador' })
+      } finally {
+        saving.value = false
+      }
+    })
+  }
+
+  const removeRow = (index: number) => {
+    transaction.value.details.splice(index, 1)
+  }
+
+  const saveDraftChanges = async () => {
+    saving.value = true
+    try {
+      const updatedDetails = transaction.value.details.map((d: any) => ({
+        productId: d.productId,
+        quantity: Number(d.quantity),
+        unitPrice: Number(d.unitPrice),
+        expirationDate: d.expirationDate
+      }))
+      
+      const res = await $fetch(`/api/receptions/${id}`, {
+        method: 'PUT',
+        body: { details: updatedDetails }
+      })
+      
+      transaction.value = res
+      isEditing.value = false
+      $q.notify({ type: 'positive', message: 'Cambios guardados con éxito' })
+    } catch (error: any) {
+      $q.notify({ type: 'negative', message: error.data?.message || 'Error al guardar cambios' })
+    } finally {
+      saving.value = false
+    }
+  }
+
+  const promptReject = () => {
+    $q.dialog({
+      title: 'Rechazar Recepción',
+      message: 'Indica el motivo del rechazo:',
+      prompt: { model: '', type: 'text', isValid: (val: string) => val.length > 3 },
+      cancel: true
+    }).onOk((notes) => {
+      updateStatus('REJECTED', notes)
+    })
+  }
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      DRAFT: 'grey-7', PENDING: 'orange-8', APPROVED: 'blue-8', REJECTED: 'red-8', CONFIRMED: 'green-8'
+    }
+    return colors[status] || 'grey'
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      DRAFT: 'Borrador', PENDING: 'Pendiente', APPROVED: 'Aprobado', REJECTED: 'Rechazado', CONFIRMED: 'Confirmado'
+    }
+    return labels[status] || status
+  }
+
+  onMounted(() => fetchDetails())
+
+  return {
+    transaction,
+    loading,
+    saving,
+    canApprove,
+    isEditing,
+    grandTotal,
+    columns,
+    updateStatus,
+    promptReject,
+    deleteDraft,
+    removeRow,
+    saveDraftChanges,
+    getStatusColor,
+    getStatusLabel
+  }
+}

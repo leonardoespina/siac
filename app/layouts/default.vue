@@ -1,0 +1,260 @@
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
+import { useNotificationsStore, type Notification } from '~/stores/notifications'
+import { useQuasar } from 'quasar'
+
+// ── LAYOUT BASE DE QUASAR ───────────────────────────────────────────────────
+const leftDrawerOpen = ref(true)
+const auth = useAuthStore()
+const notifications = useNotificationsStore()
+const router = useRouter()
+const $q = useQuasar()
+const { $socket } = useNuxtApp() as any
+
+const isPasswordDialogOpen = ref(false)
+const changingPassword = ref(false)
+const passwordForm = ref({ old: '', new: '', confirm: '' })
+
+// Inicializar sockets y notificaciones si está logueado
+onMounted(() => {
+  if (auth.isAuthenticated && auth.user) {
+    notifications.fetchAll()
+    $socket.emit('join', auth.user.id)
+    
+    // Escuchar notificaciones en vivo
+    $socket.on('notification', (newNotif: Notification) => {
+      notifications.addRealtimeNotification(newNotif)
+      $q.notify({
+        type: 'info',
+        message: newNotif.title,
+        caption: newNotif.message,
+        position: 'top-right',
+        actions: [{ icon: 'close', color: 'white' }]
+      })
+    })
+  }
+})
+
+// Volver a enlazar si el usuario hace login sin recargar F5
+watch(() => auth.isAuthenticated, (newVal) => {
+  if (newVal && auth.user) {
+    notifications.fetchAll()
+    $socket.emit('join', auth.user.id)
+  }
+})
+
+const handleNotificationClick = async (n: Notification) => {
+  if (!n.isRead) {
+    await notifications.markAsRead(n.id)
+  }
+  if (n.link) {
+    router.push(n.link)
+  }
+}
+
+const submitPasswordChange = async () => {
+  changingPassword.value = true
+  try {
+    await auth.changePassword(passwordForm.value.old, passwordForm.value.new)
+    $q.notify({ type: 'positive', message: 'Contraseña actualizada. Úsala la próxima vez.' })
+    isPasswordDialogOpen.value = false
+    passwordForm.value = { old: '', new: '', confirm: '' }
+  } catch (error: any) {
+    $q.notify({ type: 'negative', message: error.data?.message || 'Error al cambiar clave' })
+  } finally {
+    changingPassword.value = false
+  }
+}
+</script>
+
+<template>
+  <!-- lHh Lpr lFf es el modelo de layout por defecto de Quasar -->
+  <q-layout view="lHh Lpr lFf">
+    
+    <!-- HEADER -->
+    <q-header elevated class="bg-primary">
+      <q-toolbar>
+        <q-btn
+          flat dense round
+          icon="menu"
+          @click="leftDrawerOpen = !leftDrawerOpen"
+        />
+        <q-toolbar-title>SIAC</q-toolbar-title>
+
+        <!-- INFO DEL USUARIO LOGUEADO -->
+        <div v-if="auth.isAuthenticated" class="row items-center q-gutter-md">
+          
+          <!-- CAMPANITA DE NOTIFICACIONES -->
+          <q-btn flat round dense icon="notifications">
+            <q-badge v-if="notifications.unreadCount > 0" color="red" floating rounded>
+              {{ notifications.unreadCount }}
+            </q-badge>
+            <q-menu fit>
+              <q-list style="min-width: 250px">
+                <q-item-label header>Notificaciones</q-item-label>
+                
+                <q-item v-if="notifications.notifications.length === 0">
+                  <q-item-section class="text-grey">Sin notificaciones nuevas</q-item-section>
+                </q-item>
+
+                <q-item 
+                  v-for="n in notifications.notifications" 
+                  :key="n.id" 
+                  clickable 
+                  v-ripple
+                  :class="n.isRead ? '' : 'bg-blue-1'"
+                  @click="handleNotificationClick(n)"
+                >
+                  <q-item-section>
+                    <q-item-label :class="n.isRead ? '' : 'text-weight-bold'">{{ n.title }}</q-item-label>
+                    <q-item-label caption lines="2">{{ n.message }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+
+          <!-- MENÚ DE USUARIO -->
+          <q-btn flat dense no-caps>
+            <div class="column text-right q-pr-sm">
+              <span class="text-weight-bold" style="font-size: 14px">{{ auth.user?.name }}</span>
+              <span class="text-caption" style="line-height: 1">{{ auth.user?.role?.name }}</span>
+            </div>
+            <q-icon name="arrow_drop_down" />
+
+            <q-menu fit>
+              <q-list style="min-width: 150px">
+                <q-item clickable v-close-popup @click="isPasswordDialogOpen = true">
+                  <q-item-section avatar><q-icon name="key" size="sm" /></q-item-section>
+                  <q-item-section>Cambiar Clave</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup @click="auth.logout()">
+                  <q-item-section avatar><q-icon name="logout" color="negative" size="sm" /></q-item-section>
+                  <q-item-section class="text-negative">Cerrar Sesión</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </div>
+      </q-toolbar>
+    </q-header>
+
+    <!-- SIDEBAR (MENÚ LATERAL) -->
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+      <q-list>
+        <q-item-label header>Navegación</q-item-label>
+        
+        <!-- Enlace al Dashboard -->
+        <q-item clickable to="/">
+          <q-item-section avatar>
+            <q-icon name="dashboard" />
+          </q-item-section>
+          <q-item-section>Dashboard</q-item-section>
+        </q-item>
+        
+        <!-- Aquí iremos agregando los demás menús (Productos, etc) a medida -->
+        <!-- que desarrollemos los módulos contigo. -->
+
+          <!-- Menú Dinámico: Inventario -->
+          <q-expansion-item
+            icon="inventory_2"
+            label="Inventario"
+            v-if="auth.isAuthenticated"
+          >
+            <q-list class="q-pl-lg">
+              <q-item clickable v-ripple to="/inventory/receptions" active-class="text-primary">
+                <q-item-section avatar><q-icon name="download" size="sm" /></q-item-section>
+                <q-item-section>Recepciones</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/suppliers" active-class="text-primary">
+                <q-item-section avatar><q-icon name="local_shipping" size="sm" /></q-item-section>
+                <q-item-section>Proveedores</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/products" active-class="text-primary">
+                <q-item-section avatar><q-icon name="shopping_basket" size="sm" /></q-item-section>
+                <q-item-section>Productos</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/categories" active-class="text-primary">
+                <q-item-section avatar><q-icon name="category" size="sm" /></q-item-section>
+                <q-item-section>Categorías</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/units" active-class="text-primary">
+                <q-item-section avatar><q-icon name="straighten" size="sm" /></q-item-section>
+                <q-item-section>Unidades</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/warehouses" active-class="text-primary">
+                <q-item-section avatar><q-icon name="storefront" size="sm" /></q-item-section>
+                <q-item-section>Almacenes</q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+
+          <!-- Menú Dinámico: Seguridad -->
+          <q-expansion-item
+            icon="security"
+            label="Seguridad"
+            v-if="auth.isAuthenticated && auth.user?.role?.name === 'ADMIN'"
+          >
+            <q-list class="q-pl-lg">
+              <q-item clickable v-ripple to="/security/users" active-class="text-primary">
+                <q-item-section avatar><q-icon name="manage_accounts" size="sm" /></q-item-section>
+                <q-item-section>Usuarios</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/security/roles" active-class="text-primary">
+                <q-item-section avatar><q-icon name="admin_panel_settings" size="sm" /></q-item-section>
+                <q-item-section>Roles y Permisos</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/security/audit" active-class="text-primary">
+                <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
+                <q-item-section>Auditoría</q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+
+      </q-list>
+    </q-drawer>
+
+    <!-- CONTENEDOR DE LA PÁGINA (aquí entra pages/index.vue, etc) -->
+    <q-page-container>
+      <NuxtPage />
+    </q-page-container>
+
+    <!-- MODAL CAMBIAR CONTRASEÑA -->
+    <SharedFormDialog
+      v-model="isPasswordDialogOpen"
+      title="Cambiar Contraseña"
+      :loading="changingPassword"
+      save-label="Actualizar"
+      @save="submitPasswordChange"
+    >
+      <q-input
+        v-model="passwordForm.old"
+        label="Contraseña Actual *"
+        type="password"
+        outlined dense autofocus
+        :rules="[val => !!val || 'Requerida']"
+      />
+      <q-input
+        v-model="passwordForm.new"
+        label="Nueva Contraseña *"
+        type="password"
+        outlined dense class="q-mt-md"
+        :rules="[val => val.length >= 6 || 'Mínimo 6 caracteres']"
+      />
+      <q-input
+        v-model="passwordForm.confirm"
+        label="Confirmar Nueva Contraseña *"
+        type="password"
+        outlined dense class="q-mt-md"
+        :rules="[
+          val => !!val || 'Requerida',
+          val => val === passwordForm.new || 'Las contraseñas no coinciden'
+        ]"
+      />
+    </SharedFormDialog>
+
+  </q-layout>
+</template>

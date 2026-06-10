@@ -1,0 +1,41 @@
+{
+  "name": "siac",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@quasar/extras": "^1.18.0",
+    "jsonwebtoken": "^9.0.3",
+    "mitt": "^3.0.1",
+    "nuxt": "^4.4.7",
+    "pg": "^8.21.0",
+    "pinia": "^3.0.4",
+    "quasar": "^2.19.3",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "vite": "^8.0.16",
+    "vue": "^3.5.35",
+    "vue-router": "^5.1.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@pinia/nuxt": "^0.11.3",
+    "@prisma/client": "^7.8.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.20.0",
+    "@vite-pwa/nuxt": "^1.1.1",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "nuxt-quasar-ui": "^3.0.1",
+    "prisma": "^7.8.0",
+    "tsx": "^4.22.4"
+  }
+}
