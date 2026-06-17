@@ -112,9 +112,20 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 import { useTransferForm } from '~/composables/features/useTransferForm'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductsStore } from '~/stores/products'
+
+const auth = useAuthStore()
+const router = useRouter()
+
+// Protección de Ruta: Solo Admin puede crear transferencias
+const role = auth.user?.role?.name?.toUpperCase()
+if (role !== 'ADMIN' && role !== 'ADMINISTRADOR') {
+  router.push('/inventory/transfers')
+}
 
 const warehousesStore = useWarehousesStore()
 const productsStore = useProductsStore()
