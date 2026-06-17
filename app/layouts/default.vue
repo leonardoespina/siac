@@ -155,6 +155,22 @@ const submitPasswordChange = async () => {
           <q-item-section>Dashboard</q-item-section>
         </q-item>
         
+        <q-item to="/inventory/receptions" clickable v-ripple v-if="auth.hasPermission('RECEPTIONS', 'canRead')">
+          <q-item-section avatar>
+            <q-icon name="inventory_2" />
+          </q-item-section>
+          <q-item-section>Recepciones</q-item-section>
+        </q-item>
+
+        <q-item to="/inventory/transfers" clickable v-ripple v-if="auth.hasPermission('TRANSFERS', 'canRead')">
+          <q-item-section avatar>
+            <q-icon name="local_shipping" />
+          </q-item-section>
+          <q-item-section>Transferencias (Cocinas)</q-item-section>
+        </q-item>
+
+        <q-separator class="q-my-md" />
+
         <!-- Aquí iremos agregando los demás menús (Productos, etc) a medida -->
         <!-- que desarrollemos los módulos contigo. -->
 
@@ -162,32 +178,92 @@ const submitPasswordChange = async () => {
           <q-expansion-item
             icon="inventory_2"
             label="Inventario"
-            v-if="auth.isAuthenticated"
+            v-if="auth.isAuthenticated && (auth.hasPermission('PRODUCTS', 'canRead') || auth.hasPermission('CATEGORIES', 'canRead') || auth.hasPermission('WAREHOUSES', 'canRead') || auth.hasPermission('UNITS', 'canRead'))"
           >
             <q-list class="q-pl-lg">
-              <q-item clickable v-ripple to="/inventory/receptions" active-class="text-primary">
-                <q-item-section avatar><q-icon name="download" size="sm" /></q-item-section>
-                <q-item-section>Recepciones</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/suppliers" active-class="text-primary">
-                <q-item-section avatar><q-icon name="local_shipping" size="sm" /></q-item-section>
-                <q-item-section>Proveedores</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/products" active-class="text-primary">
+              <q-item clickable v-ripple to="/inventory/products" active-class="text-primary" v-if="auth.hasPermission('PRODUCTS', 'canRead')">
                 <q-item-section avatar><q-icon name="shopping_basket" size="sm" /></q-item-section>
                 <q-item-section>Productos</q-item-section>
               </q-item>
-              <q-item clickable v-ripple to="/inventory/categories" active-class="text-primary">
+              <q-item clickable v-ripple to="/inventory/categories" active-class="text-primary" v-if="auth.hasPermission('CATEGORIES', 'canRead')">
                 <q-item-section avatar><q-icon name="category" size="sm" /></q-item-section>
                 <q-item-section>Categorías</q-item-section>
               </q-item>
-              <q-item clickable v-ripple to="/inventory/units" active-class="text-primary">
+              <q-item clickable v-ripple to="/inventory/units" active-class="text-primary" v-if="auth.hasPermission('UNITS', 'canRead')">
                 <q-item-section avatar><q-icon name="straighten" size="sm" /></q-item-section>
                 <q-item-section>Unidades</q-item-section>
               </q-item>
-              <q-item clickable v-ripple to="/inventory/warehouses" active-class="text-primary">
+              <q-item clickable v-ripple to="/inventory/warehouses" active-class="text-primary" v-if="auth.hasPermission('WAREHOUSES', 'canRead')">
                 <q-item-section avatar><q-icon name="storefront" size="sm" /></q-item-section>
                 <q-item-section>Almacenes</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/institutions" active-class="text-primary" v-if="auth.hasPermission('INSTITUTIONS', 'canRead')">
+                <q-item-section avatar><q-icon name="account_balance" size="sm" /></q-item-section>
+                <q-item-section>Instituciones (Apoyos)</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/approvals" active-class="text-primary" v-if="auth.hasPermission('OPERATIONS', 'canUpdate')">
+                <q-item-section avatar><q-icon name="fact_check" size="sm" /></q-item-section>
+                <q-item-section>Aprobación de Consumos</q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+
+          <!-- Menú Dinámico: Operación Local -->
+          <q-expansion-item
+            icon="restaurant"
+            label="Cocina / Operación Local"
+            v-if="auth.isAuthenticated && auth.hasPermission('OPERATIONS', 'canRead')"
+          >
+            <q-list class="q-pl-lg">
+              <q-item clickable v-ripple to="/kitchen/operation" active-class="text-primary">
+                <q-item-section avatar><q-icon name="point_of_sale" size="sm" /></q-item-section>
+                <q-item-section>Panel de Operaciones</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/kitchen/inventory" active-class="text-primary">
+                <q-item-section avatar><q-icon name="inventory" size="sm" /></q-item-section>
+                <q-item-section>Mi Inventario Físico</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/kitchen/shifts" active-class="text-primary">
+                <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
+                <q-item-section>Mi Historial de Turnos</q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+
+          <!-- Menú Dinámico: Reportes -->
+          <q-expansion-item
+            icon="analytics"
+            label="Reportes"
+            v-if="auth.isAuthenticated && auth.hasPermission('REPORTS', 'canRead')"
+          >
+            <q-list class="q-pl-lg">
+              <q-item clickable v-ripple to="/reports" active-class="text-primary" exact>
+                <q-item-section avatar><q-icon name="dashboard" size="sm" /></q-item-section>
+                <q-item-section>Dashboard de Reportes</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/value" active-class="text-primary">
+                <q-item-section avatar><q-icon name="request_quote" size="sm" /></q-item-section>
+                <q-item-section>Valor del Inventario</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/alerts" active-class="text-primary">
+                <q-item-section avatar><q-icon name="warning" size="sm" /></q-item-section>
+                <q-item-section>Alertas de Stop</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/minmax" active-class="text-primary">
+                <q-item-section avatar><q-icon name="bar_chart" size="sm" /></q-item-section>
+                <q-item-section>Mínimos y Máximos</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/consumptions" active-class="text-primary">
+                <q-item-section avatar><q-icon name="restaurant" size="sm" /></q-item-section>
+                <q-item-section>Consumos y Mermas</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/institutions" active-class="text-primary">
+                <q-item-section avatar><q-icon name="volunteer_activism" size="sm" /></q-item-section>
+                <q-item-section>Apoyos Institucionales</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/shifts" active-class="text-primary">
+                <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
+                <q-item-section>Historial de Turnos</q-item-section>
               </q-item>
             </q-list>
           </q-expansion-item>
@@ -196,7 +272,7 @@ const submitPasswordChange = async () => {
           <q-expansion-item
             icon="security"
             label="Seguridad"
-            v-if="auth.isAuthenticated && auth.user?.role?.name === 'ADMIN'"
+            v-if="auth.isAuthenticated && auth.hasPermission('SECURITY', 'canRead')"
           >
             <q-list class="q-pl-lg">
               <q-item clickable v-ripple to="/security/users" active-class="text-primary">

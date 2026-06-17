@@ -8,7 +8,8 @@ export async function listAll() {
   return prisma.product.findMany({
     include: {
       category: true,
-      unit: true
+      unit: true,
+      stocks: true
     },
     orderBy: { name: 'asc' }
   })

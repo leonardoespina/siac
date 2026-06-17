@@ -18,4 +18,38 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (auth.isAuthenticated && to.path === '/login') {
     return navigateTo('/')
   }
+
+  // --- PROTECCIÓN BASADA EN PERMISOS (MATRIZ CRUD) ---
+  if (auth.isAuthenticated && to.path !== '/') {
+    // Diccionario de prefijo de ruta -> Código de Módulo
+    const routePermissions: Record<string, string> = {
+      '/inventory/receptions': 'RECEPTIONS',
+      '/inventory/transfers': 'TRANSFERS',
+      '/inventory/products': 'PRODUCTS',
+      '/inventory/categories': 'CATEGORIES',
+      '/inventory/units': 'UNITS',
+      '/inventory/warehouses': 'WAREHOUSES',
+      '/inventory/institutions': 'INSTITUTIONS',
+      '/security': 'SECURITY',
+      '/kitchen/operation': 'OPERATIONS',
+      '/inventory/approvals': 'OPERATIONS',
+      '/kitchen/shifts': 'OPERATIONS',
+      '/reports/shifts': 'REPORTS'
+    }
+
+    // Buscamos si la ruta actual requiere algún módulo
+    for (const [pathPrefix, moduleCode] of Object.entries(routePermissions)) {
+      if (to.path.startsWith(pathPrefix)) {
+        // Verificamos si tiene el permiso "canRead" para este módulo (o canUpdate para approvals)
+        const requiredAction = pathPrefix === '/kitchen/approvals' ? 'canUpdate' : 'canRead'
+        
+        if (!auth.hasPermission(moduleCode, requiredAction)) {
+          console.warn(`Acceso denegado a ${to.path}. Faltan permisos para el módulo ${moduleCode}.`)
+          // Lo expulsamos al Dashboard
+          return navigateTo('/')
+        }
+        break // Si ya validó, salimos del ciclo
+      }
+    }
+  }
 })

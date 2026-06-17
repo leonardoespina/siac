@@ -79,6 +79,14 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value.role.permissions.find(p => p.module.code === moduleCode) || null
   }
 
+  // Helper rápido para verificar un permiso específico
+  function hasPermission(moduleCode: string, action: 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete') {
+    const roleName = user.value?.role?.name?.toUpperCase()
+    if (roleName === 'ADMIN' || roleName === 'ADMINISTRADOR') return true // El ADMIN siempre puede hacer todo
+    const p = getModulePermissions(moduleCode)
+    return p ? p[action] : false
+  }
+
   // Método: Cambiar contraseña personal
   async function changePassword(oldPassword: string, newPassword: string) {
     await $fetch('/api/auth/password', {
@@ -96,6 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchUser,
     getModulePermissions,
+    hasPermission,
     changePassword
   }
 })

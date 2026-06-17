@@ -28,6 +28,23 @@ export async function requireAuth(event: H3Event) {
 }
 
 /**
+ * 1.5. Devuelve el contexto completo del usuario (ID, Rol, Warehouse)
+ */
+export async function requireUserContext(event: H3Event) {
+  const userId = await requireAuth(event)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true }
+  })
+  if (!user) throw new UnauthorizedError('Usuario no encontrado')
+  return {
+    id: user.id,
+    roleName: user.role.name,
+    warehouseId: user.warehouseId
+  }
+}
+
+/**
  * 2. Verifica la matriz de permisos de la base de datos (Rol vs Módulo).
  * Ejemplo de uso en un endpoint: await requirePermission(event, 'PRODUCTS', 'create')
  */
@@ -57,8 +74,10 @@ export async function requirePermission(
     throw new ForbiddenError('El usuario no tiene un rol asignado')
   }
 
-  // (Opcional) Si tuviéramos un rol Super Admin, podríamos dejarlo pasar siempre:
-  // if (user.role.name === 'ADMIN') return userId;
+  // Si tiene rol ADMIN, lo dejamos pasar siempre
+  if (user.role.name === 'ADMIN' || user.role.name.toUpperCase() === 'ADMINISTRADOR') {
+    return userId
+  }
 
   const modulePerm = user.role.permissions[0]
 

@@ -14,7 +14,7 @@ export interface UserContext {
 export function validateStateTransition(currentStatus: TransactionStatus, newStatus: TransactionStatus) {
   const validTransitions: Record<TransactionStatus, TransactionStatus[]> = {
     DRAFT: ['PENDING'],
-    PENDING: ['APPROVED', 'REJECTED'],
+    PENDING: ['APPROVED', 'REJECTED', 'CONFIRMED'],
     APPROVED: ['CONFIRMED'],
     REJECTED: [],
     CONFIRMED: []

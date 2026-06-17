@@ -63,6 +63,10 @@ model User {
   roleId Int  @map("role_id")
   role   Role @relation(fields: [roleId], references: [id])
 
+  // Aislamiento por Comedor (Multi-Tenant local)
+  warehouseId Int?       @map("warehouse_id")
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
   auditLogs AuditLog[]
@@ -71,6 +75,7 @@ model User {
   createdTransactions  Transaction[]  @relation("CreatedBy")
   approvedTransactions Transaction[]  @relation("ApprovedBy")
   notifications        Notification[]
+  shifts               Shift[]
 
   @@map("users")
 }
@@ -108,6 +113,23 @@ model Supplier {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("suppliers")
+}
+
+// ── INSTITUCIONES (APOYOS Y DONACIONES) ────────────────────────────────────
+
+model Institution {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  type        String?  // Ej: "Educativa", "Salud", "Comunitaria", "Gubernamental"
+  description String?
+  active      Boolean  @default(true)
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("institutions")
 }
 
 // ── INVENTARIO: CATÁLOGO ───────────────────────────────────────────────────
@@ -149,6 +171,7 @@ model Product {
   unit         Unit     @relation(fields: [unitId], references: [id])
   minimumStock Decimal  @default(0) @map("minimum_stock") @db.Decimal(10, 2)
   maximumStock Decimal? @map("maximum_stock") @db.Decimal(10, 2)
+  referencePrice Decimal @default(0) @map("reference_price") @db.Decimal(10, 2) // Precio base para cálculo de reportes
   isPerishable Boolean  @default(false) @map("is_perishable")
   active       Boolean  @default(true)
 
@@ -180,6 +203,8 @@ model Warehouse {
   // Relaciones inversas
   outgoingTransactions Transaction[] @relation("SourceWarehouse")
   incomingTransactions Transaction[] @relation("DestinationWarehouse")
+  users                User[]
+  shifts               Shift[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -208,6 +233,9 @@ enum TransactionType {
   RECEPTION    // Entrada por compra (Carga Excel o Manual)
   TRANSFER     // Envío de Central a Local
   ADJUSTMENT   // Ajuste manual de inventario
+  CONSUMPTION  // Despacho/Consumo diario de cocina
+  LOSS         // Merma o pérdida
+  SUPPORT      // Apoyo o Donación a Institución
 }
 
 enum TransactionStatus {
@@ -234,12 +262,20 @@ model Transaction {
   supplierId  Int?              @map("supplier_id")
   supplier    Supplier?         @relation(fields: [supplierId], references: [id])
 
+  // Institución (Solo para Apoyos/Donaciones)
+  institutionId Int?            @map("institution_id")
+  institution   Institution?    @relation(fields: [institutionId], references: [id])
+
   // Seguimiento de Usuarios
   createdById Int               @map("created_by_id")
   createdBy   User              @relation("CreatedBy", fields: [createdById], references: [id])
   
   approvedById Int?             @map("approved_by_id")
   approvedBy   User?            @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  // Vinculación con el Turno (Para consumos y mermas locales)
+  shiftId     Int?              @map("shift_id")
+  shift       Shift?            @relation(fields: [shiftId], references: [id])
 
   notes       String?           @db.Text
   
@@ -249,6 +285,28 @@ model Transaction {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("transactions")
+}
+
+// ── CONTROL DE TURNOS (OPERACIÓN LOCAL) ────────────────────────────────────
+
+model Shift {
+  id          Int       @id @default(autoincrement())
+  warehouseId Int       @map("warehouse_id")
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  userId      Int       @map("user_id")
+  user        User      @relation(fields: [userId], references: [id])
+  startTime   DateTime  @default(now()) @map("start_time")
+  endTime     DateTime? @map("end_time")
+  status      String    @default("OPEN") // 'OPEN' o 'CLOSED'
+  shiftType   String    @default("DIURNO") @map("shift_type") // 'DIURNO' | 'NOCTURNO'
+  notes       String?   @db.Text
+
+  transactions Transaction[]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("shifts")
 }
 
 model TransactionDetail {

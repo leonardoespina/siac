@@ -22,6 +22,7 @@ export function useProductForm() {
     unitId: undefined,
     minimumStock: 0,
     maximumStock: undefined,
+    referencePrice: 0,
     isPerishable: false,
     active: true
   })
@@ -36,6 +37,7 @@ export function useProductForm() {
       unitId: undefined,
       minimumStock: 0,
       maximumStock: undefined,
+      referencePrice: 0,
       isPerishable: false,
       active: true
     }

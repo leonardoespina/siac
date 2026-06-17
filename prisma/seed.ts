@@ -18,7 +18,11 @@ async function main() {
     { code: 'CATEGORIES', name: 'Categorías de Productos' },
     { code: 'UNITS', name: 'Unidades de Medida' },
     { code: 'WAREHOUSES', name: 'Gestión de Almacenes' },
-    { code: 'SECURITY', name: 'Seguridad y Accesos' } // Opcional, pero bueno tenerlo
+    { code: 'SECURITY', name: 'Seguridad y Accesos' },
+    { code: 'RECEPTIONS', name: 'Recepciones y Compras' },
+    { code: 'TRANSFERS', name: 'Transferencias' },
+    { code: 'OPERATIONS', name: 'Operación Diaria y Consumos' },
+    { code: 'REPORTS', name: 'Reportes e Historial' }
   ]
 
   const modules = []

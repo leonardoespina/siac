@@ -1,0 +1,49 @@
+import { defineApiHandler } from '../../utils/handler'
+import { prisma } from '../../utils/prisma'
+import { requireUserContext } from '../../utils/auth'
+import { ValidationError } from '../../domain/errors'
+
+export default defineApiHandler(async (event) => {
+  const user = await requireUserContext(event)
+  const body = await readBody(event)
+  
+  const targetWarehouseId = user.warehouseId || Number(body.warehouseId)
+
+  if (!targetWarehouseId) {
+    throw new ValidationError('Debes especificar un comedor para abrir el turno.')
+  }
+
+  // REGLA 5: Sin cerrar turno anterior no se abre el siguiente.
+  // Verificar si el almacén ya tiene un turno abierto (incluso si es de otro usuario,
+  // normalmente solo hay un turno activo por comedor)
+  const existingShift = await prisma.shift.findFirst({
+    where: {
+      warehouseId: targetWarehouseId,
+      status: 'OPEN'
+    }
+  })
+
+  if (existingShift) {
+    throw new ValidationError(`Ya existe un turno abierto en este comedor (Iniciado por ID: ${existingShift.userId}). Debes cerrarlo primero.`)
+  }
+
+  // Leer parámetros opcionales
+  const shiftType = body?.shiftType || 'DIURNO'
+  const startTime = body?.startTime ? new Date(body.startTime) : new Date()
+
+  // Abrir nuevo turno
+  const shift = await prisma.shift.create({
+    data: {
+      userId: user.id,
+      warehouseId: targetWarehouseId,
+      status: 'OPEN',
+      shiftType: shiftType,
+      startTime: startTime
+    },
+    include: {
+      warehouse: true
+    }
+  })
+
+  return shift
+})

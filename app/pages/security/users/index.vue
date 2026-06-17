@@ -16,6 +16,13 @@
         </q-td>
       </template>
       
+      <template v-slot:body-cell-warehouse="props">
+        <q-td :props="props">
+          <span v-if="props.row.warehouseId">{{ props.row.warehouse?.name || 'Comedor Asignado' }}</span>
+          <span v-else class="text-grey text-italic">Global</span>
+        </q-td>
+      </template>
+      
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
           <SharedStatusBadge :active="props.row.active" />
@@ -44,7 +51,7 @@
         <div class="col-12 col-md-6">
           <q-input v-model="form.name" label="Nombre" outlined dense :rules="[val => !!val || 'Requerido']" />
         </div>
-        <div class="col-12">
+        <div class="col-12 col-md-6">
           <q-select 
             v-model="form.roleId" 
             :options="rolesStore.roles" 
@@ -56,6 +63,19 @@
             outlined 
             dense 
             :rules="[val => !!val || 'Requerido']" 
+          />
+        </div>
+        <div class="col-12 col-md-6">
+          <q-select 
+            v-model="form.warehouseId" 
+            :options="[{id: null, name: 'Ninguno (Acceso Global)'}, ...warehousesStore.localWarehouses]" 
+            option-value="id" 
+            option-label="name" 
+            emit-value 
+            map-options 
+            label="Comedor Asignado (Opcional)" 
+            outlined 
+            dense 
           />
         </div>
         <div class="col-12" v-if="isEditing">
@@ -73,12 +93,14 @@
 import { ref, onMounted } from 'vue'
 import { useUsersStore } from '~/stores/users'
 import { useRolesStore } from '~/stores/roles'
+import { useWarehousesStore } from '~/stores/warehouses'
 import { useUserForm } from '~/composables/features/useUserForm'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const store = useUsersStore()
 const rolesStore = useRolesStore()
+const warehousesStore = useWarehousesStore()
 const { isOpen, isEditing, loading, form, openCreate, openEdit, submit } = useUserForm()
 
 const filter = ref('')
@@ -87,6 +109,7 @@ const columns = [
   { name: 'cedula', label: 'Cédula', field: 'cedula', align: 'left', sortable: true },
   { name: 'name', label: 'Nombre', field: 'name', align: 'left', sortable: true },
   { name: 'role', label: 'Rol', field: 'role', align: 'center', sortable: true },
+  { name: 'warehouse', label: 'Comedor Asignado', field: 'warehouse', align: 'center' },
   { name: 'status', label: 'Estado', field: 'active', align: 'center', sortable: true },
   { name: 'actions', label: 'Acciones', align: 'right' }
 ]
@@ -109,7 +132,8 @@ const deleteUser = (id: number) => {
 onMounted(async () => {
   await Promise.all([
     store.fetchUsers(),
-    rolesStore.fetchRoles() // Necesitamos los roles para llenar el select
+    rolesStore.fetchRoles(), // Necesitamos los roles para llenar el select
+    warehousesStore.fetchAll() // Necesitamos los comedores para el select
   ])
 })
 </script>

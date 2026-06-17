@@ -16,12 +16,13 @@ export function useUserForm() {
     name: '',
     password: '',
     roleId: null as number | null,
+    warehouseId: null as number | null,
     active: true
   })
 
   function openCreate() {
     isEditing.value = false
-    form.value = { id: 0, cedula: '', name: '', password: '', roleId: null, active: true }
+    form.value = { id: 0, cedula: '', name: '', password: '', roleId: null, warehouseId: null, active: true }
     isOpen.value = true
   }
 

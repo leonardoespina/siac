@@ -5,8 +5,7 @@
     :columns="columns"
     :loading="loading"
     :filter="filter"
-    v-model:pagination="internalPagination"
-    @request="onRequest"
+    :pagination="initialPagination"
     row-key="id"
     flat
     bordered
@@ -65,12 +64,10 @@ const internalFilter = computed({
   set: (val) => emit('update:filter', val)
 })
 
-const internalPagination = computed({
-  get: () => props.pagination,
-  set: (val) => emit('update:pagination', val)
+const initialPagination = ref({
+  sortBy: 'id',
+  descending: true,
+  page: 1,
+  rowsPerPage: 10
 })
-
-const onRequest = (reqProps: any) => {
-  emit('request', reqProps)
-}
 </script>

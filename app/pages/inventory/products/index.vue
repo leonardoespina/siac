@@ -35,13 +35,38 @@
         </q-td>
       </template>
 
+      <template v-slot:body-cell-centralStock="props">
+        <q-td :props="props" class="text-center">
+          <q-badge :color="getCentralStock(props.row) < props.row.minimumStock ? 'negative' : 'positive'" class="text-weight-bold" style="font-size: 14px">
+            {{ getCentralStock(props.row) }}
+            <q-icon name="warning" v-if="getCentralStock(props.row) < props.row.minimumStock" class="q-ml-xs" />
+          </q-badge>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-localStock="props">
+        <q-td :props="props" class="text-center text-weight-bold text-grey-8">
+          {{ getLocalStock(props.row) }}
+        </q-td>
+      </template>
+
       <template v-slot:body-cell-actions="props">
         <q-td :props="props" class="text-right">
+          <q-btn flat round dense color="teal" icon="insert_chart" @click="openKardex(props.row)">
+            <q-tooltip>Ver Kardex / Historial</q-tooltip>
+          </q-btn>
           <q-btn flat round dense color="primary" icon="edit" @click="openEdit(props.row)" />
           <q-btn flat round dense color="negative" icon="delete" @click="remove(props.row.id)" v-if="props.row.active" />
         </q-td>
       </template>
     </SharedCrudTable>
+
+    <!-- Modal del Kardex -->
+    <SharedKardexDialog 
+      v-model="isKardexOpen" 
+      :product="selectedProduct" 
+      :central-stock="selectedProduct ? getCentralStock(selectedProduct) : 0" 
+    />
 
     <!-- Dialogo de Formulario con Tabs para no saturar visualmente -->
     <SharedFormDialog
@@ -96,6 +121,14 @@
         </div>
       </div>
 
+      <div class="row q-mt-sm">
+        <div class="col-12">
+          <q-input v-model.number="form.referencePrice" type="number" step="0.01" label="Costo Referencial (Reportes)" hint="Precio base unitario para calcular el valor del inventario" outlined dense>
+            <template v-slot:prepend><q-icon name="attach_money" /></template>
+          </q-input>
+        </div>
+      </div>
+
       <q-input v-model="form.description" label="Descripción (Opcional)" type="textarea" outlined dense class="q-mt-md" />
 
       <div class="row q-mt-md">
@@ -114,30 +147,64 @@ import { ref, onMounted } from 'vue'
 import { useProductsStore } from '~/stores/products'
 import { useCategoriesStore } from '~/stores/categories'
 import { useUnitsStore } from '~/stores/units'
+import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductForm } from '~/composables/features/useProductForm'
 
 const store = useProductsStore()
 const categoriesStore = useCategoriesStore()
 const unitsStore = useUnitsStore()
+const warehousesStore = useWarehousesStore()
 
 const { isDialogOpen, isEditing, form, openCreate, openEdit, submit, remove } = useProductForm()
 
 const filter = ref('')
+const isKardexOpen = ref(false)
+const selectedProduct = ref<any>(null)
+
+// Funciones para calcular Stock
+const getCentralStock = (product: any) => {
+  const central = warehousesStore.warehouses.find(w => w.type === 'CENTRAL')
+  if (!central || !product.stocks) return 0
+  const stock = product.stocks.find((s: any) => s.warehouseId === central.id)
+  return stock ? Number(stock.quantity) : 0
+}
+
+const getLocalStock = (product: any) => {
+  const locals = warehousesStore.warehouses.filter(w => w.type === 'LOCAL')
+  if (locals.length === 0 || !product.stocks) return 0
+  
+  let total = 0
+  for (const local of locals) {
+    const stock = product.stocks.find((s: any) => s.warehouseId === local.id)
+    if (stock) total += Number(stock.quantity)
+  }
+  return total
+}
+
+const openKardex = (product: any) => {
+  selectedProduct.value = product
+  isKardexOpen.value = true
+}
+
 
 const columns = [
-  { name: 'code', label: 'Código', field: 'code', align: 'left', sortable: true },
-  { name: 'name', label: 'Nombre', field: 'name', align: 'left', sortable: true },
-  { name: 'category', label: 'Categoría', align: 'center' },
-  { name: 'unit', label: 'Und', align: 'center' },
-  { name: 'minimumStock', label: 'Min', field: 'minimumStock', align: 'center' },
-  { name: 'perishable', label: 'Perecedero', align: 'center' },
-  { name: 'status', label: 'Estado', field: 'active', align: 'center', sortable: true },
-  { name: 'actions', label: 'Acciones', align: 'right' }
+  { name: 'code', label: 'Código', field: 'code', align: 'left' as const, sortable: true },
+  { name: 'name', label: 'Nombre', field: 'name', align: 'left' as const, sortable: true },
+  { name: 'category', label: 'Categoría', align: 'center' as const },
+  { name: 'centralStock', label: 'Stock Central', align: 'center' as const, sortable: true, field: (row:any) => getCentralStock(row) },
+  { name: 'localStock', label: 'Stock Locales (Cocinas)', align: 'center' as const },
+  { name: 'unit', label: 'Und', align: 'center' as const },
+  { name: 'minimumStock', label: 'Min', field: 'minimumStock', align: 'center' as const },
+  { name: 'referencePrice', label: 'Costo Ref.', field: 'referencePrice', align: 'center' as const, format: (val: any) => `$${Number(val).toFixed(2)}` },
+  { name: 'perishable', label: 'Perecedero', align: 'center' as const },
+  { name: 'status', label: 'Estado', field: 'active', align: 'center' as const, sortable: true },
+  { name: 'actions', label: 'Acciones', align: 'right' as const }
 ]
 
-onMounted(() => {
+onMounted(async () => {
   store.fetchAll()
   if (categoriesStore.categories.length === 0) categoriesStore.fetchAll()
   if (unitsStore.units.length === 0) unitsStore.fetchAll()
+  if (warehousesStore.warehouses.length === 0) await warehousesStore.fetchAll()
 })
 </script>

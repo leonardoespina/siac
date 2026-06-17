@@ -24,6 +24,7 @@ export default defineApiHandler(async (event) => {
       cedula: body.cedula,
       name: body.name,
       roleId: parseInt(body.roleId),
+      warehouseId: body.warehouseId ? parseInt(body.warehouseId) : null,
       passwordHash,
       active: true
     },

@@ -24,6 +24,10 @@ export const useWarehousesStore = defineStore('warehouses', {
     warehouses: [] as Warehouse[],
     loading: false
   }),
+  getters: {
+    localWarehouses: (state) => state.warehouses.filter(w => w.type === 'LOCAL'),
+    centralWarehouses: (state) => state.warehouses.filter(w => w.type === 'CENTRAL')
+  },
   actions: {
     /**
      * Carga todos los almacenes registrados (Centrales y Locales).
