@@ -7,7 +7,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "prisma generate && nuxt prepare"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

@@ -3,12 +3,14 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useNotificationsStore, type Notification } from '~/stores/notifications'
+import { useInteractiveTour } from '~/composables/features/useInteractiveTour'
 import { useQuasar } from 'quasar'
 
 // ── LAYOUT BASE DE QUASAR ───────────────────────────────────────────────────
 const leftDrawerOpen = ref(true)
 const auth = useAuthStore()
 const notifications = useNotificationsStore()
+const interactiveTour = useInteractiveTour()
 const router = useRouter()
 const $q = useQuasar()
 const { $socket } = useNuxtApp() as any
@@ -22,6 +24,7 @@ onMounted(() => {
   if (auth.isAuthenticated && auth.user) {
     notifications.fetchAll()
     $socket.emit('join', auth.user.id)
+    interactiveTour.checkAndOpenTour()
     
     // Escuchar notificaciones en vivo
     $socket.on('notification', (newNotif: Notification) => {
@@ -42,6 +45,7 @@ watch(() => auth.isAuthenticated, (newVal) => {
   if (newVal && auth.user) {
     notifications.fetchAll()
     $socket.emit('join', auth.user.id)
+    interactiveTour.checkAndOpenTour()
   }
 })
 
@@ -85,6 +89,11 @@ const submitPasswordChange = async () => {
 
         <!-- INFO DEL USUARIO LOGUEADO -->
         <div v-if="auth.isAuthenticated" class="row items-center q-gutter-md">
+
+          <!-- BOTÓN DE AYUDA / TOUR -->
+          <q-btn flat round dense icon="help_outline" @click="interactiveTour.openTour()">
+            <q-tooltip>Ver Guía Rápida</q-tooltip>
+          </q-btn>
           
           <!-- CAMPANITA DE NOTIFICACIONES -->
           <q-btn flat round dense icon="notifications">
@@ -331,6 +340,9 @@ const submitPasswordChange = async () => {
         ]"
       />
     </SharedFormDialog>
+
+    <!-- GUÍA INTERACTIVA (ONBOARDING) -->
+    <SharedInteractiveTour />
 
   </q-layout>
 </template>
