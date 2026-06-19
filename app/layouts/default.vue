@@ -187,7 +187,7 @@ const submitPasswordChange = async () => {
           <q-expansion-item
             icon="inventory_2"
             label="Inventario"
-            v-if="auth.isAuthenticated && (auth.hasPermission('PRODUCTS', 'canRead') || auth.hasPermission('CATEGORIES', 'canRead') || auth.hasPermission('WAREHOUSES', 'canRead') || auth.hasPermission('UNITS', 'canRead'))"
+            v-if="auth.isAuthenticated && (auth.hasPermission('PRODUCTS', 'canRead') || auth.hasPermission('CATEGORIES', 'canRead') || auth.hasPermission('WAREHOUSES', 'canRead') || auth.hasPermission('UNITS', 'canRead') || auth.hasPermission('SUPPLIERS', 'canRead'))"
           >
             <q-list class="q-pl-lg">
               <q-item clickable v-ripple to="/inventory/products" active-class="text-primary" v-if="auth.hasPermission('PRODUCTS', 'canRead')">
@@ -205,6 +205,10 @@ const submitPasswordChange = async () => {
               <q-item clickable v-ripple to="/inventory/warehouses" active-class="text-primary" v-if="auth.hasPermission('WAREHOUSES', 'canRead')">
                 <q-item-section avatar><q-icon name="storefront" size="sm" /></q-item-section>
                 <q-item-section>Almacenes</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/inventory/suppliers" active-class="text-primary" v-if="auth.hasPermission('SUPPLIERS', 'canRead')">
+                <q-item-section avatar><q-icon name="business" size="sm" /></q-item-section>
+                <q-item-section>Proveedores</q-item-section>
               </q-item>
               <q-item clickable v-ripple to="/inventory/institutions" active-class="text-primary" v-if="auth.hasPermission('INSTITUTIONS', 'canRead')">
                 <q-item-section avatar><q-icon name="account_balance" size="sm" /></q-item-section>
