@@ -23,9 +23,10 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Debe proporcionar un almacén destino, un proveedor y al menos una fila de Excel.')
   }
 
-  // Se ejecutará toda la lógica dentro de una transacción de Prisma. 
-  // Si algo falla en la fila 500, se hace Rollback de todo para no dejar la DB sucia.
-  const createdTransaction = await prisma.$transaction(async (tx) => {
+  try {
+    // Se ejecutará toda la lógica dentro de una transacción de Prisma. 
+    // Si algo falla en la fila 500, se hace Rollback de todo para no dejar la DB sucia.
+    const createdTransaction = await prisma.$transaction(async (tx) => {
     
     // 1. Diccionarios en memoria para no hacer queries redundantes en el bucle
     const categoryCache = new Map<string, number>()
@@ -107,8 +108,8 @@ export default defineApiHandler(async (event) => {
       data: {
         type: 'RECEPTION',
         status: 'DRAFT',
-        destinationId: parseInt(destinationId),
-        supplierId: parseInt(supplierId),
+        destinationId: Number(destinationId),
+        supplierId: Number(supplierId),
         createdById: userId,
         notes: 'Importación masiva desde Excel',
         details: {
@@ -121,16 +122,34 @@ export default defineApiHandler(async (event) => {
     })
 
     return transaction
-  }, {
-    maxWait: 5000, // Darle tiempo si el excel es muy grande
-    timeout: 20000 // Timeout de 20 segundos
-  })
+    }, {
+      maxWait: 15000, // 15 segundos para adquirir conexión (Render free tier)
+      timeout: 30000  // 30 segundos para ejecutar (Render free tier)
+    })
 
-  await logAudit(userId, 'CREATE', 'TRANSACTION', createdTransaction.id, `Importación Excel de ${rows.length} filas.`)
+    await logAudit(userId, 'CREATE', 'TRANSACTION', createdTransaction.id, `Importación Excel de ${rows.length} filas.`)
 
-  return {
-    success: true,
-    message: 'Recepción en Borrador creada con éxito',
-    transactionId: createdTransaction.id
+    return {
+      success: true,
+      message: 'Recepción en Borrador creada con éxito',
+      transactionId: createdTransaction.id
+    }
+  } catch (error: any) {
+    console.error('Error in excel.post.ts:', error)
+    
+    if (error.statusCode === 422 || error.name === 'DomainError') {
+      throw error // Respetar errores de validación
+    }
+
+    const shortMsg = error.message ? error.message.replace(/\r?\n|\r/g, ' ').substring(0, 100) : 'Error desconocido'
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: `DB_ERR: ${shortMsg}`,
+      data: {
+        message: error.message || 'Error desconocido en la BD',
+        stack: error.stack
+      }
+    })
   }
 })

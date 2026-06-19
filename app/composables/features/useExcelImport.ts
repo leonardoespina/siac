@@ -68,16 +68,18 @@ export function useExcelImport() {
     return clean.toUpperCase()
   }
 
-  const normalizeDate = (val: any): string | null => {
+  const normalizeDate = (val: any): string | null | 'INVALID' => {
     if (!val) return null
 
     // Si Excel lo envía como número serial (ej. 44562)
     if (typeof val === 'number') {
       const date = new Date(Math.round((val - 25569) * 86400 * 1000))
+      if (isNaN(date.getTime())) return 'INVALID'
       return date.toISOString().split('T')[0]
     }
 
     const strVal = String(val).trim()
+    
     // Si viene como string literal "DD/MM/YYYY" o "DD-MM-YYYY"
     const regex = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
     const match = strVal.match(regex)
@@ -85,7 +87,19 @@ export function useExcelImport() {
       const day = match[1].padStart(2, '0')
       const month = match[2].padStart(2, '0')
       const year = match[3]
-      return `${year}-${month}-${day}` // Convertimos a YYYY-MM-DD para la BD
+      
+      const isoStr = `${year}-${month}-${day}`
+      if (!isNaN(new Date(isoStr).getTime())) {
+        return isoStr
+      }
+      
+      // Fallback: si el usuario usó formato MM/DD/YYYY (ej. 12/25/2026)
+      const isoStrUS = `${year}-${day}-${month}`
+      if (!isNaN(new Date(isoStrUS).getTime())) {
+        return isoStrUS
+      }
+      
+      return 'INVALID'
     }
 
     // Fallback por si la base subyacente de JS lo logra parsear
@@ -94,7 +108,7 @@ export function useExcelImport() {
       return fallbackDate.toISOString().split('T')[0]
     }
 
-    return null
+    return 'INVALID'
   }
 
   const downloadTemplate = () => {
@@ -151,6 +165,11 @@ export function useExcelImport() {
 
         // Parsear fecha flexiblemente
         let expirationDate = normalizeDate(r['Vencimiento'])
+        if (expirationDate === 'INVALID') {
+          isValid = false
+          errorMsg = 'Formato de fecha de vencimiento inválido'
+          expirationDate = null
+        }
 
         return {
           index,
