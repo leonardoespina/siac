@@ -11,7 +11,6 @@ export function useNotifications() {
     success: (message: string) => $q.notify({
       type: 'positive',
       message,
-      position: 'top-right',
       timeout: 3000,
       icon: 'check_circle',
       classes: 'text-weight-medium'
@@ -19,7 +18,6 @@ export function useNotifications() {
     error: (message: string) => $q.notify({
       type: 'negative',
       message,
-      position: 'top-right',
       timeout: 6000,
       icon: 'error',
       classes: 'text-weight-medium'
@@ -27,14 +25,12 @@ export function useNotifications() {
     warning: (message: string) => $q.notify({
       type: 'warning',
       message,
-      position: 'top-right',
       icon: 'warning',
       classes: 'text-weight-medium text-dark'
     }),
     info: (message: string) => $q.notify({
       type: 'info',
       message,
-      position: 'top-right',
       icon: 'info',
       classes: 'text-weight-medium'
     }),

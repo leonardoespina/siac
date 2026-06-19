@@ -87,7 +87,7 @@
           </div>
         </q-card-section>
         
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="transaction.details"
           :columns="columns"
           row-key="id"
@@ -115,6 +115,36 @@
                 <q-tooltip>Eliminar de la lista</q-tooltip>
               </q-btn>
             </q-td>
+          </template>
+
+          <!-- MODO GRID MÓVIL PERSONALIZADO -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+              <q-card bordered flat>
+                <q-card-section class="q-pb-none">
+                  <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm items-center">
+                    <div class="text-caption text-grey-7">{{ col.label }}</div>
+                    <div class="text-weight-bold text-right" style="max-width: 60%">
+                      <template v-if="col.name === 'quantity'">
+                        <template v-if="!isEditing">{{ props.row.quantity }}</template>
+                        <q-input v-else v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" />
+                      </template>
+                      <template v-else-if="col.name === 'price'">
+                        <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
+                        <q-input v-else v-model.number="props.row.unitPrice" type="number" dense outlined prefix="$" style="max-width: 110px; margin: 0 0 0 auto" />
+                      </template>
+                      <template v-else>
+                        {{ col.value }}
+                      </template>
+                    </div>
+                  </div>
+                </q-card-section>
+                <q-separator v-if="isEditing" />
+                <q-card-actions align="right" v-if="isEditing">
+                  <q-btn flat color="negative" icon="delete" @click="removeRow(props.rowIndex)" label="Eliminar" />
+                </q-card-actions>
+              </q-card>
+            </div>
           </template>
         </q-table>
       </q-card>

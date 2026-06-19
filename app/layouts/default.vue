@@ -33,7 +33,6 @@ onMounted(() => {
         type: 'info',
         message: newNotif.title,
         caption: newNotif.message,
-        position: 'top-right',
         actions: [{ icon: 'close', color: 'white' }]
       })
     })
@@ -127,11 +126,16 @@ const submitPasswordChange = async () => {
 
           <!-- MENÚ DE USUARIO -->
           <q-btn flat dense no-caps>
-            <div class="column text-right q-pr-sm">
-              <span class="text-weight-bold" style="font-size: 14px">{{ auth.user?.name }}</span>
-              <span class="text-caption" style="line-height: 1">{{ auth.user?.role?.name }}</span>
+            <div class="row items-center">
+              <div v-if="$q.screen.gt.xs" class="column text-right q-pr-sm">
+                <span class="text-weight-bold ellipsis" style="font-size: 14px; max-width: 150px;">{{ auth.user?.name }}</span>
+                <span class="text-caption ellipsis" style="line-height: 1; max-width: 150px;">{{ auth.user?.role?.name }}</span>
+              </div>
+              <q-avatar v-else size="sm" color="blue-9" text-color="white" class="q-mr-xs">
+                {{ auth.user?.name?.charAt(0)?.toUpperCase() || 'U' }}
+              </q-avatar>
+              <q-icon name="arrow_drop_down" />
             </div>
-            <q-icon name="arrow_drop_down" />
 
             <q-menu fit>
               <q-list style="min-width: 150px">

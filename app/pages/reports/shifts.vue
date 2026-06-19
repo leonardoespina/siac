@@ -73,7 +73,7 @@
 
     <div v-else>
       <q-card bordered flat>
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="shifts"
           :columns="columns"
           row-key="id"
@@ -147,3 +147,4 @@ const {
   loading, shifts, filterDate, filterWarehouse, warehousesStore, stats, fetchShifts, columns, pagination
 } = useShiftsReport()
 </script>
+

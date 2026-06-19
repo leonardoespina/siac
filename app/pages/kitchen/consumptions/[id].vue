@@ -75,6 +75,7 @@
       <!-- DETALLES (PRODUCTOS) -->
       <q-card bordered flat>
         <q-table
+          :grid="$q.screen.lt.md"
           :rows="transferItems"
           :columns="columns"
           row-key="productId"

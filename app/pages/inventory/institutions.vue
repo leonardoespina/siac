@@ -5,7 +5,7 @@
       <q-btn v-if="auth.hasPermission('INSTITUTIONS', 'canCreate')" color="primary" icon="add" label="Nueva Institución" @click="openDialog()" />
     </div>
 
-    <q-table
+    <q-table :grid="$q.screen.lt.md"
       :rows="institutions"
       :columns="columns"
       row-key="id"
@@ -26,6 +26,34 @@
           <q-btn v-if="auth.hasPermission('INSTITUTIONS', 'canUpdate')" flat round color="primary" icon="edit" size="sm" @click="openDialog(props.row)" />
           <q-btn v-if="auth.hasPermission('INSTITUTIONS', 'canDelete')" flat round color="negative" icon="delete" size="sm" @click="confirmDelete(props.row)" />
         </q-td>
+      </template>
+
+      <!-- MODO GRID MÓVIL -->
+      <template v-slot:item="props">
+        <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+          <q-card bordered flat>
+            <q-card-section class="q-pb-none">
+              <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm">
+                <div class="text-caption text-grey-7">{{ col.label }}</div>
+                <div class="text-weight-bold text-right">
+                  <template v-if="col.name === 'active'">
+                    <q-badge :color="props.row.active ? 'positive' : 'negative'">
+                      {{ props.row.active ? 'Activo' : 'Inactivo' }}
+                    </q-badge>
+                  </template>
+                  <template v-else>
+                    {{ col.value }}
+                  </template>
+                </div>
+              </div>
+            </q-card-section>
+            <q-separator />
+            <q-card-actions align="right">
+              <q-btn v-if="auth.hasPermission('INSTITUTIONS', 'canUpdate')" flat color="primary" icon="edit" label="Editar" @click="openDialog(props.row)" />
+              <q-btn v-if="auth.hasPermission('INSTITUTIONS', 'canDelete')" flat round color="negative" icon="delete" @click="confirmDelete(props.row)" />
+            </q-card-actions>
+          </q-card>
+        </div>
       </template>
     </q-table>
 
@@ -95,3 +123,4 @@ const confirmDelete = (row: any) => {
   })
 }
 </script>
+

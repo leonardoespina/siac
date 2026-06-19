@@ -10,6 +10,13 @@ export default defineNuxtConfig({
 
   quasar: {
     plugins: ['Notify', 'Dialog', 'Loading'],
+    config: {
+      notify: {
+        position: 'bottom',
+        timeout: 3000,
+        actions: [{ icon: 'close', color: 'white' }]
+      }
+    },
     extras: {
       fontIcons: ['material-icons'],
     },

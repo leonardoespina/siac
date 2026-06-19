@@ -6,6 +6,7 @@
     :loading="loading"
     :filter="filter"
     :pagination="initialPagination"
+    :grid="$q.screen.lt.md"
     row-key="id"
     flat
     bordered
@@ -36,9 +37,34 @@
       />
     </template>
 
-    <!-- Permitir que el componente padre inyecte sus propios slots (Ej. celdas personalizadas o de acciones) -->
     <template v-for="(_, slot) in $slots" v-slot:[slot]="scope">
       <slot :name="slot" v-bind="scope" />
+    </template>
+
+    <!-- MODO GRID DINÁMICO (Soporta custom slots del padre) -->
+    <template v-slot:item="props">
+      <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+        <q-card bordered flat>
+          <q-card-section class="q-pb-none">
+            <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm">
+              <div class="text-caption text-grey-7">{{ col.label }}</div>
+              <div class="text-weight-bold text-right" style="max-width: 60%; word-break: break-word;">
+                <!-- Fallback al slot inyectado por el padre, o texto plano -->
+                <slot :name="`body-cell-${col.name}`" v-bind="{ ...props, col: col, value: col.value }">
+                  {{ col.value }}
+                </slot>
+              </div>
+            </div>
+          </q-card-section>
+          
+          <template v-if="props.cols.some(c => c.name === 'actions')">
+            <q-separator />
+            <q-card-actions align="right" class="bg-grey-1">
+              <slot name="body-cell-actions" v-bind="{ ...props, col: props.cols.find(c => c.name === 'actions'), value: null }"></slot>
+            </q-card-actions>
+          </template>
+        </q-card>
+      </div>
     </template>
   </q-table>
 </template>

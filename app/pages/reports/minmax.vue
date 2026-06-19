@@ -11,7 +11,7 @@
 
     <div v-else>
       <q-card bordered flat>
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="minMaxStats"
           :columns="columns"
           row-key="id"
@@ -71,3 +71,4 @@ onMounted(() => {
   fetchMinMaxReport()
 })
 </script>
+

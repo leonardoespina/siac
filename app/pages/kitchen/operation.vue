@@ -110,7 +110,7 @@
             </div>
           </q-card-section>
           
-          <q-table
+          <q-table :grid="$q.screen.lt.md"
             v-if="shiftConsumptions.length > 0"
             :rows="shiftConsumptions"
             :columns="consumptionColumns"
@@ -145,13 +145,45 @@
                   <q-tooltip>Ver / Modificar Detalles</q-tooltip>
                 </q-btn>
                 
-                <!-- BOTÓN ELIMINAR "DESDE AFUERA" -->
-                <q-btn flat round color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'PENDING'" size="sm">
-                  <q-tooltip>Eliminar Registro</q-tooltip>
-                </q-btn>
-              </q-td>
-            </template>
-          </q-table>
+              <!-- BOTÓN ELIMINAR "DESDE AFUERA" -->
+              <q-btn flat round color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'PENDING'" size="sm">
+                <q-tooltip>Eliminar Registro</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+
+          <!-- MODO GRID -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+              <q-card bordered flat>
+                <q-card-section class="q-pb-none">
+                  <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm">
+                    <div class="text-caption text-grey-7">{{ col.label }}</div>
+                    <div class="text-weight-bold text-right">
+                      <template v-if="col.name === 'type'">
+                        <q-chip :color="props.row.type === 'CONSUMPTION' ? 'blue-1' : (props.row.type === 'SUPPORT' ? 'purple-1' : 'red-1')" 
+                                :text-color="props.row.type === 'CONSUMPTION' ? 'blue-8' : (props.row.type === 'SUPPORT' ? 'purple-8' : 'red-8')" size="sm">
+                          {{ props.row.type === 'CONSUMPTION' ? 'Consumo' : (props.row.type === 'SUPPORT' ? 'Apoyo' : 'Merma') }}
+                        </q-chip>
+                      </template>
+                      <template v-else-if="col.name === 'status'">
+                        <q-badge :color="props.row.status === 'PENDING' ? 'orange' : (props.row.status === 'CONFIRMED' ? 'green' : 'grey')">
+                          {{ props.row.status === 'PENDING' ? 'Pendiente' : (props.row.status === 'CONFIRMED' ? 'Aprobado' : props.row.status) }}
+                        </q-badge>
+                      </template>
+                      <template v-else>{{ col.value }}</template>
+                    </div>
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-card-actions align="right">
+                  <q-btn flat color="primary" label="Ver" icon="visibility" :to="`/kitchen/consumptions/${props.row.id}`" />
+                  <q-btn flat color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'PENDING'" />
+                </q-card-actions>
+              </q-card>
+            </div>
+          </template>
+        </q-table>
           
           <q-card-section v-else class="text-center text-grey-5 q-pa-xl">
             <q-icon name="receipt_long" size="48px" class="q-mb-sm block q-mx-auto" />
@@ -211,7 +243,7 @@
 
               <div class="col-12 col-md-8">
                 <q-card flat bordered>
-                  <q-table
+                  <q-table :grid="$q.screen.lt.md"
                     :rows="consumptionItems"
                     :columns="[
                       { name: 'product', label: 'Producto', field: 'productName', align: 'left' },
@@ -327,3 +359,4 @@ const {
   isGlobalUser, activeWarehouseId, warehouses
 } = useKitchenOperation()
 </script>
+

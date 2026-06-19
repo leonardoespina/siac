@@ -43,7 +43,7 @@
 
       <div class="text-h6 q-mb-md text-grey-8" v-if="institutionsDetails.length > 0">Detalle de Donaciones</div>
       <q-card bordered flat v-if="institutionsDetails.length > 0">
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="institutionsDetails"
           :columns="columns"
           row-key="id"
@@ -138,3 +138,4 @@ onMounted(() => {
   handleFilter()
 })
 </script>
+

@@ -53,7 +53,7 @@
       </div>
 
       <q-card bordered flat>
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="consumptionDetails"
           :columns="columns"
           row-key="id"
@@ -116,3 +116,4 @@ onMounted(async () => {
   handleFilter()
 })
 </script>
+

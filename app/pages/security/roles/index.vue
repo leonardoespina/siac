@@ -38,15 +38,15 @@
       <q-separator class="q-mb-sm" />
       
       <!-- Matriz de permisos -->
-      <div v-for="(perm, index) in form.permissions" :key="perm.moduleId" class="row items-center q-mb-xs q-py-xs" style="border-bottom: 1px solid #eee;">
-        <div class="col-4 text-weight-medium">
+      <div v-for="(perm, index) in form.permissions" :key="perm.moduleId" class="row items-center q-mb-sm q-py-sm" style="border-bottom: 1px solid #eee;">
+        <div class="col-12 col-md-4 text-weight-medium q-mb-xs q-mb-md-none">
           {{ getModuleName(perm.moduleId) }}
         </div>
-        <div class="col-8 row justify-around">
-          <q-checkbox v-model="form.permissions[index].canCreate" label="Crear" color="primary" dense />
-          <q-checkbox v-model="form.permissions[index].canRead" label="Leer" color="primary" dense />
-          <q-checkbox v-model="form.permissions[index].canUpdate" label="Editar" color="primary" dense />
-          <q-checkbox v-model="form.permissions[index].canDelete" label="Borrar" color="negative" dense />
+        <div class="col-12 col-md-8 row q-col-gutter-sm">
+          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canCreate" label="Crear" color="primary" dense /></div>
+          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canRead" label="Leer" color="primary" dense /></div>
+          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canUpdate" label="Editar" color="primary" dense /></div>
+          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canDelete" label="Borrar" color="negative" dense /></div>
         </div>
       </div>
     </SharedFormDialog>

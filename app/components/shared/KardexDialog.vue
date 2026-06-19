@@ -16,7 +16,7 @@
           Mostrando el historial de movimientos de inventario (Entradas y Salidas Confirmadas/Enviadas).
         </div>
 
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="movements"
           :columns="columns"
           row-key="id"
@@ -87,3 +87,4 @@ watch(() => props.modelValue, async (newVal) => {
   }
 })
 </script>
+

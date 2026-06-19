@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <q-page :class="[$q.screen.lt.sm ? 'q-pa-sm' : 'q-pa-lg']">
     <div class="row items-center q-mb-md">
       <q-btn flat round icon="arrow_back" color="primary" to="/inventory/receptions" class="q-mr-sm" />
       <div class="text-h4 text-weight-bold text-primary">Importar Recepción</div>
@@ -43,7 +43,7 @@
             icon="file_upload" 
             label="Cargar Excel" 
             size="lg"
-            class="full-width"
+            :class="['full-width', { 'q-mt-sm': $q.screen.lt.sm }]"
             outline
             @click="isUploaderOpen = true"
           />
@@ -64,6 +64,7 @@
           icon="cloud_upload" 
           label="Guardar e Importar" 
           size="lg"
+          :class="['q-ml-sm', { 'full-width q-ml-none q-mt-sm': $q.screen.lt.md }]"
           :loading="saving"
           :disable="!supplierId || !destinationId || !referenceNumber"
           @click="saveImport"

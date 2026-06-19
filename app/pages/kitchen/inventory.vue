@@ -72,7 +72,7 @@
 
       <!-- Tabla de Datos -->
       <q-card flat bordered>
-        <q-table
+        <q-table :grid="$q.screen.lt.md"
           :rows="inventoryList"
           :columns="columns"
           row-key="id"
@@ -130,3 +130,4 @@ const columns = [
   { name: 'unit', label: 'Unidad', field: row => row.unit?.abbreviation, align: 'center', sortable: true },
 ]
 </script>
+

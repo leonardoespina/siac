@@ -92,7 +92,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <q-page class="q-pa-lg bg-grey-1">
+  <q-page :class="['bg-grey-1', $q.screen.lt.sm ? 'q-pa-sm' : 'q-pa-lg']">
     
     <!-- HEADER GENERAL -->
     <div class="q-mb-xl">
@@ -223,6 +223,7 @@ onMounted(async () => {
               label="ABRIR TURNO" 
               size="lg" 
               class="text-weight-bold"
+              :class="{ 'full-width q-mt-md': $q.screen.lt.sm }"
               @click="handleOpenShift"
             />
           </q-card-section>
