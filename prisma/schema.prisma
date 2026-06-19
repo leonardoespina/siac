@@ -277,6 +277,7 @@ model Transaction {
   shiftId     Int?              @map("shift_id")
   shift       Shift?            @relation(fields: [shiftId], references: [id])
 
+  referenceNumber String?         @map("reference_number") // Número de factura, guía de despacho o nota de entrega
   notes       String?           @db.Text
   
   details     TransactionDetail[]

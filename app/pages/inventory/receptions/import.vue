@@ -8,7 +8,7 @@
     <!-- PASO 1: Subida y Configuración -->
     <q-card bordered flat class="q-mb-md">
       <q-card-section class="row q-col-gutter-md items-center">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <q-select
             v-model="supplierId"
             :options="suppliersStore.suppliers"
@@ -19,7 +19,14 @@
             outlined dense
           />
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
+          <q-input
+            v-model="referenceNumber"
+            label="N° Factura / Entrega *"
+            outlined dense
+          />
+        </div>
+        <div class="col-12 col-md-3">
           <q-select
             v-model="destinationId"
             :options="centralWarehouses"
@@ -30,7 +37,7 @@
             outlined dense
           />
         </div>
-        <div class="col-12 col-md-4 text-center">
+        <div class="col-12 col-md-3 text-center">
           <q-btn 
             color="primary" 
             icon="file_upload" 
@@ -58,7 +65,7 @@
           label="Guardar e Importar" 
           size="lg"
           :loading="saving"
-          :disable="!supplierId || !destinationId"
+          :disable="!supplierId || !destinationId || !referenceNumber"
           @click="saveImport"
         />
       </q-card-section>
@@ -179,6 +186,7 @@ const {
   file, 
   supplierId, 
   destinationId, 
+  referenceNumber,
   parsedRows, 
   saving,
   isProcessing,

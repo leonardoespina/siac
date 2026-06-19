@@ -18,9 +18,9 @@ export default defineApiHandler(async (event) => {
   const userId = await requireAuth(event)
   const body = await readBody(event)
 
-  const { destinationId, supplierId, rows } = body
-  if (!destinationId || !supplierId || !rows || !Array.isArray(rows) || rows.length === 0) {
-    throw new ValidationError('Debe proporcionar un almacén destino, un proveedor y al menos una fila de Excel.')
+  const { destinationId, supplierId, referenceNumber, rows } = body
+  if (!destinationId || !supplierId || !referenceNumber || !rows || !Array.isArray(rows) || rows.length === 0) {
+    throw new ValidationError('Debe proporcionar un almacén destino, un proveedor, un número de factura y al menos una fila de Excel.')
   }
 
   try {
@@ -110,6 +110,7 @@ export default defineApiHandler(async (event) => {
         status: 'DRAFT',
         destinationId: Number(destinationId),
         supplierId: Number(supplierId),
+        referenceNumber: String(referenceNumber).trim(),
         createdById: userId,
         notes: 'Importación masiva desde Excel',
         details: {

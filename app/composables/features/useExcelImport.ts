@@ -10,6 +10,7 @@ export function useExcelImport() {
   const file = ref<File | null>(null)
   const supplierId = ref<number | null>(null)
   const destinationId = ref<number | null>(null)
+  const referenceNumber = ref<string>('')
 
   const parsedRows = ref<any[]>([])
   const saving = ref(false)
@@ -212,6 +213,7 @@ export function useExcelImport() {
         body: {
           supplierId: supplierId.value,
           destinationId: destinationId.value,
+          referenceNumber: referenceNumber.value || null,
           rows: parsedRows.value
         }
       })
@@ -229,6 +231,7 @@ export function useExcelImport() {
     file,
     supplierId,
     destinationId,
+    referenceNumber,
     parsedRows,
     saving,
     isProcessing,
