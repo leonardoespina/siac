@@ -102,11 +102,14 @@
               <q-card-section>
                 <div class="text-caption text-grey">Categoría: {{ props.row.categoryName }} | Unidad: {{ props.row.unitName }}</div>
                 <div class="row q-mt-sm q-col-gutter-sm">
-                  <div class="col-6">
-                    <q-input v-model.number="props.row.quantity" type="number" label="Cantidad" dense outlined @update:model-value="revalidateRow(props.row)" />
+                  <div class="col-4">
+                    <q-input v-model.number="props.row.quantity" type="number" label="Cant." dense outlined @update:model-value="revalidateRow(props.row)" />
                   </div>
-                  <div class="col-6">
-                    <q-input v-model.number="props.row.unitPrice" type="number" label="Precio ($)" dense outlined @update:model-value="revalidateRow(props.row)" />
+                  <div class="col-4">
+                    <q-input v-model.number="props.row.unitPrice" type="number" label="Precio" dense outlined prefix="$" @update:model-value="revalidateRow(props.row)" />
+                  </div>
+                  <div class="col-4">
+                    <q-input v-model="props.row.expirationDate" type="date" label="Vence" dense outlined @update:model-value="revalidateRow(props.row)" />
                   </div>
                 </div>
               </q-card-section>
@@ -150,6 +153,19 @@
               prefix="$"
               style="max-width: 110px; margin: 0 auto"
               :color="props.row.unitPrice < 0 ? 'negative' : 'primary'"
+              @update:model-value="revalidateRow(props.row)"
+            />
+          </q-td>
+        </template>
+
+        <!-- Edición en Vivo: Vencimiento -->
+        <template v-slot:body-cell-expirationDate="props">
+          <q-td :props="props">
+            <q-input 
+              v-model="props.row.expirationDate" 
+              type="date" 
+              dense outlined 
+              style="max-width: 140px; margin: 0 auto"
               @update:model-value="revalidateRow(props.row)"
             />
           </q-td>
@@ -215,7 +231,7 @@ const columns = [
   { name: 'unitName', label: 'Unidad', field: 'unitName', align: 'center' },
   { name: 'quantity', label: 'Cant.', field: 'quantity', align: 'center' },
   { name: 'unitPrice', label: 'Precio', field: 'unitPrice', align: 'center' },
-  { name: 'expirationDate', label: 'Vence', field: 'expirationDate', align: 'center' }
+  { name: 'expirationDate', label: 'Vencimiento', field: 'expirationDate', align: 'center', format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' }
 ]
 
 onMounted(async () => {

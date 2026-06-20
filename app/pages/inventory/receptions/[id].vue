@@ -109,6 +109,13 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-exp="props">
+            <q-td :props="props">
+              <template v-if="!isEditing">{{ props.row.expirationDate ? new Date(props.row.expirationDate).toLocaleDateString() : 'N/A' }}</template>
+              <q-input v-else v-model="props.row.expirationDate" type="date" dense outlined style="max-width: 140px; margin: 0 auto" />
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-actions="props">
             <q-td :props="props">
               <q-btn flat round dense color="negative" icon="delete" @click="removeRow(props.rowIndex)">
@@ -132,6 +139,10 @@
                       <template v-else-if="col.name === 'price'">
                         <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
                         <q-input v-else v-model.number="props.row.unitPrice" type="number" dense outlined prefix="$" style="max-width: 110px; margin: 0 0 0 auto" />
+                      </template>
+                      <template v-else-if="col.name === 'exp'">
+                        <template v-if="!isEditing">{{ props.row.expirationDate ? new Date(props.row.expirationDate).toLocaleDateString() : 'N/A' }}</template>
+                        <q-input v-else v-model="props.row.expirationDate" type="date" dense outlined style="max-width: 140px; margin: 0 0 0 auto" />
                       </template>
                       <template v-else>
                         {{ col.value }}
