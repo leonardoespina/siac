@@ -11,9 +11,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loading.value = true
     try {
       // Obtenemos recepciones y transferencias (simplificado para el mockup visual por ahora)
-      const [receptions, transfers] = await Promise.all([
+      const [receptions, transfers, consumptions] = await Promise.all([
         $fetch('/api/receptions'),
-        $fetch('/api/transfers')
+        $fetch('/api/transfers'),
+        $fetch('/api/consumptions')
       ])
 
       const tasks = []
@@ -42,6 +43,20 @@ export const useDashboardStore = defineStore('dashboard', () => {
             route: `/inventory/transfers/${t.id}`,
             description: `${t.source?.name || 'Central'} -> ${t.destination?.name || 'Destino'}`,
             user: t.createdBy?.name || 'Desconocido'
+          })
+        }
+      })
+
+      consumptions.forEach((c: any) => {
+        if (c.status === 'PENDING') {
+          tasks.push({
+            id: `C-${c.id}`,
+            type: 'Consumo / Operación',
+            icon: 'restaurant',
+            color: 'orange',
+            route: `/reports/consumptions`, // Or the specific detail page if exists
+            description: `Despacho de: ${c.source?.name || 'Comedor'}`,
+            user: c.createdBy?.name || 'Desconocido'
           })
         }
       })
