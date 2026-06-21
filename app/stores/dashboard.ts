@@ -54,7 +54,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
             type: 'Consumo / Operación',
             icon: 'restaurant',
             color: 'orange',
-            route: `/reports/consumptions`, // Or the specific detail page if exists
+            route: `/inventory/approvals`, 
             description: `Despacho de: ${c.source?.name || 'Comedor'}`,
             user: c.createdBy?.name || 'Desconocido'
           })
