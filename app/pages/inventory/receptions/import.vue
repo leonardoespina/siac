@@ -83,6 +83,9 @@
         <template v-slot:top-right>
           <q-input borderless dense debounce="300" v-model="searchQuery" placeholder="Buscar producto...">
             <template v-slot:append>
+              <q-btn flat round dense icon="camera_alt" color="amber-8" @click="isOcrOpen = true">
+                <q-tooltip>Escanear Nombre con Cámara (OCR)</q-tooltip>
+              </q-btn>
               <q-icon name="search" />
             </template>
           </q-input>
@@ -103,7 +106,9 @@
                 <div class="text-caption text-grey">Categoría: {{ props.row.categoryName }} | Unidad: {{ props.row.unitName }}</div>
                 <div class="row q-mt-sm q-col-gutter-sm">
                   <div class="col-4">
-                    <q-input v-model.number="props.row.quantity" type="number" label="Cant." dense outlined @update:model-value="revalidateRow(props.row)" />
+                    <q-input v-model.number="props.row.quantity" type="number" label="Cant." dense outlined readonly @update:model-value="revalidateRow(props.row)">
+                      <q-tooltip>Modifique la cantidad en la siguiente pantalla (Borrador)</q-tooltip>
+                    </q-input>
                   </div>
                   <div class="col-4">
                     <q-input v-model.number="props.row.unitPrice" type="number" label="Precio" dense outlined prefix="$" @update:model-value="revalidateRow(props.row)" />
@@ -136,10 +141,13 @@
               v-model.number="props.row.quantity" 
               type="number" 
               dense outlined 
+              readonly
               style="max-width: 90px; margin: 0 auto"
               :color="props.row.quantity <= 0 ? 'negative' : 'primary'"
               @update:model-value="revalidateRow(props.row)"
-            />
+            >
+              <q-tooltip>Modifique la cantidad en la siguiente pantalla (Borrador)</q-tooltip>
+            </q-input>
           </q-td>
         </template>
 
@@ -182,15 +190,19 @@
       @file-selected="handleFileSelected"
     />
 
+    <!-- Componente de Escáner OCR Reutilizable -->
+    <SharedOcrCameraScanner v-model="isOcrOpen" @onDetect="handleOcrDetection" />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
 import { useSuppliersStore } from '~/stores/suppliers'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useExcelImport } from '~/composables/features/useExcelImport'
 
+const $q = useQuasar()
 const suppliersStore = useSuppliersStore()
 const warehousesStore = useWarehousesStore()
 
@@ -233,6 +245,19 @@ const columns = [
   { name: 'unitPrice', label: 'Precio', field: 'unitPrice', align: 'center' },
   { name: 'expirationDate', label: 'Vencimiento', field: 'expirationDate', align: 'center', format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' }
 ]
+
+// === OCR ===
+const isOcrOpen = ref(false)
+const handleOcrDetection = (text: string) => {
+  searchQuery.value = text
+  isOcrOpen.value = false
+  $q.notify({
+    type: 'positive',
+    message: `Detectado: ${text}`,
+    position: 'top',
+    timeout: 2000
+  })
+}
 
 onMounted(async () => {
   await suppliersStore.fetchAll()

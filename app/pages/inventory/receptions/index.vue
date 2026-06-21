@@ -23,6 +23,9 @@
 
       <template v-slot:body-cell-actions="props">
         <q-td :props="props" class="text-right">
+          <q-btn flat round dense color="secondary" icon="print" @click="openReport(props.row.id)">
+            <q-tooltip>Imprimir Acta de Recepción</q-tooltip>
+          </q-btn>
           <q-btn flat round dense color="primary" icon="visibility" @click="viewDetails(props.row.id)">
             <q-tooltip>Ver Detalles</q-tooltip>
           </q-btn>
@@ -50,6 +53,7 @@
             </q-card-section>
             <q-separator />
             <q-card-actions align="right">
+              <q-btn flat color="secondary" label="Imprimir" icon="print" @click="openReport(props.row.id)" />
               <q-btn flat color="primary" label="Ver Detalles" icon="visibility" @click="viewDetails(props.row.id)" />
             </q-card-actions>
           </q-card>
@@ -60,7 +64,13 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { useReceptionsList } from '~/composables/features/useReceptionsList'
+
+const router = useRouter()
+const openReport = (id: number) => {
+  window.open(`/inventory/receptions/report-${id}`, '_blank')
+}
 
 // ── LÓGICA DELEGADA AL COMPOSABLE ───────────────────────────────────────────
 const {

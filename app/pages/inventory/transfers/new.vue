@@ -39,7 +39,12 @@
           </q-card-section>
           <q-card-section>
             <q-input v-model="searchQuery" outlined dense placeholder="Buscar producto por nombre o código..." class="q-mb-sm" clearable>
-              <template v-slot:append><q-icon name="search" /></template>
+              <template v-slot:append>
+                <q-btn flat round dense icon="camera_alt" color="amber-8" @click="isOcrOpen = true">
+                  <q-tooltip>Escanear etiqueta (OCR)</q-tooltip>
+                </q-btn>
+                <q-icon name="search" />
+              </template>
             </q-input>
 
             <q-list bordered separator v-if="filteredProducts.length > 0">
@@ -107,11 +112,14 @@
         </q-card>
       </div>
     </div>
+
+    <!-- Componente OCR Reutilizable -->
+    <SharedOcrCameraScanner v-model="isOcrOpen" @onDetect="handleOcrDetection" />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useTransferForm } from '~/composables/features/useTransferForm'
@@ -140,4 +148,11 @@ const {
   localWarehouses, filteredProducts, centralWarehouse,
   getCentralStock, addItem, removeItem, saveDraft
 } = useTransferForm()
+
+// ── LÓGICA DE OCR ───────────────────────────────────────────────
+const isOcrOpen = ref(false)
+const handleOcrDetection = (text: string) => {
+  searchQuery.value = text
+  isOcrOpen.value = false
+}
 </script>

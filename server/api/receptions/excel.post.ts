@@ -98,6 +98,7 @@ export default defineApiHandler(async (event) => {
       detailsData.push({
         productId: productId,
         quantity: row.quantity,
+        expectedQuantity: row.quantity, // Lo facturado/esperado según el Excel
         unitPrice: row.unitPrice || 0,
         expirationDate: row.expirationDate ? new Date(row.expirationDate) : null
       })

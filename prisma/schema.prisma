@@ -319,9 +319,13 @@ model TransactionDetail {
   product       Product     @relation(fields: [productId], references: [id])
 
   quantity      Decimal     @db.Decimal(10, 2)
+  expectedQuantity Decimal? @map("expected_quantity") @db.Decimal(10, 2)
+  
   unitPrice     Decimal     @default(0) @map("unit_price") @db.Decimal(10, 2) // Precio exacto sin afectar el producto maestro
   
   expirationDate DateTime?  @map("expiration_date") @db.Date // Lote de vencimiento opcional
+  
+  discrepancyReason String? @map("discrepancy_reason") @db.VarChar(255)
 
   @@map("transaction_details")
 }

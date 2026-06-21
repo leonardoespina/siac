@@ -225,7 +225,12 @@
 
                 <q-card flat bordered class="q-pa-sm">
                   <q-input v-model="searchQuery" outlined dense placeholder="Buscar producto en almacén local..." clearable autofocus>
-                    <template v-slot:append><q-icon name="search" /></template>
+                    <template v-slot:append>
+                      <q-btn flat round dense icon="camera_alt" color="amber-8" @click="isOcrOpen = true">
+                        <q-tooltip>Escanear etiqueta (OCR)</q-tooltip>
+                      </q-btn>
+                      <q-icon name="search" />
+                    </template>
                   </q-input>
                   <q-list bordered separator v-if="filteredProducts.length > 0" class="q-mt-sm">
                     <q-item v-for="product in filteredProducts" :key="product.id" clickable @click="addConsumptionItem(product)">
@@ -339,11 +344,15 @@
 
       </div>
 
+      <!-- Componente OCR Reutilizable -->
+      <SharedOcrCameraScanner v-model="isOcrOpen" @onDetect="handleOcrDetection" />
+
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useKitchenOperation } from '~/composables/features/useKitchenOperation'
 
 const {
@@ -358,5 +367,12 @@ const {
   openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption,
   isGlobalUser, activeWarehouseId, warehouses
 } = useKitchenOperation()
+
+// ── LÓGICA DE OCR ───────────────────────────────────────────────
+const isOcrOpen = ref(false)
+const handleOcrDetection = (text: string) => {
+  searchQuery.value = text
+  isOcrOpen.value = false
+}
 </script>
 

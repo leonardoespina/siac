@@ -82,6 +82,25 @@
       <q-card bordered flat>
         <q-card-section class="bg-grey-2 row justify-between items-center">
           <div class="text-h6">Detalle de Productos</div>
+          
+          <!-- BUSCADOR PARA FILTRAR LA TABLA -->
+          <div class="col-12 col-md-5 q-mt-sm q-mt-md-none">
+            <q-input
+              v-model="searchQuery"
+              placeholder="Buscar en la recepción..."
+              dense
+              outlined
+              class="bg-white"
+            >
+              <template v-slot:append>
+                <q-btn flat round dense icon="camera_alt" color="amber-8" @click="isOcrOpen = true">
+                  <q-tooltip>Escanear etiqueta (OCR)</q-tooltip>
+                </q-btn>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </div>
+
           <div class="text-subtitle1 text-weight-bold" v-if="transaction.status === 'DRAFT' || grandTotal > 0">
             Gran Total: <span class="text-primary">${{ grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
           </div>
@@ -90,15 +109,38 @@
         <q-table :grid="$q.screen.lt.md"
           :rows="transaction.details"
           :columns="columns"
+          :filter="searchQuery"
           row-key="id"
           flat
           hide-pagination
           :pagination="{ rowsPerPage: 0 }"
         >
+          <template v-slot:body-cell-expectedQuantity="props">
+            <q-td :props="props">
+              <span class="text-grey-7">{{ props.row.expectedQuantity || props.row.quantity }}</span>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-quantity="props">
-            <q-td :props="props" class="text-weight-bold">
-              <template v-if="!isEditing">{{ props.row.quantity }}</template>
-              <q-input v-else v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 auto" />
+            <q-td :props="props" :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'bg-red-1' : ''">
+              <template v-if="!isEditing">
+                <span :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'text-red-9 text-weight-bold' : ''">{{ props.row.quantity }}</span>
+                <div v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity)" class="text-caption text-red-9 q-mt-xs" style="max-width: 150px; white-space: normal;">
+                  <strong>Motivo:</strong> {{ props.row.discrepancyReason || 'No especificado' }}
+                </div>
+              </template>
+              <div v-else>
+                <q-input v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 auto" />
+                <q-input v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity || props.row.quantity)" 
+                         v-model="props.row.discrepancyReason" 
+                         type="text" 
+                         dense 
+                         outlined 
+                         placeholder="Motivo del faltante..." 
+                         class="q-mt-sm bg-white" 
+                         color="negative" 
+                         style="max-width: 150px; margin: 0 auto" />
+              </div>
             </q-td>
           </template>
 
@@ -132,9 +174,27 @@
                   <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm items-center">
                     <div class="text-caption text-grey-7">{{ col.label }}</div>
                     <div class="text-weight-bold text-right" style="max-width: 60%">
-                      <template v-if="col.name === 'quantity'">
-                        <template v-if="!isEditing">{{ props.row.quantity }}</template>
-                        <q-input v-else v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" />
+                      <template v-if="col.name === 'expectedQuantity'">
+                        {{ props.row.expectedQuantity || props.row.quantity }}
+                      </template>
+                      <template v-else-if="col.name === 'quantity'">
+                        <div v-if="!isEditing">
+                          <span :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'text-red-9 text-weight-bold' : ''">{{ props.row.quantity }}</span>
+                          <div v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity)" class="text-caption text-red-9 text-left q-mt-xs">
+                            <strong>Motivo:</strong> {{ props.row.discrepancyReason || 'No especificado' }}
+                          </div>
+                        </div>
+                        <div v-else>
+                          <q-input v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" />
+                          <q-input v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity || props.row.quantity)" 
+                                  v-model="props.row.discrepancyReason" 
+                                  type="text" 
+                                  dense 
+                                  outlined 
+                                  placeholder="Motivo..." 
+                                  class="q-mt-sm bg-white" 
+                                  color="negative" />
+                        </div>
                       </template>
                       <template v-else-if="col.name === 'price'">
                         <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
@@ -169,10 +229,14 @@
       </q-card>
 
     </div>
+
+    <!-- Componente OCR Reutilizable -->
+    <SharedOcrCameraScanner v-model="isOcrOpen" @onDetect="handleOcrDetection" />
   </q-page>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useReceptionDetails } from '~/composables/features/useReceptionDetails'
 
 // ── LÓGICA DELEGADA AL COMPOSABLE ───────────────────────────────────────────
@@ -190,6 +254,20 @@ const {
   removeRow,
   saveDraftChanges,
   getStatusColor,
-  getStatusLabel
+  getStatusLabel,
+  searchQuery
 } = useReceptionDetails()
+import { useRoute } from 'vue-router'
+const route = useRoute()
+
+// ── LÓGICA DE OCR ───────────────────────────────────────────────
+const isOcrOpen = ref(false)
+const handleOcrDetection = (text: string) => {
+  searchQuery.value = text
+  isOcrOpen.value = false
+}
+
+const openReport = () => {
+  window.open(`/inventory/receptions/report-${route.params.id}`, '_blank')
+}
 </script>

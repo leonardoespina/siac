@@ -26,15 +26,11 @@ onMounted(() => {
     $socket.emit('join', auth.user.id)
     interactiveTour.checkAndOpenTour()
     
-    // Escuchar notificaciones en vivo
+    // Escuchar notificaciones en vivo (Silencioso para no ensuciar pantalla)
     $socket.on('notification', (newNotif: Notification) => {
       notifications.addRealtimeNotification(newNotif)
-      $q.notify({
-        type: 'info',
-        message: newNotif.title,
-        caption: newNotif.message,
-        actions: [{ icon: 'close', color: 'white' }]
-      })
+      // Se eliminó el $q.notify aquí para evitar SPAM visual. 
+      // El usuario se enterará por el contador rojo de la campanita.
     })
   }
 })

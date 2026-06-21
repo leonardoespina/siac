@@ -88,7 +88,9 @@ export async function getById(id: number) {
       destination: true,
       source: true,
       supplier: true,
-      institution: true
+      institution: true,
+      createdBy: { select: { id: true, name: true } },
+      approvedBy: { select: { id: true, name: true } }
     }
   })
   if (!tx) throw new NotFoundError('Transacción', id.toString())
@@ -158,6 +160,8 @@ export async function updateDraftDetails(id: number, newDetails: any[], user: Us
           transactionId: id,
           productId: d.productId,
           quantity: d.quantity,
+          expectedQuantity: d.expectedQuantity,
+          discrepancyReason: d.discrepancyReason || null,
           unitPrice: d.unitPrice,
           expirationDate: d.expirationDate ? new Date(d.expirationDate) : null
         }))
@@ -172,7 +176,9 @@ export async function updateDraftDetails(id: number, newDetails: any[], user: Us
         destination: true,
         source: true,
         supplier: true,
-        institution: true
+        institution: true,
+        createdBy: { select: { id: true, name: true } },
+        approvedBy: { select: { id: true, name: true } }
       }
     })
   })

@@ -15,6 +15,9 @@ export function useReceptionDetails() {
   const saving = ref(false)
   const isEditing = ref(false)
 
+  // Filtro de la tabla
+  const searchQuery = ref('')
+
   const canApprove = computed(() => {
     return auth.user?.role?.name === 'ADMIN' || auth.user?.role?.name === 'GERENTE'
   })
@@ -30,7 +33,8 @@ export function useReceptionDetails() {
     const cols = [
       { name: 'code', label: 'Código', field: (row: any) => row.product?.code, align: 'left' as const },
       { name: 'product', label: 'Producto', field: (row: any) => row.product?.name, align: 'left' as const },
-      { name: 'quantity', label: 'Cantidad', field: 'quantity', align: 'center' as const },
+      { name: 'expectedQuantity', label: 'Facturado', field: 'expectedQuantity', align: 'center' as const },
+      { name: 'quantity', label: 'Recibido', field: 'quantity', align: 'center' as const },
       { name: 'price', label: 'Precio', field: 'unitPrice', align: 'center' as const, format: (val: number) => `$${val}` },
       { name: 'exp', label: 'Vencimiento', field: 'expirationDate', align: 'center' as const, format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' }
     ]
@@ -96,9 +100,19 @@ export function useReceptionDetails() {
   const saveDraftChanges = async () => {
     saving.value = true
     try {
+      for (const d of transaction.value.details) {
+        if (Number(d.quantity) < Number(d.expectedQuantity) && (!d.discrepancyReason || d.discrepancyReason.trim() === '')) {
+          $q.notify({ type: 'negative', message: `Debe indicar el motivo del faltante para: ${d.product?.name}` })
+          saving.value = false
+          return
+        }
+      }
+
       const updatedDetails = transaction.value.details.map((d: any) => ({
         productId: d.productId,
         quantity: Number(d.quantity),
+        expectedQuantity: Number(d.expectedQuantity || d.quantity),
+        discrepancyReason: d.discrepancyReason,
         unitPrice: Number(d.unitPrice),
         expirationDate: d.expirationDate
       }))
@@ -159,6 +173,7 @@ export function useReceptionDetails() {
     removeRow,
     saveDraftChanges,
     getStatusColor,
-    getStatusLabel
+    getStatusLabel,
+    searchQuery
   }
 }
