@@ -68,6 +68,10 @@ model User {
   warehouseId Int?       @map("warehouse_id")
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
+  // Aislamiento por Subdependencia (Para Solicitantes/Aprobadores de Comensales)
+  subdependencyId Int?           @map("subdependency_id")
+  subdependency   Subdependency? @relation(fields: [subdependencyId], references: [id])
+
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
   auditLogs AuditLog[]
@@ -77,6 +81,9 @@ model User {
   approvedTransactions Transaction[]  @relation("ApprovedBy")
   notifications        Notification[]
   shifts               Shift[]
+
+  createdDinerRequests  DinerRequest[] @relation("DinerRequestsCreated")
+  approvedDinerRequests DinerRequest[] @relation("DinerRequestsApproved")
 
   @@map("users")
 }
@@ -348,4 +355,95 @@ model Notification {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("notifications")
+}
+
+// ── MÓDULO COMENSALES (ESTRUCTURA ORGANIZACIONAL) ─────────────────────────
+
+model Dependency {
+  id              Int             @id @default(autoincrement())
+  name            String          @unique
+  active          Boolean         @default(true)
+  subdependencies Subdependency[]
+  
+  @@map("dependencies")
+}
+
+model Subdependency {
+  id            Int        @id @default(autoincrement())
+  name          String
+  active        Boolean    @default(true)
+  dependencyId  Int        @map("dependency_id")
+  dependency    Dependency @relation(fields: [dependencyId], references: [id])
+  
+  users         User[]    
+  diners        Diner[]   
+
+  @@map("subdependencies")
+}
+
+model Squad {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  active Boolean @default(true)
+  
+  diners Diner[]       
+
+  @@map("squads")
+}
+
+model Diner {
+  id          Int     @id @default(autoincrement())
+  cedula      String  @unique
+  name        String
+  rationType  String  @default("NORMAL") @map("ration_type") // NORMAL o DIETA
+  active      Boolean @default(true)
+  
+  // A qué subdependencia/área pertenece el trabajador
+  subdependencyId Int           @map("subdependency_id")
+  subdependency   Subdependency @relation(fields: [subdependencyId], references: [id])
+
+  // A qué cuadrilla/turno (catálogo base) está asignado
+  squadId     Int     @map("squad_id")
+  squad       Squad   @relation(fields: [squadId], references: [id])
+  
+  fingerprint String? @db.Text
+  qrCode      String? @unique @map("qr_code")
+
+  requestDetails DinerRequestDetail[]
+
+  @@map("diners")
+}
+
+model DinerRequest {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  shiftType String   @map("shift_type")  // DESAYUNO, ALMUERZO, CENA, SOBRECENA
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  createdById Int   @map("created_by_id")
+  createdBy   User  @relation(name: "DinerRequestsCreated", fields: [createdById], references: [id])
+  
+  approvedById Int? @map("approved_by_id")
+  approvedBy   User? @relation(name: "DinerRequestsApproved", fields: [approvedById], references: [id])
+
+  details DinerRequestDetail[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("diner_requests")
+}
+
+model DinerRequestDetail {
+  id        Int    @id @default(autoincrement())
+  requestId Int    @map("request_id")
+  request   DinerRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  dinerId   Int    @map("diner_id")
+  diner     Diner  @relation(fields: [dinerId], references: [id])
+  
+  rationType String @default("NORMAL") @map("ration_type")
+
+  @@unique([requestId, dinerId])
+  @@map("diner_request_details")
 }

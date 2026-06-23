@@ -1,0 +1,87 @@
+import { defineStore } from 'pinia'
+
+export interface Diner {
+  id: number
+  cedula: string
+  name: string
+  rationType: string
+  active: boolean
+  squadId: number
+}
+
+export const useDinersStore = defineStore('diners', {
+  state: () => ({
+    diners: [] as Diner[],
+    isLoading: false,
+  }),
+  
+  actions: {
+    async fetchAll() {
+      this.isLoading = true
+      try {
+        const data = await $fetch('/api/diners')
+        this.diners = data as Diner[]
+      } catch (error) {
+        console.error('Error fetching diners:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    async registerDiner(cedula: string, name: string, rationType: string, squadId: number) {
+      this.isLoading = true
+      try {
+        const result = await $fetch('/api/diners', {
+          method: 'POST',
+          body: { cedula, name, rationType, squadId }
+        })
+        // Opcionalmente podemos pushearlo al state si lo estamos mostrando en pantalla
+        this.diners.push(result as Diner)
+        return result
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    async updateDiner(id: number, data: { cedula: string, name: string, rationType: string, squadId: number }) {
+      this.isLoading = true
+      try {
+        const result = await $fetch(`/api/diners/${id}`, {
+          method: 'PUT',
+          body: data
+        })
+        const index = this.diners.findIndex(d => d.id === id)
+        if (index !== -1) {
+          this.diners[index] = { ...this.diners[index], ...result as Diner }
+        }
+        return result
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async deleteDiner(id: number) {
+      this.isLoading = true
+      try {
+        await $fetch(`/api/diners/${id}`, {
+          method: 'DELETE'
+        })
+        this.diners = this.diners.filter(d => d.id !== id)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    async submitRequest(targetDate: string, shiftType: string, dinersList: any[]) {
+      this.isLoading = true
+      try {
+        return await $fetch('/api/diners/requests', {
+          method: 'POST',
+          body: { targetDate, shiftType, dinersList }
+        })
+      } finally {
+        this.isLoading = false
+      }
+    }
+  }
+})

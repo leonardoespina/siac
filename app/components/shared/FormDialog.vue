@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="internalIsOpen" persistent :maximized="$q.screen.lt.md">
-    <q-card style="min-width: 400px; max-width: 90vw;">
+    <q-card style="width: 100%; max-width: 800px;">
       <!-- Cabecera Estándar -->
       <q-card-section class="bg-primary text-white row items-center q-pb-sm">
         <div class="text-h6 text-weight-bold">{{ title }}</div>

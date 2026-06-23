@@ -228,6 +228,40 @@ const submitPasswordChange = async () => {
             </q-list>
           </q-expansion-item>
 
+          <!-- Menú Dinámico: Gestión de Comensales -->
+          <q-expansion-item
+            icon="groups"
+            label="Gestión de Comensales"
+            v-if="auth.isAuthenticated && (auth.hasPermission('DINERS', 'canRead') || auth.hasPermission('SQUADS', 'canRead') || auth.hasPermission('DEPENDENCIES', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canRead'))"
+          >
+            <q-list class="q-pl-lg">
+              <q-item clickable v-ripple to="/diners/requests" active-class="text-primary" v-if="auth.hasPermission('DINERS_REQUESTS', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canCreate')">
+                <q-item-section avatar><q-icon name="restaurant_menu" size="sm" /></q-item-section>
+                <q-item-section>Solicitar Comidas</q-item-section>
+              </q-item>
+              
+              <q-item clickable v-ripple to="/diners/squads" active-class="text-primary" v-if="auth.hasPermission('SQUADS', 'canRead')">
+                <q-item-section avatar><q-icon name="engineering" size="sm" /></q-item-section>
+                <q-item-section>Mis Cuadrillas</q-item-section>
+              </q-item>
+
+              <q-item clickable v-ripple to="/diners/workers" active-class="text-primary" v-if="auth.hasPermission('DINERS', 'canRead')">
+                <q-item-section avatar><q-icon name="fingerprint" size="sm" /></q-item-section>
+                <q-item-section>Comensales Físicos</q-item-section>
+              </q-item>
+
+              <q-item clickable v-ripple to="/diners/squad-catalog" active-class="text-primary" v-if="auth.hasPermission('SQUADS', 'canCreate') || auth.hasPermission('SQUADS', 'canRead')">
+                <q-item-section avatar><q-icon name="list_alt" size="sm" /></q-item-section>
+                <q-item-section>Catálogo de Cuadrillas</q-item-section>
+              </q-item>
+
+              <q-item clickable v-ripple to="/diners/dependencies" active-class="text-primary" v-if="auth.hasPermission('DEPENDENCIES', 'canRead')">
+                <q-item-section avatar><q-icon name="account_tree" size="sm" /></q-item-section>
+                <q-item-section>Árbol Organizacional</q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+
           <!-- Menú Dinámico: Operación Local -->
           <q-expansion-item
             icon="restaurant"

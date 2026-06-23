@@ -25,6 +25,13 @@ export default defineApiHandler(async (event) => {
             include: { module: true }
           }
         }
+      },
+      subdependency: {
+        select: {
+          name: true,
+          dependencyId: true,
+          dependency: { select: { name: true } }
+        }
       }
     }
   })

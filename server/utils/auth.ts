@@ -47,7 +47,9 @@ export async function requireUserContext(event: H3Event) {
   return {
     id: user.id,
     roleName: user.role.name,
-    warehouseId: user.warehouseId
+    isGlobal: user.role.isGlobal,
+    warehouseId: user.warehouseId,
+    subdependencyId: user.subdependencyId
   }
 }
 

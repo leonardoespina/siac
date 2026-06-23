@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useUsersStore } from '~/stores/users'
+import { useDependenciesStore } from '~/stores/dependencies'
 import { useNotifications } from '~/composables/core/useNotifications'
 
 export function useUserForm() {
@@ -17,18 +18,33 @@ export function useUserForm() {
     password: '',
     roleId: null as number | null,
     warehouseId: null as number | null,
+    dependencyId: null as number | null,
+    subdependencyId: null as number | null,
     active: true
   })
 
   function openCreate() {
     isEditing.value = false
-    form.value = { id: 0, cedula: '', name: '', password: '', roleId: null, warehouseId: null, active: true }
+    form.value = { id: 0, cedula: '', name: '', password: '', roleId: null, warehouseId: null, dependencyId: null, subdependencyId: null, active: true }
     isOpen.value = true
   }
 
   function openEdit(user: any) {
     isEditing.value = true
-    form.value = { ...user, password: '' }
+    
+    // Find dependencyId if user has subdependencyId
+    let depId = null
+    if (user.subdependencyId) {
+      const depStore = useDependenciesStore()
+      for (const dep of depStore.dependencies) {
+        if (dep.subdependencies?.some((sub: any) => sub.id === user.subdependencyId)) {
+          depId = dep.id
+          break
+        }
+      }
+    }
+    
+    form.value = { ...user, dependencyId: depId, password: '' }
     isOpen.value = true
   }
 

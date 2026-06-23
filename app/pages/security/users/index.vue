@@ -45,16 +45,19 @@
       @save="submit"
     >
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-6">
+        <!-- Fila 1: Datos Personales -->
+        <div class="col-12 col-md-4">
           <q-input v-model="form.cedula" label="Cédula" outlined dense :rules="[val => !!val || 'Requerido']" />
         </div>
-        <div class="col-12 col-md-6">
-          <q-input v-model="form.name" label="Nombre" outlined dense :rules="[val => !!val || 'Requerido']" />
+        <div class="col-12 col-md-8">
+          <q-input v-model="form.name" label="Nombre Completo" outlined dense :rules="[val => !!val || 'Requerido']" />
         </div>
+
+        <!-- Fila 2: Roles y Operativa -->
         <div class="col-12 col-md-6">
           <q-select 
             v-model="form.roleId" 
-            :options="rolesStore.roles" 
+            :options="roleOptions" 
             option-value="id" 
             option-label="name" 
             emit-value 
@@ -63,20 +66,88 @@
             outlined 
             dense 
             :rules="[val => !!val || 'Requerido']" 
-          />
+            use-input
+            hide-selected
+            fill-input
+            input-debounce="0"
+            @filter="filterRoles"
+          >
+            <template v-slot:no-option>
+              <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+            </template>
+          </q-select>
         </div>
         <div class="col-12 col-md-6">
           <q-select 
             v-model="form.warehouseId" 
-            :options="[{id: null, name: 'Ninguno (Acceso Global)'}, ...warehousesStore.localWarehouses]" 
+            :options="warehouseOptions" 
             option-value="id" 
             option-label="name" 
             emit-value 
             map-options 
-            label="Comedor Asignado (Opcional)" 
+            label="Comedor (Local/Cocina)" 
             outlined 
             dense 
-          />
+            use-input
+            hide-selected
+            fill-input
+            input-debounce="0"
+            @filter="filterWarehouses"
+            @update:model-value="form.warehouseId ? (form.dependencyId = null, form.subdependencyId = null) : null"
+          >
+            <template v-slot:no-option>
+              <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+            </template>
+          </q-select>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-select 
+            v-model="form.dependencyId" 
+            :options="dependencyOptions" 
+            option-value="id"
+            option-label="name"
+            emit-value 
+            map-options 
+            label="Dependencia Principal" 
+            outlined 
+            dense
+            clearable
+            use-input
+            hide-selected
+            fill-input
+            input-debounce="0"
+            @filter="filterDependencies"
+            @update:model-value="form.subdependencyId = null; form.dependencyId ? form.warehouseId = null : null"
+          >
+            <template v-slot:no-option>
+              <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+            </template>
+          </q-select>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-select 
+            v-model="form.subdependencyId" 
+            :options="subdependencyOptions" 
+            option-value="id"
+            option-label="name"
+            emit-value 
+            map-options 
+            label="Subdependencia (Supervisores)" 
+            outlined 
+            dense
+            clearable
+            :disable="!form.dependencyId"
+            use-input
+            hide-selected
+            fill-input
+            input-debounce="0"
+            @filter="filterSubdependencies"
+            @update:model-value="form.subdependencyId ? form.warehouseId = null : null"
+          >
+            <template v-slot:no-option>
+              <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+            </template>
+          </q-select>
         </div>
         <div class="col-12" v-if="isEditing">
           <q-input v-model="form.password" label="Nueva Contraseña (Dejar en blanco si no se cambia)" outlined dense type="password" />
@@ -94,6 +165,7 @@ import { ref, onMounted } from 'vue'
 import { useUsersStore } from '~/stores/users'
 import { useRolesStore } from '~/stores/roles'
 import { useWarehousesStore } from '~/stores/warehouses'
+import { useDependenciesStore } from '~/stores/dependencies'
 import { useUserForm } from '~/composables/features/useUserForm'
 import { useQuasar } from 'quasar'
 
@@ -101,9 +173,49 @@ const $q = useQuasar()
 const store = useUsersStore()
 const rolesStore = useRolesStore()
 const warehousesStore = useWarehousesStore()
+const depStore = useDependenciesStore()
 const { isOpen, isEditing, loading, form, openCreate, openEdit, submit } = useUserForm()
 
 const filter = ref('')
+
+// -- AUTOCOMPLETE LÓGICA --
+const roleOptions = ref<any[]>([])
+const filterRoles = (val: string, update: Function) => {
+  update(() => {
+    const needle = val.toLowerCase()
+    roleOptions.value = rolesStore.roles.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+  })
+}
+
+const warehouseOptions = ref<any[]>([])
+const filterWarehouses = (val: string, update: Function) => {
+  update(() => {
+    const baseOptions = [{id: null, name: 'Ninguno'}, ...warehousesStore.localWarehouses]
+    const needle = val.toLowerCase()
+    warehouseOptions.value = baseOptions.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+  })
+}
+
+const dependencyOptions = ref<any[]>([])
+const filterDependencies = (val: string, update: Function) => {
+  update(() => {
+    const needle = val.toLowerCase()
+    dependencyOptions.value = depStore.dependencies.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+  })
+}
+
+const subdependencyOptions = ref<any[]>([])
+const filteredSubdependencies = computed(() => {
+  if (!form.value.dependencyId) return []
+  const dep = depStore.dependencies.find(d => d.id === form.value.dependencyId)
+  return dep?.subdependencies || []
+})
+const filterSubdependencies = (val: string, update: Function) => {
+  update(() => {
+    const needle = val.toLowerCase()
+    subdependencyOptions.value = filteredSubdependencies.value.filter((v: any) => v.name.toLowerCase().indexOf(needle) > -1)
+  })
+}
 
 const columns = [
   { name: 'cedula', label: 'Cédula', field: 'cedula', align: 'left', sortable: true },
@@ -133,7 +245,8 @@ onMounted(async () => {
   await Promise.all([
     store.fetchUsers(),
     rolesStore.fetchRoles(), // Necesitamos los roles para llenar el select
-    warehousesStore.fetchAll() // Necesitamos los comedores para el select
+    warehousesStore.fetchAll(), // Necesitamos los comedores para el select
+    depStore.fetchAll() // Necesitamos las subdependencias para el select
   ])
 })
 </script>

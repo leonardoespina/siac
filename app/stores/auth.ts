@@ -13,8 +13,15 @@ export interface UserState {
   id: number
   cedula: string
   name: string
+  subdependencyId?: number | null
+  subdependency?: {
+    name: string
+    dependencyId: number
+    dependency: { name: string }
+  } | null
   role: {
     name: string
+    isGlobal: boolean
     permissions: ModulePermission[]
   }
 }
