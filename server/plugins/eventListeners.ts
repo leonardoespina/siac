@@ -141,4 +141,14 @@ export default defineNitroPlugin((nitroApp) => {
       console.error('Error procesando evento stock:below-minimum', e)
     }
   })
+
+  // 4. Escuchar actualización general de inventario para reactividad
+  eventBus.on('inventory:updated', (payload) => {
+    if (io) {
+      // Emitir al comedor específico
+      io.to(`warehouse_${payload.warehouseId}`).emit('inventory:update_row', payload)
+      // Emitir a los administradores globales
+      io.to(`global_inventory`).emit('inventory:update_row', payload)
+    }
+  })
 })

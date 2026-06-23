@@ -52,10 +52,12 @@ const handleOpenShift = () => {
     message: '¿Estás seguro de iniciar el turno de operaciones?',
     options: {
       type: 'radio',
-      model: 'DIURNO',
+      model: 'DESAYUNO',
       items: [
-        { label: 'Turno Diurno', value: 'DIURNO' },
-        { label: 'Turno Nocturno', value: 'NOCTURNO' }
+        { label: 'Desayuno', value: 'DESAYUNO' },
+        { label: 'Almuerzo', value: 'ALMUERZO' },
+        { label: 'Cena', value: 'CENA' },
+        { label: 'Sobrecena', value: 'SOBRECENA' }
       ]
     },
     cancel: true,
@@ -254,7 +256,7 @@ onMounted(async () => {
               :color="isShiftOpen ? 'orange-8' : 'grey-5'" 
               :disable="!isShiftOpen"
               class="full-width q-pa-md justify-start no-wrap shadow-1"
-              @click="goTo('/reports/consumptions')"
+              @click="goTo('/kitchen/operation')"
             >
               <q-avatar :color="isShiftOpen ? 'orange-8' : 'grey-5'" text-color="white" icon="restaurant" class="q-mr-md" size="sm" />
               <div class="text-left">

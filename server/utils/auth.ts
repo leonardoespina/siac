@@ -6,6 +6,13 @@ import { prisma } from './prisma'
 // ── PROTECCIÓN DE RUTAS Y PERMISOS DINÁMICOS ──────────────────────────────
 // Estas funciones se usarán en todos los endpoints (handlers) que requieran seguridad.
 
+export function hasGlobalAccess(user: { warehouseId?: number | null, roleName?: string }): boolean {
+  // Un usuario tiene acceso global a los datos de sedes (ver todo) SOLO si NO tiene un comedor asignado.
+  return !user.warehouseId
+}
+
+
+
 /**
  * 1. Verifica que el usuario haya enviado un token JWT válido.
  * Devuelve el ID del usuario si es exitoso. Lanza 401 si no.
@@ -74,8 +81,8 @@ export async function requirePermission(
     throw new ForbiddenError('El usuario no tiene un rol asignado')
   }
 
-  // Si tiene rol ADMIN, lo dejamos pasar siempre
-  if (user.role.name === 'ADMIN' || user.role.name.toUpperCase() === 'ADMINISTRADOR') {
+  // Si tiene rol ADMIN (isGlobal), lo dejamos pasar siempre
+  if (user.role.isGlobal) {
     return userId
   }
 
@@ -110,7 +117,7 @@ export async function requireAdmin(event: H3Event) {
     include: { role: true }
   })
   
-  if (user?.role?.name !== 'ADMIN') {
+  if (!user?.role?.isGlobal) {
     throw new UnauthorizedError('Solo administradores pueden realizar esta acción')
   }
   

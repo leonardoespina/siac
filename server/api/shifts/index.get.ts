@@ -1,9 +1,16 @@
 import { defineApiHandler } from '../../utils/handler'
 import { prisma } from '../../utils/prisma'
+import { requireUserContext, hasGlobalAccess } from '../../utils/auth'
 
 export default defineApiHandler(async (event) => {
+  const user = await requireUserContext(event)
   const query = getQuery(event)
-  const warehouseId = query.warehouseId ? parseInt(query.warehouseId as string) : undefined
+  let warehouseId = query.warehouseId ? parseInt(query.warehouseId as string) : undefined
+
+  // Seguridad: Forzar filtro si no es global
+  if (!hasGlobalAccess(user)) {
+    warehouseId = user.warehouseId!
+  }
   const dateStr = query.date as string
 
   // Filtros dinámicos

@@ -4,8 +4,8 @@ import { emitEvent } from '../utils/eventBus'
 import { ValidationError } from '../domain/errors'
 import type { UserContext, TransactionStatus } from '../domain/transaction'
 
-export async function listTransfers() {
-  return await repo.listTransfers()
+export async function listTransfers(warehouseId?: number) {
+  return await repo.listTransfers(warehouseId)
 }
 
 export async function createTransfer(input: any, user: UserContext) {

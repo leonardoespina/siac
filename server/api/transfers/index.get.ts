@@ -1,8 +1,9 @@
 import { defineApiHandler } from '../../utils/handler'
 import * as service from '../../services/transferService'
-import { requireAuth } from '../../utils/auth'
+import { requireUserContext, hasGlobalAccess } from '../../utils/auth'
 
 export default defineApiHandler(async (event) => {
-  await requireAuth(event)
-  return await service.listTransfers()
+  const user = await requireUserContext(event)
+  const targetWarehouseId = hasGlobalAccess(user) ? undefined : user.warehouseId
+  return await service.listTransfers(targetWarehouseId || undefined)
 })

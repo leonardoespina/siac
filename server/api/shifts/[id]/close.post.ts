@@ -14,8 +14,11 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Este turno ya fue cerrado')
   }
 
-  // Solo el usuario que lo abrió, o un Admin, puede cerrarlo
-  if (shift.userId !== user.id && user.roleName !== 'ADMIN' && user.roleName !== 'GERENTE') {
+  // Solo el usuario que lo abrió, o un Admin/Gerente, puede cerrarlo
+  const role = user.roleName.toUpperCase()
+  const isGlobalUser = role === 'ADMIN' || role === 'ADMINISTRADOR' || role === 'GERENTE'
+  
+  if (shift.userId !== user.id && !isGlobalUser) {
     throw new ValidationError('No tienes permiso para cerrar este turno')
   }
 

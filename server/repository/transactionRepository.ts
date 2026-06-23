@@ -192,7 +192,7 @@ import { emitEvent } from '../utils/eventBus'
 async function applyStockChanges(tx: any) {
   if (tx.type === 'RECEPTION' && tx.destinationId) {
     for (const detail of tx.details) {
-      await prisma.stock.upsert({
+      const updatedStock = await prisma.stock.upsert({
         where: {
           warehouseId_productId: {
             warehouseId: tx.destinationId,
@@ -207,6 +207,13 @@ async function applyStockChanges(tx: any) {
           productId: detail.productId,
           quantity: detail.quantity
         }
+      })
+      
+      // Emitir el evento de actualización de inventario para sockets en tiempo real
+      emitEvent('inventory:updated', {
+        warehouseId: tx.destinationId,
+        productId: detail.productId,
+        quantity: updatedStock.quantity
       })
       
       // [NUEVO] Capturar y guardar el precio de la factura como "Costo Ref" del Producto
@@ -239,6 +246,12 @@ async function applyStockChanges(tx: any) {
         }
       })
       
+      emitEvent('inventory:updated', {
+        warehouseId: tx.sourceId,
+        productId: detail.productId,
+        quantity: updatedSourceStock.quantity
+      })
+      
       // Alerta de stock mínimo
       const minStock = detail.product?.minimumStock ? Number(detail.product.minimumStock) : 0
       if (Number(updatedSourceStock.quantity) <= minStock) {
@@ -251,7 +264,7 @@ async function applyStockChanges(tx: any) {
       }
 
       // 2. Sumar al Almacén Destino (Local/Cocina)
-      await prisma.stock.upsert({
+      const updatedDestStock = await prisma.stock.upsert({
         where: {
           warehouseId_productId: {
             warehouseId: tx.destinationId,
@@ -266,6 +279,12 @@ async function applyStockChanges(tx: any) {
           productId: detail.productId,
           quantity: detail.quantity
         }
+      })
+      
+      emitEvent('inventory:updated', {
+        warehouseId: tx.destinationId,
+        productId: detail.productId,
+        quantity: updatedDestStock.quantity
       })
     }
   }
@@ -304,6 +323,12 @@ async function applyStockChanges(tx: any) {
           minimumQuantity: minStock
         })
       }
+      
+      emitEvent('inventory:updated', {
+        warehouseId: tx.sourceId,
+        productId: detail.productId,
+        quantity: updatedSourceStock.quantity
+      })
     }
   }
 }

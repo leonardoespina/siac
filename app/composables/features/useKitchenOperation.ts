@@ -18,7 +18,7 @@ export function useKitchenOperation() {
   // Modales de Turno
   const isShiftDialogOpen = ref(false)
   const isCloseShiftDialogOpen = ref(false)
-  const shiftForm = ref({ shiftType: 'DIURNO', customStartTime: '', useCustomTime: false })
+  const shiftForm = ref({ shiftType: 'DESAYUNO', customStartTime: '', useCustomTime: false })
   const closeShiftForm = ref({ customEndTime: '', useCustomTime: false })
   
   // Consumo Form

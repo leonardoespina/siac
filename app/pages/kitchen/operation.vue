@@ -296,8 +296,10 @@
               <q-option-group
                 v-model="shiftForm.shiftType"
                 :options="[
-                  { label: 'Turno Diurno', value: 'DIURNO' },
-                  { label: 'Turno Nocturno', value: 'NOCTURNO' }
+                  { label: 'Desayuno', value: 'DESAYUNO' },
+                  { label: 'Almuerzo', value: 'ALMUERZO' },
+                  { label: 'Cena', value: 'CENA' },
+                  { label: 'Sobrecena', value: 'SOBRECENA' }
                 ]"
                 color="primary"
                 inline

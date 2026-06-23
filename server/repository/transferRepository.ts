@@ -1,9 +1,18 @@
 import { prisma } from '../utils/prisma'
 import type { UserContext } from '../domain/transaction'
 
-export async function listTransfers() {
+export async function listTransfers(warehouseId?: number) {
+  const whereClause: any = { type: 'TRANSFER' }
+  
+  if (warehouseId) {
+    whereClause.OR = [
+      { sourceId: warehouseId },
+      { destinationId: warehouseId }
+    ]
+  }
+
   return prisma.transaction.findMany({
-    where: { type: 'TRANSFER' },
+    where: whereClause,
     include: {
       source: true,
       destination: true,

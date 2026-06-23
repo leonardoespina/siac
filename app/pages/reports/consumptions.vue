@@ -14,7 +14,7 @@
         <div class="col-12 col-md-3">
           <q-input v-model="endDate" type="date" label="Hasta" outlined dense />
         </div>
-        <div class="col-12 col-md-3">
+        <div v-if="!auth.user?.warehouseId" class="col-12 col-md-3">
           <q-select
             v-model="filterWarehouse"
             :options="warehousesStore.warehouses.filter(w => w.type === 'LOCAL')"
@@ -83,8 +83,10 @@
 import { ref, onMounted } from 'vue'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useReports } from '~/composables/features/useReports'
+import { useAuthStore } from '~/stores/auth'
 import { date } from 'quasar'
 
+const auth = useAuthStore()
 const warehousesStore = useWarehousesStore()
 const { loading, totalConsumptionItems, totalLossItems, totalConsumptionValue, totalLossValue, consumptionDetails, fetchConsumptionsReport } = useReports()
 

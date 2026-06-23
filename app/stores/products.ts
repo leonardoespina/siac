@@ -20,6 +20,7 @@ export interface Product {
   // Relaciones anidadas
   category?: Category
   unit?: Unit
+  stocks?: any[]
 }
 
 /**
@@ -66,14 +67,27 @@ export const useProductsStore = defineStore('products', {
       await this.fetchAll()
     },
 
-    /**
-     * Realiza un borrado lógico del producto para que no aparezca en nuevas búsquedas.
-     */
     async remove(id: number) {
       await $fetch(`/api/products/${id}`, {
         method: 'DELETE'
       })
       await this.fetchAll()
+    },
+
+    /**
+     * Actualiza el stock de un producto específico en la memoria (Reatividad Socket)
+     */
+    updateProductStock(productId: number, warehouseId: number, newQuantity: number | string) {
+      const product = this.products.find(p => p.id === productId)
+      if (product) {
+        if (!product.stocks) product.stocks = []
+        const stockIndex = product.stocks.findIndex((s: any) => s.warehouseId === warehouseId)
+        if (stockIndex >= 0) {
+          product.stocks[stockIndex].quantity = newQuantity
+        } else {
+          product.stocks.push({ warehouseId, productId, quantity: newQuantity })
+        }
+      }
     }
   }
 })

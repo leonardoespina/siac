@@ -12,7 +12,7 @@
         <div class="col-12 col-md-3">
           <q-input v-model="filterDate" type="date" outlined dense label="Fecha del Turno" />
         </div>
-        <div class="col-12 col-md-4">
+        <div v-if="!auth.user?.warehouseId" class="col-12 col-md-4">
           <q-select 
             v-model="filterWarehouse" 
             :options="[{id: null, name: 'Todos los Comedores'}, ...warehousesStore.localWarehouses]" 
@@ -142,7 +142,9 @@
 
 <script setup lang="ts">
 import { useShiftsReport } from '~/composables/features/useShiftsReport'
+import { useAuthStore } from '~/stores/auth'
 
+const auth = useAuthStore()
 const {
   loading, shifts, filterDate, filterWarehouse, warehousesStore, stats, fetchShifts, columns, pagination
 } = useShiftsReport()

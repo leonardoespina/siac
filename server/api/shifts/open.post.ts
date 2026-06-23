@@ -1,13 +1,13 @@
 import { defineApiHandler } from '../../utils/handler'
 import { prisma } from '../../utils/prisma'
-import { requireUserContext } from '../../utils/auth'
+import { requireUserContext, hasGlobalAccess } from '../../utils/auth'
 import { ValidationError } from '../../domain/errors'
 
 export default defineApiHandler(async (event) => {
   const user = await requireUserContext(event)
   const body = await readBody(event)
   
-  const targetWarehouseId = user.warehouseId || Number(body.warehouseId)
+  const targetWarehouseId = hasGlobalAccess(user) ? Number(body.warehouseId) : user.warehouseId
 
   if (!targetWarehouseId) {
     throw new ValidationError('Debes especificar un comedor para abrir el turno.')

@@ -17,6 +17,7 @@ model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique // Ej: "Administrador", "Almacenista"
   description String?
+  isGlobal    Boolean          @default(false) @map("is_global")
   users       User[]
   permissions RolePermission[]
 

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useNotificationsStore, type Notification } from '~/stores/notifications'
 import { useInteractiveTour } from '~/composables/features/useInteractiveTour'
+import { useProductsStore } from '~/stores/products'
 import { useQuasar } from 'quasar'
 
 // ── LAYOUT BASE DE QUASAR ───────────────────────────────────────────────────
@@ -11,6 +12,7 @@ const leftDrawerOpen = ref(true)
 const auth = useAuthStore()
 const notifications = useNotificationsStore()
 const interactiveTour = useInteractiveTour()
+const productStore = useProductsStore()
 const router = useRouter()
 const $q = useQuasar()
 const { $socket } = useNuxtApp() as any
@@ -23,7 +25,7 @@ const passwordForm = ref({ old: '', new: '', confirm: '' })
 onMounted(() => {
   if (auth.isAuthenticated && auth.user) {
     notifications.fetchAll()
-    $socket.emit('join', auth.user.id)
+    $socket.emit('join', { userId: auth.user.id, warehouseId: auth.user.warehouseId })
     interactiveTour.checkAndOpenTour()
     
     // Escuchar notificaciones en vivo (Silencioso para no ensuciar pantalla)
@@ -32,6 +34,11 @@ onMounted(() => {
       // Se eliminó el $q.notify aquí para evitar SPAM visual. 
       // El usuario se enterará por el contador rojo de la campanita.
     })
+    
+    // Escuchar actualizaciones de inventario en vivo (Reactividad)
+    $socket.on('inventory:update_row', (payload: { warehouseId: number, productId: number, quantity: string|number }) => {
+      productStore.updateProductStock(payload.productId, payload.warehouseId, payload.quantity)
+    })
   }
 })
 
@@ -39,7 +46,7 @@ onMounted(() => {
 watch(() => auth.isAuthenticated, (newVal) => {
   if (newVal && auth.user) {
     notifications.fetchAll()
-    $socket.emit('join', auth.user.id)
+    $socket.emit('join', { userId: auth.user.id, warehouseId: auth.user.warehouseId })
     interactiveTour.checkAndOpenTour()
   }
 })

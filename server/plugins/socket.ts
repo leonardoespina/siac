@@ -19,12 +19,15 @@ export default defineNitroPlugin((nitroApp) => {
       console.log('⚡ Socket.io servidor inicializado correctamente.')
 
       io.on('connection', (socket) => {
-        // Cuando un usuario se loguea en el frontend, enviará un evento 'join' con su ID
-        socket.on('join', (userId: number) => {
-          socket.join(`user_${userId}`)
+        // Cuando un usuario se loguea en el frontend, enviará un evento 'join' con su payload
+        socket.on('join', (payload: { userId: number, warehouseId?: number | null }) => {
+          socket.join(`user_${payload.userId}`)
           
-          // También los unimos a "salas" según su rol si quisiéramos mandar alertas masivas
-          // socket.join(`role_${roleName}`)
+          if (payload.warehouseId) {
+            socket.join(`warehouse_${payload.warehouseId}`)
+          } else {
+            socket.join(`global_inventory`)
+          }
         })
       })
     }

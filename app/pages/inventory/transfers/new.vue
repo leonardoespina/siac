@@ -13,18 +13,26 @@
             <div class="text-subtitle1 text-weight-bold">Configuración de Envío</div>
           </q-card-section>
           <q-card-section>
-            <div class="text-caption text-grey q-mb-sm">Origen (Automático)</div>
-            <q-input :model-value="centralWarehouse?.name || 'Cargando...'" readonly outlined dense disable class="q-mb-md">
-              <template v-slot:prepend><q-icon name="store" /></template>
-            </q-input>
-
             <q-select
-              v-model="destinationId"
-              :options="localWarehouses"
+              v-model="sourceId"
+              :options="availableSources"
               option-value="id"
               option-label="name"
               emit-value map-options
-              label="Cocina Destino *"
+              label="Almacén de Origen *"
+              outlined dense class="q-mb-md"
+              color="primary"
+            >
+              <template v-slot:prepend><q-icon name="store" /></template>
+            </q-select>
+
+            <q-select
+              v-model="destinationId"
+              :options="availableDestinations"
+              option-value="id"
+              option-label="name"
+              emit-value map-options
+              label="Almacén de Destino *"
               outlined dense
               color="primary"
             >
@@ -47,23 +55,26 @@
               </template>
             </q-input>
 
-            <q-list bordered separator v-if="filteredProducts.length > 0">
-              <q-item v-for="product in filteredProducts" :key="product.id" clickable @click="addItem(product)">
-                <q-item-section>
-                  <q-item-label>{{ product.name }}</q-item-label>
-                  <q-item-label caption>Código: {{ product.code }}</q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <div class="text-caption text-grey">Stock en Central</div>
-                  <q-badge :color="getCentralStock(product.id) > 0 ? 'green' : 'red'">
-                    {{ getCentralStock(product.id) }} {{ product.unit?.abbreviation }}
+            <q-table
+              :rows="filteredProducts"
+              :columns="productColumns"
+              row-key="id"
+              flat bordered dense
+              :pagination="{ rowsPerPage: 5 }"
+            >
+              <template v-slot:body-cell-stock="props">
+                <q-td :props="props">
+                  <q-badge :color="getStock(props.row.id, sourceId) > 0 ? 'green' : 'red'">
+                    {{ getStock(props.row.id, sourceId) }} {{ props.row.unit?.abbreviation }}
                   </q-badge>
-                </q-item-section>
-              </q-item>
-            </q-list>
-            <div v-else-if="searchQuery" class="text-center text-grey q-py-md">
-              No se encontraron productos
-            </div>
+                </q-td>
+              </template>
+              <template v-slot:body-cell-actions="props">
+                <q-td :props="props" class="text-right">
+                  <q-btn flat round dense color="primary" icon="add" @click="addItem(props.row)" />
+                </q-td>
+              </template>
+            </q-table>
           </q-card-section>
         </q-card>
       </div>
@@ -86,7 +97,7 @@
             <q-item v-for="(item, index) in transferItems" :key="item.productId" class="q-py-md">
               <q-item-section>
                 <q-item-label class="text-weight-bold">{{ item.productName }}</q-item-label>
-                <q-item-label caption>Stock Central: {{ item.availableStock }} {{ item.unit }}</q-item-label>
+                <q-item-label caption>Stock Origen: {{ item.availableStock }} {{ item.unit }}</q-item-label>
               </q-item-section>
 
               <q-item-section style="max-width: 150px" v-if="showPrices">
@@ -144,10 +155,17 @@ onMounted(async () => {
 })
 
 const {
-  saving, destinationId, searchQuery, transferItems, showPrices,
-  localWarehouses, filteredProducts, centralWarehouse,
-  getCentralStock, addItem, removeItem, saveDraft
+  saving, sourceId, destinationId, searchQuery, transferItems, showPrices,
+  availableSources, availableDestinations, filteredProducts,
+  getStock, addItem, removeItem, saveDraft
 } = useTransferForm()
+
+const productColumns = [
+  { name: 'name', label: 'Producto', field: 'name', align: 'left' as const },
+  { name: 'code', label: 'Código', field: 'code', align: 'left' as const },
+  { name: 'stock', label: 'Stock Origen', field: 'stock', align: 'center' as const },
+  { name: 'actions', label: '', field: 'actions', align: 'right' as const }
+]
 
 // ── LÓGICA DE OCR ───────────────────────────────────────────────
 const isOcrOpen = ref(false)

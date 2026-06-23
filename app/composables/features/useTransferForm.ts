@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useWarehousesStore } from '~/stores/warehouses'
@@ -11,6 +11,7 @@ export function useTransferForm() {
   const productsStore = useProductsStore()
 
   const saving = ref(false)
+  const sourceId = ref<number | null>(null)
   const destinationId = ref<number | null>(null)
   const searchQuery = ref('')
   const transferItems = ref<any[]>([])
@@ -18,27 +19,37 @@ export function useTransferForm() {
   // Toggle visual (Pedido por el usuario)
   const showPrices = ref(false)
 
-  // Almacén central (origen fijo)
-  const centralWarehouse = computed(() => warehousesStore.warehouses.find(w => w.type === 'CENTRAL'))
-  
-  // Almacenes locales (cocinas) para el selector de destino
-  const localWarehouses = computed(() => warehousesStore.warehouses.filter(w => w.type === 'LOCAL'))
+  // Almacenes disponibles
+  const availableSources = computed(() => warehousesStore.warehouses)
+
+  const availableDestinations = computed(() => 
+    warehousesStore.warehouses.filter(w => w.id !== sourceId.value)
+  )
+
+  // Limpiar carrito si cambian el origen
+  watch(sourceId, () => {
+    if (transferItems.value.length > 0) {
+      transferItems.value = []
+      $q.notify({ type: 'info', message: 'La cesta se ha vaciado debido al cambio de Almacén de Origen' })
+    }
+  })
 
   // Buscador de productos
   const filteredProducts = computed(() => {
-    if (!searchQuery.value) return []
-    const lowerQuery = searchQuery.value.toLowerCase()
-    return productsStore.products.filter(p => 
-      p.active && (p.name.toLowerCase().includes(lowerQuery) || p.code.toLowerCase().includes(lowerQuery))
-    ).slice(0, 8)
+    const lowerQuery = (searchQuery.value || '').toLowerCase()
+    return productsStore.products.filter(p => {
+      if (!p.active) return false
+      if (!lowerQuery) return true
+      return p.name.toLowerCase().includes(lowerQuery) || p.code.toLowerCase().includes(lowerQuery)
+    })
   })
 
-  // Helper para obtener el stock central de un producto
-  const getCentralStock = (productId: number) => {
-    if (!centralWarehouse.value) return 0
+  // Helper para obtener el stock en un almacén específico
+  const getStock = (productId: number, warehouseId: number | null) => {
+    if (!warehouseId) return 0
     const product = productsStore.products.find(p => p.id === productId)
     if (!product || !product.stocks) return 0
-    const stock = product.stocks.find((s: any) => s.warehouseId === centralWarehouse.value!.id)
+    const stock = product.stocks.find((s: any) => s.warehouseId === warehouseId)
     return stock ? Number(stock.quantity) : 0
   }
 
@@ -49,12 +60,17 @@ export function useTransferForm() {
       return
     }
     
+    if (!sourceId.value) {
+      $q.notify({ type: 'warning', message: 'Seleccione primero el almacén de origen' })
+      return
+    }
+
     transferItems.value.push({
       productId: product.id,
       productName: product.name,
       productCode: product.code,
       unit: product.unit?.abbreviation || 'UN',
-      availableStock: getCentralStock(product.id),
+      availableStock: getStock(product.id, sourceId.value),
       quantity: 1,
       unitPrice: Number(product.referencePrice) || 0 // Hereda automáticamente el costo referencial
     })
@@ -67,13 +83,15 @@ export function useTransferForm() {
   }
 
   const saveDraft = async () => {
-    if (!destinationId.value) return $q.notify({ type: 'negative', message: 'Seleccione el almacén destino (Cocina)' })
+    if (!sourceId.value) return $q.notify({ type: 'negative', message: 'Seleccione el almacén de origen' })
+    if (!destinationId.value) return $q.notify({ type: 'negative', message: 'Seleccione el almacén destino' })
+    if (sourceId.value === destinationId.value) return $q.notify({ type: 'negative', message: 'El origen y el destino no pueden ser el mismo almacén' })
     if (transferItems.value.length === 0) return $q.notify({ type: 'negative', message: 'Agregue al menos un producto a la transferencia' })
     
     for (const item of transferItems.value) {
       if (item.quantity <= 0) return $q.notify({ type: 'negative', message: `La cantidad de ${item.productName} debe ser mayor a 0` })
       if (item.quantity > item.availableStock) {
-        return $q.notify({ type: 'negative', message: `Solo hay ${item.availableStock} ${item.unit} de ${item.productName} en el Almacén Central` })
+        return $q.notify({ type: 'negative', message: `Solo hay ${item.availableStock} ${item.unit} de ${item.productName} en el almacén de origen` })
       }
     }
 
@@ -82,7 +100,7 @@ export function useTransferForm() {
       const { id } = await $fetch('/api/transfers', {
         method: 'POST',
         body: {
-          sourceId: centralWarehouse.value?.id,
+          sourceId: sourceId.value,
           destinationId: destinationId.value,
           details: transferItems.value
         }
@@ -98,14 +116,15 @@ export function useTransferForm() {
 
   return {
     saving,
+    sourceId,
     destinationId,
     searchQuery,
     transferItems,
     showPrices,
-    localWarehouses,
+    availableSources,
+    availableDestinations,
     filteredProducts,
-    centralWarehouse,
-    getCentralStock,
+    getStock,
     addItem,
     removeItem,
     saveDraft

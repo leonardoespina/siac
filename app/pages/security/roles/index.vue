@@ -16,6 +16,11 @@
           <q-btn flat round dense color="negative" icon="delete" @click="deleteRole(props.row.id)" />
         </q-td>
       </template>
+      <template v-slot:body-cell-isGlobal="props">
+        <q-td :props="props" class="text-center">
+          <q-icon :name="props.row.isGlobal ? 'check_circle' : 'cancel'" :color="props.row.isGlobal ? 'positive' : 'grey'" size="sm" />
+        </q-td>
+      </template>
     </SharedCrudTable>
 
     <!-- Modal Formulario de Rol -->
@@ -31,6 +36,9 @@
         </div>
         <div class="col-12 col-md-6">
           <q-input v-model="form.description" label="Descripción (Opcional)" outlined dense />
+        </div>
+        <div class="col-12">
+          <q-checkbox v-model="form.isGlobal" label="Administrador Global (Modo Dios: acceso a todo)" color="warning" />
         </div>
       </div>
 
@@ -68,6 +76,7 @@ const filter = ref('')
 const columns = [
   { name: 'name', label: 'Nombre', field: 'name', align: 'left', sortable: true },
   { name: 'description', label: 'Descripción', field: 'description', align: 'left' },
+  { name: 'isGlobal', label: '¿Global?', field: 'isGlobal', align: 'center', sortable: true },
   { name: 'actions', label: 'Acciones', align: 'right' }
 ]
 
