@@ -7,6 +7,8 @@ export interface Diner {
   rationType: string
   active: boolean
   squadId: number
+  positionId?: number | null
+  warehouseId?: number | null
 }
 
 export const useDinersStore = defineStore('diners', {
@@ -16,10 +18,15 @@ export const useDinersStore = defineStore('diners', {
   }),
   
   actions: {
-    async fetchAll() {
+    async fetchAll(params?: { subdependencyId?: number | null, dependencyId?: number | null }) {
       this.isLoading = true
       try {
-        const data = await $fetch('/api/diners')
+        const query = new URLSearchParams()
+        if (params?.subdependencyId) query.append('subdependencyId', params.subdependencyId.toString())
+        if (params?.dependencyId) query.append('dependencyId', params.dependencyId.toString())
+        
+        const url = query.toString() ? `/api/diners?${query.toString()}` : '/api/diners'
+        const data = await $fetch(url)
         this.diners = data as Diner[]
       } catch (error) {
         console.error('Error fetching diners:', error)
@@ -28,12 +35,12 @@ export const useDinersStore = defineStore('diners', {
       }
     },
     
-    async registerDiner(cedula: string, name: string, rationType: string, squadId: number) {
+    async registerDiner(cedula: string, name: string, rationType: string, squadId: number, subdependencyId?: number | null, positionId?: number | null, warehouseId?: number | null) {
       this.isLoading = true
       try {
         const result = await $fetch('/api/diners', {
           method: 'POST',
-          body: { cedula, name, rationType, squadId }
+          body: { cedula, name, rationType, squadId, subdependencyId, positionId, warehouseId }
         })
         // Opcionalmente podemos pushearlo al state si lo estamos mostrando en pantalla
         this.diners.push(result as Diner)
@@ -43,7 +50,7 @@ export const useDinersStore = defineStore('diners', {
       }
     },
     
-    async updateDiner(id: number, data: { cedula: string, name: string, rationType: string, squadId: number }) {
+    async updateDiner(id: number, data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId?: number | null, positionId?: number | null, warehouseId?: number | null }) {
       this.isLoading = true
       try {
         const result = await $fetch(`/api/diners/${id}`, {
@@ -71,6 +78,31 @@ export const useDinersStore = defineStore('diners', {
         this.isLoading = false
       }
     },
+
+    async fetchByCedula(cedula: string) {
+      this.isLoading = true
+      try {
+        const data = await $fetch(`/api/diners/cedula/${cedula}`)
+        return data as Diner
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async clearFingerprint(id: number) {
+      this.isLoading = true
+      try {
+        await $fetch(`/api/diners/${id}/biometric`, {
+          method: 'DELETE'
+        })
+        const index = this.diners.findIndex(d => d.id === id)
+        if (index !== -1) {
+          (this.diners[index] as any).fingerprint = null
+        }
+      } finally {
+        this.isLoading = false
+      }
+    },
     
     async submitRequest(targetDate: string, shiftType: string, dinersList: any[]) {
       this.isLoading = true
@@ -81,6 +113,22 @@ export const useDinersStore = defineStore('diners', {
         })
       } finally {
         this.isLoading = false
+      }
+    },
+    
+    syncDiner(action: 'create' | 'update' | 'delete', payloadDiner: any) {
+      if (action === 'create') {
+        // Solo agregar si no existe ya
+        if (!this.diners.some(d => d.id === payloadDiner.id)) {
+          this.diners.push(payloadDiner as Diner)
+        }
+      } else if (action === 'update') {
+        const index = this.diners.findIndex(d => d.id === payloadDiner.id)
+        if (index !== -1) {
+          this.diners[index] = { ...this.diners[index], ...payloadDiner }
+        }
+      } else if (action === 'delete') {
+        this.diners = this.diners.filter(d => d.id !== payloadDiner.id)
       }
     }
   }

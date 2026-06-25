@@ -33,6 +33,7 @@ export default defineApiHandler(async (event) => {
       name: body.name,
       roleId: body.roleId ? parseInt(body.roleId) : undefined,
       warehouseId: body.warehouseId !== undefined ? (body.warehouseId ? parseInt(body.warehouseId) : null) : undefined,
+      dependencyId: body.dependencyId !== undefined ? (body.dependencyId ? parseInt(body.dependencyId) : null) : undefined,
       subdependencyId: body.subdependencyId !== undefined ? (body.subdependencyId ? parseInt(body.subdependencyId) : null) : undefined,
       active: body.active !== undefined ? body.active : undefined,
       ...(passwordHash && { passwordHash })

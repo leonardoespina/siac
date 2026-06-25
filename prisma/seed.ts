@@ -22,7 +22,11 @@ async function main() {
     { code: 'RECEPTIONS', name: 'Recepciones y Compras' },
     { code: 'TRANSFERS', name: 'Transferencias' },
     { code: 'OPERATIONS', name: 'Operación Diaria y Consumos' },
-    { code: 'REPORTS', name: 'Reportes e Historial' }
+    { code: 'REPORTS', name: 'Reportes e Historial' },
+    { code: 'POSITIONS', name: 'Catálogo de Cargos' },
+    { code: 'DINERS', name: 'Directorio de Comensales' },
+    { code: 'DISPATCH', name: 'Despacho Rápido' },
+    { code: 'BIOMETRIC', name: 'Gestión Biométrica' }
   ]
 
   const modules = []

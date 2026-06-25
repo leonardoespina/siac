@@ -32,9 +32,10 @@ export function useUserForm() {
   function openEdit(user: any) {
     isEditing.value = true
     
-    // Find dependencyId if user has subdependencyId
-    let depId = null
-    if (user.subdependencyId) {
+    // Find dependencyId if user has subdependencyId (for normal users)
+    // For Gerentes, user.dependencyId is already provided by the backend
+    let depId = user.dependencyId || null
+    if (!depId && user.subdependencyId) {
       const depStore = useDependenciesStore()
       for (const dep of depStore.dependencies) {
         if (dep.subdependencies?.some((sub: any) => sub.id === user.subdependencyId)) {

@@ -13,17 +13,24 @@ export default defineApiHandler(async (event) => {
   
   const query = getQuery(event)
   
-  // Usamos el ID de la query si lo envían (útil para admins filtrando), 
-  // sino, usamos la subdependencia asignada al propio usuario.
+  // 1. Resolvemos subdependencia (Prioridad si se especifica en UI)
   const targetSubdependency = query.subdependencyId 
     ? Number(query.subdependencyId) 
     : user.subdependencyId
 
-  if (!targetSubdependency) {
-    // Si no tienen un ID asociado ni mandan query, no devolvemos nada 
-    // para evitar saturar la red con miles de registros.
-    return []
+  // 2. Resolvemos dependencia (Para Gerentes o filtros Globales)
+  const targetDependency = query.dependencyId
+    ? Number(query.dependencyId)
+    : user.dependencyId // NOTA: user.dependencyId estará disponible para el rol Gerente
+
+  if (targetSubdependency) {
+    return await dinerRepo.getDinersBySubdependency(targetSubdependency)
+  }
+  
+  if (targetDependency) {
+    return await dinerRepo.getDinersByDependency(targetDependency)
   }
 
-  return await dinerRepo.getDinersBySubdependency(targetSubdependency)
+  // Si no tienen un ID asociado ni mandan query válida, devolvemos vacío
+  return []
 })

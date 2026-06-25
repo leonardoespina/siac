@@ -68,6 +68,10 @@ model User {
   warehouseId Int?       @map("warehouse_id")
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
+  // Aislamiento por Dependencia (Para Gerentes, Autoridad sobre todas las subdependencias)
+  dependencyId Int?           @map("dependency_id")
+  dependency   Dependency?    @relation(fields: [dependencyId], references: [id])
+
   // Aislamiento por Subdependencia (Para Solicitantes/Aprobadores de Comensales)
   subdependencyId Int?           @map("subdependency_id")
   subdependency   Subdependency? @relation(fields: [subdependencyId], references: [id])
@@ -213,6 +217,8 @@ model Warehouse {
   incomingTransactions Transaction[] @relation("DestinationWarehouse")
   users                User[]
   shifts               Shift[]
+  diners               Diner[]
+  dinerRequests        DinerRequest[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -364,6 +370,7 @@ model Dependency {
   name            String          @unique
   active          Boolean         @default(true)
   subdependencies Subdependency[]
+  users           User[]
   
   @@map("dependencies")
 }
@@ -391,6 +398,16 @@ model Squad {
   @@map("squads")
 }
 
+model Position {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  active Boolean @default(true)
+  
+  diners Diner[]
+
+  @@map("positions")
+}
+
 model Diner {
   id          Int     @id @default(autoincrement())
   cedula      String  @unique
@@ -405,6 +422,14 @@ model Diner {
   // A qué cuadrilla/turno (catálogo base) está asignado
   squadId     Int     @map("squad_id")
   squad       Squad   @relation(fields: [squadId], references: [id])
+  
+  // Cargo o puesto del trabajador (opcional por retrocompatibilidad)
+  positionId  Int?    @map("position_id")
+  position    Position? @relation(fields: [positionId], references: [id])
+  
+  // Comedor Base asignado al trabajador (Sede Administrativa)
+  warehouseId Int?       @map("warehouse_id")
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
   
   fingerprint String? @db.Text
   qrCode      String? @unique @map("qr_code")
@@ -425,6 +450,9 @@ model DinerRequest {
   
   approvedById Int? @map("approved_by_id")
   approvedBy   User? @relation(name: "DinerRequestsApproved", fields: [approvedById], references: [id])
+
+  warehouseId Int?       @map("warehouse_id")
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
   details DinerRequestDetail[]
 

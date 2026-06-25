@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useUsersStore } from '~/stores/users'
 import { useRolesStore } from '~/stores/roles'
 import { useWarehousesStore } from '~/stores/warehouses'
@@ -180,6 +180,19 @@ const filter = ref('')
 
 // -- AUTOCOMPLETE LÓGICA --
 const roleOptions = ref<any[]>([])
+const warehouseOptions = ref<any[]>([])
+const dependencyOptions = ref<any[]>([])
+const subdependencyOptions = ref<any[]>([])
+
+// Inicializamos las opciones cuando se abre el modal para que los selects puedan mapear ID -> Nombre
+watch(isOpen, (val) => {
+  if (val) {
+    roleOptions.value = rolesStore.roles
+    warehouseOptions.value = [{id: null, name: 'Ninguno'}, ...warehousesStore.localWarehouses]
+    dependencyOptions.value = depStore.dependencies
+    subdependencyOptions.value = filteredSubdependencies.value
+  }
+})
 const filterRoles = (val: string, update: Function) => {
   update(() => {
     const needle = val.toLowerCase()
@@ -187,7 +200,6 @@ const filterRoles = (val: string, update: Function) => {
   })
 }
 
-const warehouseOptions = ref<any[]>([])
 const filterWarehouses = (val: string, update: Function) => {
   update(() => {
     const baseOptions = [{id: null, name: 'Ninguno'}, ...warehousesStore.localWarehouses]
@@ -196,7 +208,6 @@ const filterWarehouses = (val: string, update: Function) => {
   })
 }
 
-const dependencyOptions = ref<any[]>([])
 const filterDependencies = (val: string, update: Function) => {
   update(() => {
     const needle = val.toLowerCase()
@@ -204,7 +215,6 @@ const filterDependencies = (val: string, update: Function) => {
   })
 }
 
-const subdependencyOptions = ref<any[]>([])
 const filteredSubdependencies = computed(() => {
   if (!form.value.dependencyId) return []
   const dep = depStore.dependencies.find(d => d.id === form.value.dependencyId)

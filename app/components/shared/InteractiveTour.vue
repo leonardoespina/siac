@@ -94,7 +94,7 @@ import { useInteractiveTour } from '~/composables/features/useInteractiveTour'
 import { useAuthStore } from '~/stores/auth'
 import { useQuasar } from 'quasar'
 
-const { isOpen, isManager, closeTour } = useInteractiveTour()
+const { isOpen, tourProfile, closeTour } = useInteractiveTour()
 const authStore = useAuthStore()
 const router = useRouter()
 const $q = useQuasar()
@@ -107,7 +107,7 @@ watch(isOpen, (val) => {
 })
 
 const steps = computed(() => {
-  if (isManager.value) {
+  if (tourProfile.value === 'admin') {
     return [
       { 
         name: 'step1', 
@@ -134,7 +134,35 @@ const steps = computed(() => {
         actionLabel: 'Ir al Dashboard de Reportes'
       }
     ]
+  } else if (tourProfile.value === 'diners') {
+    return [
+      { 
+        name: 'step1', 
+        icon: 'account_tree', 
+        title: 'Paso 1: Tu Jerarquía y Cuadrillas', 
+        text: 'El sistema organiza a las personas en Dependencias y Subdependencias. Empieza agrupando a tus trabajadores en "Cuadrillas" para llevar un control más rápido y eficiente.',
+        route: '/diners/squads',
+        actionLabel: 'Ver mis Cuadrillas'
+      },
+      { 
+        name: 'step2', 
+        icon: 'fingerprint', 
+        title: 'Paso 2: Registro de Comensales', 
+        text: 'Añade a los trabajadores al Directorio. Indícales su tipo de dieta (Normal o Médica) y la cuadrilla a la que pertenecen. Ellos usarán su cédula en los kioscos de los comedores operativos.',
+        route: '/diners/workers',
+        actionLabel: 'Ir al Directorio de Comensales'
+      },
+      { 
+        name: 'step3', 
+        icon: 'restaurant_menu', 
+        title: 'Paso 3: Solicitudes Extraordinarias', 
+        text: 'Si necesitas apoyar a una cuadrilla con desayunos o almuerzos que no estaban planificados o son fuera de turno, puedes enviar una solicitud digital directa a la cocina.',
+        route: '/diners/requests',
+        actionLabel: 'Gestionar Solicitudes'
+      }
+    ]
   } else {
+    // Operador de Almacén/Cocina (default)
     return [
       { 
         name: 'step1', 
@@ -157,7 +185,7 @@ const steps = computed(() => {
         icon: 'restaurant', 
         title: 'Paso 3: Registro de Consumos', 
         text: 'Al terminar de cocinar, es VITAL que registres en el sistema las cantidades exactas de ingredientes que utilizaste. Esto rebajará tu inventario y generará el reporte de costos.',
-        route: '/kitchen/operation', // Asumiendo que el consumo se hace desde ahí o no tiene ruta propia separada
+        route: '/kitchen/operation',
         actionLabel: 'Registrar Consumo'
       }
     ]

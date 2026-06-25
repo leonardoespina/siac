@@ -13,15 +13,21 @@ const auth = useAuthStore()
 const dashboardStore = useDashboardStore()
 const productStore = useProductsStore()
 
-// Rol derivado
-const isAdmin = computed(() => {
+const showAdminDashboard = computed(() => {
   const roleName = auth.user?.role?.name?.toUpperCase()
   return roleName === 'ADMIN' || roleName === 'ADMINISTRADOR'
 })
 
-const isOperator = computed(() => {
-  return !isAdmin.value
+const showWarehouseDashboard = computed(() => {
+  return !showAdminDashboard.value && auth.hasPermission('OPERATIONS', 'canRead')
 })
+
+const showDinersDashboard = computed(() => {
+  return !showAdminDashboard.value && !showWarehouseDashboard.value && 
+    (auth.hasPermission('DINERS', 'canRead') || auth.hasPermission('SQUADS', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canRead'))
+})
+
+const isOperator = computed(() => showWarehouseDashboard.value)
 
 const warehouseName = computed(() => {
   // En el futuro, podríamos cruzar auth.user.warehouseId con el nombre real
@@ -81,14 +87,16 @@ const goTo = (route: string) => {
 }
 
 onMounted(async () => {
-  if (isAdmin.value) {
+  if (showAdminDashboard.value) {
     await dashboardStore.fetchPendingTasks()
-  } else {
-    // Es operador
+  } else if (showWarehouseDashboard.value) {
+    // Es operador de almacén/cocina
     await Promise.all([
       dashboardStore.fetchActiveShift(),
       productStore.fetchAll() // Fetch productos (para ver stock local)
     ])
+  } else {
+    // Es usuario de comensales, no cargamos el almacén local
   }
 })
 </script>
@@ -102,15 +110,16 @@ onMounted(async () => {
         Hola, {{ auth.user?.name || 'Usuario' }}
       </div>
       <div class="text-subtitle1 text-grey-7">
-        <template v-if="isAdmin">Bienvenido a tu centro de control.</template>
-        <template v-else>Sede Operativa: <span class="text-weight-bold text-primary">{{ warehouseName }}</span></template>
+        <template v-if="showAdminDashboard">Bienvenido a tu centro de control.</template>
+        <template v-else-if="showWarehouseDashboard">Sede Operativa: <span class="text-weight-bold text-primary">{{ warehouseName }}</span></template>
+        <template v-else>Panel de Gestión de Comensales</template>
       </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- VISTA GERENCIAL (ADMIN)                    -->
+    <!-- VISTA GERENCIAL (ADMIN ALMACÉN)            -->
     <!-- ========================================== -->
-    <div v-if="isAdmin" class="row q-col-gutter-lg">
+    <div v-if="showAdminDashboard" class="row q-col-gutter-lg">
       
       <!-- Bandeja de Aprobaciones -->
       <div class="col-12 col-md-8">
@@ -195,9 +204,9 @@ onMounted(async () => {
     </div>
 
     <!-- ========================================== -->
-    <!-- VISTA OPERATIVA (OPERADOR LOCAL)           -->
+    <!-- VISTA OPERATIVA (OPERADOR LOCAL DE COCINA) -->
     <!-- ========================================== -->
-    <div v-else class="row q-col-gutter-lg">
+    <div v-else-if="showWarehouseDashboard" class="row q-col-gutter-lg">
       
       <!-- Control de Turno Gigante -->
       <div class="col-12">
@@ -303,6 +312,65 @@ onMounted(async () => {
         </q-card>
       </div>
 
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VISTA COMENSALES (GERENTES / SUPERVISORES) -->
+    <!-- ========================================== -->
+    <div v-else-if="showDinersDashboard" class="row q-col-gutter-lg">
+      <!-- Atajos de Comensales -->
+      <div class="col-12 col-md-6">
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <q-card flat bordered class="cursor-pointer bg-primary text-white hover-up" @click="goTo('/diners/workers')">
+              <q-card-section class="row items-center">
+                <q-icon name="fingerprint" size="xl" class="q-mr-md opacity-80" />
+                <div>
+                  <div class="text-h6 text-weight-bold">Directorio de Comensales</div>
+                  <div class="text-subtitle2 text-blue-2">Registrar o buscar trabajadores</div>
+                </div>
+                <q-space />
+                <q-icon name="arrow_forward" size="sm" />
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/diners/squads')">
+              <q-card-section class="row items-center">
+                <q-avatar color="blue-1" text-color="blue-7" icon="engineering" class="q-mr-md" />
+                <div>
+                  <div class="text-subtitle1 text-weight-bold">Mis Cuadrillas</div>
+                  <div class="text-caption text-grey-6">Ver grupos de trabajadores</div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/diners/requests')">
+              <q-card-section class="row items-center">
+                <q-avatar color="green-1" text-color="green-7" icon="restaurant_menu" class="q-mr-md" />
+                <div>
+                  <div class="text-subtitle1 text-weight-bold">Solicitudes Extras</div>
+                  <div class="text-caption text-grey-6">Pedir comidas especiales</div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel de Información -->
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="h-full bg-grey-1">
+          <q-card-section class="q-pa-xl text-center text-grey-6">
+            <q-icon name="group" size="80px" color="primary" class="opacity-30 q-mb-md" />
+            <div class="text-h6 text-weight-bold text-dark">Bienvenido al Módulo de Comensales</div>
+            <div class="text-subtitle1 q-mt-sm">Utiliza los atajos de la izquierda o el menú principal para administrar los trabajadores, cuadrillas y solicitar apoyos o dietas especiales a los comedores operativos.</div>
+          </q-card-section>
+        </q-card>
+      </div>
     </div>
   </q-page>
 </template>

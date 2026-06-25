@@ -45,24 +45,32 @@
       <div class="text-subtitle1 q-mt-md q-mb-sm text-primary text-weight-bold">Matriz de Permisos por Módulo</div>
       <q-separator class="q-mb-sm" />
       
-      <!-- Matriz de permisos -->
-      <div v-for="(perm, index) in form.permissions" :key="perm.moduleId" class="row items-center q-mb-sm q-py-sm" style="border-bottom: 1px solid #eee;">
-        <div class="col-12 col-md-4 text-weight-medium q-mb-xs q-mb-md-none">
-          {{ getModuleName(perm.moduleId) }}
-        </div>
-        <div class="col-12 col-md-8 row q-col-gutter-sm">
-          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canCreate" label="Crear" color="primary" dense /></div>
-          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canRead" label="Leer" color="primary" dense /></div>
-          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canUpdate" label="Editar" color="primary" dense /></div>
-          <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[index].canDelete" label="Borrar" color="negative" dense /></div>
-        </div>
+      <!-- Matriz de permisos agrupada -->
+      <div v-for="(groupData, groupKey) in groupedPermissions" :key="groupKey">
+        <template v-if="groupData.length > 0">
+          <div class="q-mt-md q-mb-sm q-pa-sm bg-grey-2 text-primary text-weight-bold rounded-borders">
+            {{ CATEGORIES[groupKey as keyof typeof CATEGORIES]?.label || 'Otros Módulos' }}
+          </div>
+          
+          <div v-for="item in groupData" :key="item.perm.moduleId" class="row items-center q-mb-sm q-py-sm" style="border-bottom: 1px solid #eee;">
+            <div class="col-12 col-md-4 text-weight-medium q-mb-xs q-mb-md-none q-pl-sm">
+              {{ item.moduleName }}
+            </div>
+            <div class="col-12 col-md-8 row q-col-gutter-sm">
+              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canCreate" label="Crear" color="primary" dense /></div>
+              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Leer" color="primary" dense /></div>
+              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canUpdate" label="Editar" color="primary" dense /></div>
+              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canDelete" label="Borrar" color="negative" dense /></div>
+            </div>
+          </div>
+        </template>
       </div>
     </SharedFormDialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRolesStore } from '~/stores/roles'
 import { useRoleForm } from '~/composables/features/useRoleForm'
 import { useQuasar } from 'quasar'
@@ -80,10 +88,53 @@ const columns = [
   { name: 'actions', label: 'Acciones', align: 'right' }
 ]
 
-const getModuleName = (moduleId: number) => {
-  const m = store.modules.find(mod => mod.id === moduleId)
-  return m ? m.name : 'Desconocido'
+const CATEGORIES = {
+  DINERS: {
+    label: '🧑‍🤝‍🧑 Módulo de Comensales',
+    codes: ['DEPENDENCIES', 'SQUADS', 'POSITIONS', 'DINERS', 'DINERS_REQUESTS']
+  },
+  WAREHOUSE: {
+    label: '📦 Módulo de Almacén y Operaciones',
+    codes: ['RECEPTIONS', 'TRANSFERS', 'OPERATIONS', 'REPORTS']
+  },
+  INVENTORY: {
+    label: '📋 Catálogos Base (Inventario)',
+    codes: ['PRODUCTS', 'CATEGORIES', 'UNITS', 'WAREHOUSES']
+  },
+  SECURITY: {
+    label: '⚙️ Seguridad del Sistema',
+    codes: ['SECURITY']
+  }
 }
+
+const groupedPermissions = computed(() => {
+  const groups: Record<string, any[]> = {
+    DINERS: [],
+    WAREHOUSE: [],
+    INVENTORY: [],
+    SECURITY: [],
+    OTHER: []
+  }
+
+  form.value.permissions.forEach((perm, originalIndex) => {
+    const module = store.modules.find(m => m.id === perm.moduleId)
+    const code = module ? module.code : ''
+    
+    let assigned = false
+    for (const [key, category] of Object.entries(CATEGORIES)) {
+      if (category.codes.includes(code)) {
+        groups[key].push({ perm, originalIndex, moduleName: module?.name || 'Desconocido' })
+        assigned = true
+        break
+      }
+    }
+    if (!assigned) {
+      groups.OTHER.push({ perm, originalIndex, moduleName: module?.name || 'Desconocido' })
+    }
+  })
+
+  return groups
+})
 
 const deleteRole = (id: number) => {
   $q.dialog({

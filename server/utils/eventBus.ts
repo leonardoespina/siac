@@ -15,6 +15,11 @@ export type AppEvents = {
   
   // Inventario / Alertas
   'stock:below-minimum': { warehouseId: number, productId: number, currentQuantity: number, minimumQuantity: number }
+  
+  // Comensales (Sincronización en tiempo real)
+  'diner:created': { diner: any }
+  'diner:updated': { diner: any }
+  'diner:deleted': { id: number }
 }
 
 // Singleton in-memory bus

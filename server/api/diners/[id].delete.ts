@@ -3,6 +3,7 @@ import { requirePermission, requireUserContext } from '../../utils/auth'
 import * as dinerRepo from '../../repository/dinerRepository'
 import { prisma } from '../../utils/prisma'
 import { ForbiddenError, ValidationError, NotFoundError } from '../../domain/errors'
+import { emitEvent } from '../../utils/eventBus'
 
 export default defineApiHandler(async (event) => {
   // 1. Verificación dinámica de permisos
@@ -29,5 +30,7 @@ export default defineApiHandler(async (event) => {
   }
 
   // 4. Soft Delete
-  return await dinerRepo.deleteDiner(dinerId)
+  const deleted = await dinerRepo.deleteDiner(dinerId)
+  emitEvent('diner:deleted', { id: dinerId })
+  return deleted
 })

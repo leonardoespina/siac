@@ -151,4 +151,17 @@ export default defineNitroPlugin((nitroApp) => {
       io.to(`global_inventory`).emit('inventory:update_row', payload)
     }
   })
+
+  // 5. Sincronización en tiempo real de Comensales
+  eventBus.on('diner:created', (payload) => {
+    if (io) io.emit('diner:sync', { action: 'create', diner: payload.diner })
+  })
+  
+  eventBus.on('diner:updated', (payload) => {
+    if (io) io.emit('diner:sync', { action: 'update', diner: payload.diner })
+  })
+
+  eventBus.on('diner:deleted', (payload) => {
+    if (io) io.emit('diner:sync', { action: 'delete', diner: { id: payload.id } })
+  })
 })

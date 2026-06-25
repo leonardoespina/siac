@@ -3,6 +3,7 @@ import { requirePermission, requireUserContext } from '../../utils/auth'
 import * as dinerRepo from '../../repository/dinerRepository'
 import { prisma } from '../../utils/prisma'
 import { ForbiddenError, ValidationError } from '../../domain/errors'
+import { emitEvent } from '../../utils/eventBus'
 
 export default defineApiHandler(async (event) => {
   // 1. Verificación dinámica de permisos
@@ -11,14 +12,28 @@ export default defineApiHandler(async (event) => {
   const body = await readBody(event)
 
   const squadId = Number(body.squadId)
+  const warehouseId = Number(body.warehouseId)
 
-  if (!squadId || !body.cedula || !body.name) {
-    throw new ValidationError('Cédula, nombre y cuadrilla son obligatorios.')
+  if (!squadId || !body.cedula || !body.name || !warehouseId) {
+    throw new ValidationError('Cédula, nombre, cuadrilla y comedor son obligatorios.')
   }
   // 2. Aislamiento Multi-Tenant (Seguridad)
   let targetSubdependencyId = user.subdependencyId
-  if (user.isGlobal && body.subdependencyId) {
-    targetSubdependencyId = Number(body.subdependencyId)
+  
+  if (body.subdependencyId) {
+    if (user.isGlobal) {
+      targetSubdependencyId = Number(body.subdependencyId)
+    } else if (user.dependencyId && !user.subdependencyId) {
+      // Es un Gerente, verificamos que la subdependencia le pertenezca
+      const reqSub = await prisma.subdependency.findUnique({
+        where: { id: Number(body.subdependencyId) }
+      })
+      if (reqSub && reqSub.dependencyId === user.dependencyId) {
+        targetSubdependencyId = reqSub.id
+      } else {
+        throw new ForbiddenError('La subdependencia seleccionada no pertenece a tu Gerencia.')
+      }
+    }
   }
 
   if (!targetSubdependencyId) {
@@ -34,11 +49,17 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Ya existe un comensal registrado con esta cédula.')
   }
 
-  return await dinerRepo.createDiner({
+  const newDiner = await dinerRepo.createDiner({
     cedula: body.cedula,
     name: body.name,
     rationType: body.rationType,
     squadId: Number(body.squadId),
-    subdependencyId: targetSubdependencyId
+    subdependencyId: targetSubdependencyId,
+    warehouseId,
+    positionId: body.positionId ? Number(body.positionId) : undefined
   })
+
+  emitEvent('diner:created', { diner: newDiner })
+
+  return newDiner
 })

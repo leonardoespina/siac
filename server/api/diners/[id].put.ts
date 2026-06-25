@@ -3,6 +3,7 @@ import { requirePermission, requireUserContext } from '../../utils/auth'
 import * as dinerRepo from '../../repository/dinerRepository'
 import { prisma } from '../../utils/prisma'
 import { ForbiddenError, ValidationError, NotFoundError } from '../../domain/errors'
+import { emitEvent } from '../../utils/eventBus'
 
 export default defineApiHandler(async (event) => {
   // 1. Verificación dinámica de permisos
@@ -15,6 +16,11 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('ID de comensal inválido')
   }
 
+  const warehouseId = Number(body.warehouseId)
+  if (body.warehouseId && isNaN(warehouseId)) {
+    throw new ValidationError('ID de comedor inválido')
+  }
+
   // 2. Obtener el comensal actual
   const currentDiner = await prisma.diner.findUnique({
     where: { id: dinerId }
@@ -25,9 +31,32 @@ export default defineApiHandler(async (event) => {
   }
 
   // 3. Aislamiento Multi-Tenant (Seguridad)
-  // Si no es global, solo puede editar comensales de su propia subdependencia
-  if (!user.isGlobal && currentDiner.subdependencyId !== user.subdependencyId) {
-    throw new ForbiddenError('No tienes permiso para editar un comensal de otra área.')
+  // Si no es global, verificamos que tenga permisos sobre el comensal
+  if (!user.isGlobal) {
+    if (user.subdependencyId && currentDiner.subdependencyId !== user.subdependencyId) {
+      throw new ForbiddenError('No tienes permiso para editar un comensal de otra área.')
+    }
+    // Si es gerente, el comensal debe pertenecer a una subdependencia de su gerencia
+    if (user.dependencyId && !user.subdependencyId) {
+      const dinerSub = await prisma.subdependency.findUnique({ where: { id: currentDiner.subdependencyId }})
+      if (dinerSub?.dependencyId !== user.dependencyId) {
+        throw new ForbiddenError('No tienes permiso para editar un comensal fuera de tu Gerencia.')
+      }
+    }
+  }
+
+  let finalSubdependencyId = currentDiner.subdependencyId
+  if (body.subdependencyId) {
+    if (user.isGlobal) {
+      finalSubdependencyId = Number(body.subdependencyId)
+    } else if (user.dependencyId && !user.subdependencyId) {
+      const reqSub = await prisma.subdependency.findUnique({ where: { id: Number(body.subdependencyId) }})
+      if (reqSub && reqSub.dependencyId === user.dependencyId) {
+        finalSubdependencyId = reqSub.id
+      } else {
+        throw new ForbiddenError('La subdependencia seleccionada no pertenece a tu Gerencia.')
+      }
+    }
   }
 
   // 4. Validar duplicados de cédula si la están cambiando
@@ -41,10 +70,17 @@ export default defineApiHandler(async (event) => {
   }
 
   // 5. Actualizar
-  return await dinerRepo.updateDiner(dinerId, {
+  const updatedDiner = await dinerRepo.updateDiner(dinerId, {
     cedula: body.cedula,
     name: body.name,
     rationType: body.rationType,
-    squadId: body.squadId ? Number(body.squadId) : undefined
+    squadId: body.squadId ? Number(body.squadId) : undefined,
+    subdependencyId: finalSubdependencyId,
+    warehouseId: warehouseId || undefined,
+    positionId: body.positionId ? Number(body.positionId) : undefined
   })
+
+  emitEvent('diner:updated', { diner: updatedDiner })
+
+  return updatedDiner
 })

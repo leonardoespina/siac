@@ -5,6 +5,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useNotificationsStore, type Notification } from '~/stores/notifications'
 import { useInteractiveTour } from '~/composables/features/useInteractiveTour'
 import { useProductsStore } from '~/stores/products'
+import { useDinersStore } from '~/stores/diners'
 import { useQuasar } from 'quasar'
 
 // ── LAYOUT BASE DE QUASAR ───────────────────────────────────────────────────
@@ -38,6 +39,12 @@ onMounted(() => {
     // Escuchar actualizaciones de inventario en vivo (Reactividad)
     $socket.on('inventory:update_row', (payload: { warehouseId: number, productId: number, quantity: string|number }) => {
       productStore.updateProductStock(payload.productId, payload.warehouseId, payload.quantity)
+    })
+
+    // Escuchar actualizaciones de comensales en vivo
+    $socket.on('diner:sync', (payload: { action: 'create' | 'update' | 'delete', diner: any }) => {
+      const dinersStore = useDinersStore()
+      dinersStore.syncDiner(payload.action, payload.diner)
     })
   }
 })
@@ -255,6 +262,11 @@ const submitPasswordChange = async () => {
                 <q-item-section>Catálogo de Cuadrillas</q-item-section>
               </q-item>
 
+              <q-item clickable v-ripple to="/diners/positions" active-class="text-primary" v-if="auth.hasPermission('POSITIONS', 'canRead')">
+                <q-item-section avatar><q-icon name="badge" size="sm" /></q-item-section>
+                <q-item-section>Catálogo de Cargos</q-item-section>
+              </q-item>
+
               <q-item clickable v-ripple to="/diners/dependencies" active-class="text-primary" v-if="auth.hasPermission('DEPENDENCIES', 'canRead')">
                 <q-item-section avatar><q-icon name="account_tree" size="sm" /></q-item-section>
                 <q-item-section>Árbol Organizacional</q-item-section>
@@ -326,10 +338,18 @@ const submitPasswordChange = async () => {
           <q-expansion-item
             icon="security"
             label="Seguridad"
-            v-if="auth.isAuthenticated && auth.hasPermission('SECURITY', 'canRead')"
+            v-if="auth.isAuthenticated && (auth.hasPermission('SECURITY', 'canRead') || auth.hasPermission('DISPATCH', 'canRead') || auth.hasPermission('BIOMETRIC', 'canRead'))"
           >
             <q-list class="q-pl-lg">
-              <q-item clickable v-ripple to="/security/users" active-class="text-primary">
+              <q-item clickable v-ripple to="/dispatch" active-class="text-primary" v-if="auth.hasPermission('DISPATCH', 'canRead')">
+                <q-item-section avatar><q-icon name="touch_app" size="sm" /></q-item-section>
+                <q-item-section>Punto de Despacho</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/security/biometric" active-class="text-primary" v-if="auth.hasPermission('BIOMETRIC', 'canRead')">
+                <q-item-section avatar><q-icon name="fingerprint" size="sm" /></q-item-section>
+                <q-item-section>Gestión Biométrica</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/security/users" active-class="text-primary" v-if="auth.hasPermission('SECURITY', 'canRead')">
                 <q-item-section avatar><q-icon name="manage_accounts" size="sm" /></q-item-section>
                 <q-item-section>Usuarios</q-item-section>
               </q-item>

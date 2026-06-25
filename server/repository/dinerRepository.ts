@@ -20,28 +20,63 @@ export async function getDinersBySubdependency(subdependencyId: number, squadId?
       active: true 
     },
     include: {
-      squad: true
+      squad: true,
+      position: true,
+      warehouse: true
     },
-    orderBy: { name: 'asc' }
+    orderBy: { id: 'desc' }
+  })
+}
+
+export async function getDinersByDependency(dependencyId: number) {
+  return prisma.diner.findMany({
+    where: { 
+      subdependency: {
+        dependencyId: dependencyId
+      },
+      active: true 
+    },
+    include: {
+      squad: true,
+      subdependency: true,
+      position: true,
+      warehouse: true
+    },
+    orderBy: { id: 'desc' }
   })
 }
 
 export async function getDinerByCedula(cedula: string) {
   return prisma.diner.findUnique({
-    where: { cedula }
+    where: { cedula },
+    include: {
+      squad: true,
+      position: true,
+      warehouse: true
+    }
   })
 }
 
-export async function createDiner(data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId: number }) {
+export async function createDiner(data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId: number, positionId?: number, warehouseId?: number }) {
   return prisma.diner.create({
-    data
+    data,
+    include: {
+      position: true,
+      squad: true,
+      warehouse: true
+    }
   })
 }
 
-export async function updateDiner(id: number, data: { cedula?: string, name?: string, rationType?: string, squadId?: number }) {
+export async function updateDiner(id: number, data: { cedula?: string, name?: string, rationType?: string, squadId?: number, subdependencyId?: number, positionId?: number, warehouseId?: number }) {
   return prisma.diner.update({
     where: { id },
-    data
+    data,
+    include: {
+      position: true,
+      squad: true,
+      warehouse: true
+    }
   })
 }
 
@@ -50,6 +85,31 @@ export async function deleteDiner(id: number) {
   return prisma.diner.update({
     where: { id },
     data: { active: false }
+  })
+}
+
+export async function updateDinerFingerprint(id: number, fingerprint: string) {
+  return prisma.diner.update({
+    where: { id },
+    data: { fingerprint }
+  })
+}
+
+export async function clearDinerFingerprint(id: number) {
+  return prisma.diner.update({
+    where: { id },
+    data: { fingerprint: null }
+  })
+}
+
+export async function getDinerByFingerprint(fingerprint: string) {
+  return prisma.diner.findFirst({
+    where: { fingerprint, active: true },
+    include: {
+      squad: true,
+      position: true,
+      warehouse: true
+    }
   })
 }
 

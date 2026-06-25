@@ -17,7 +17,14 @@ export async function getAllDependencies() {
     where: { active: true },
     include: {
       subdependencies: {
-        where: { active: true }
+        where: { active: true },
+        include: {
+          diners: {
+            select: {
+              squadId: true
+            }
+          }
+        }
       }
     },
     orderBy: { name: 'asc' }

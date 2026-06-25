@@ -7,7 +7,8 @@
  * - Funciones puras (sin efectos secundarios).
  */
 
-export type RationType = 'NORMAL' | 'DIET'
+// Valores posibles para raciones
+export type RationType = 'NORMAL' | 'DIETA'
 export type ShiftType = 'DESAYUNO' | 'ALMUERZO' | 'CENA' | 'SOBRECENA'
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -91,8 +92,8 @@ export function isLeadTimeValid(requestDate: Date, targetConsumptionDate: Date):
  */
 export function canAssignRationType(diner: Diner, requestedType: RationType): boolean {
   // Por ahora, todos pueden pedir cualquier tipo, pero la función pura ya está estructurada.
-  if (requestedType === 'DIET' && !diner.active) {
-    return false // Un trabajador inactivo no puede pedir dieta
-  }
+  // if (requestedType === 'DIETA' && !diner.active) {
+  //   return false // Un trabajador inactivo no puede pedir dieta
+  // }
   return true
 }

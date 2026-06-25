@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useDependenciesStore } from '~/stores/dependencies'
+import { useAuthStore } from '~/stores/auth'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const store = useDependenciesStore()
+const authStore = useAuthStore()
+
+// Verificación de Rol Administrativo Global
+const isGlobalAdmin = computed(() => !!authStore.user?.role?.isGlobal)
 
 // Modal para Dependencia Principal
 const showDepDialog = ref(false)
@@ -30,6 +35,13 @@ const depOptions = computed(() => {
     value: dep.id
   }))
 })
+
+// Calcula la cantidad de cuadrillas únicas con personal asignado en la subdependencia
+const getUniqueSquadsCount = (sub: any) => {
+  if (!sub.diners || sub.diners.length === 0) return 0
+  const uniqueIds = new Set(sub.diners.map((d: any) => d.squadId))
+  return uniqueIds.size
+}
 
 // Árbol filtrado
 const filteredDependencies = computed(() => {
@@ -157,8 +169,8 @@ onMounted(() => {
                 <q-icon name="search" />
               </template>
             </q-input>
-            <q-btn color="secondary" icon="account_tree" label="Nueva Subdependencia" @click="openCreateSub" class="q-mr-sm" />
-            <q-btn color="primary" icon="domain" label="Nueva Dependencia" @click="openCreateDep" />
+            <q-btn v-if="isGlobalAdmin" color="secondary" icon="account_tree" label="Nueva Subdependencia" @click="openCreateSub" class="q-mr-sm" />
+            <q-btn v-if="isGlobalAdmin" color="primary" icon="domain" label="Nueva Dependencia" @click="openCreateDep" />
           </q-card-section>
           
           <q-card-section>
@@ -181,7 +193,7 @@ onMounted(() => {
                     <div class="text-weight-bold">{{ dep.name }}</div>
                   </q-item-section>
 
-                  <q-item-section side>
+                  <q-item-section v-if="isGlobalAdmin" side>
                     <div class="row items-center">
                       <q-btn flat round icon="edit" color="primary" size="sm" @click.stop="openEditDep(dep)">
                         <q-tooltip>Editar Dependencia</q-tooltip>
@@ -200,10 +212,10 @@ onMounted(() => {
                     </q-item-section>
                     <q-item-section>
                       <q-item-label>{{ sub.name }}</q-item-label>
-                      <q-item-label caption>{{ sub.squads?.length || 0 }} cuadrillas registradas</q-item-label>
+                      <q-item-label caption>{{ getUniqueSquadsCount(sub) }} cuadrillas activas</q-item-label>
                     </q-item-section>
                     
-                    <q-item-section side>
+                    <q-item-section v-if="isGlobalAdmin" side>
                       <div class="row items-center">
                         <q-btn flat round icon="edit" color="primary" size="sm" @click.stop="openEditSub(sub)">
                           <q-tooltip>Editar Subdependencia</q-tooltip>
