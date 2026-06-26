@@ -64,9 +64,13 @@ model User {
   roleId Int  @map("role_id")
   role   Role @relation(fields: [roleId], references: [id])
 
-  // Aislamiento por Comedor (Multi-Tenant local)
+  // Aislamiento por Almacén Local
   warehouseId Int?       @map("warehouse_id")
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  // Aislamiento por Comedor
+  diningRoomId Int?      @map("dining_room_id")
+  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
 
   // Aislamiento por Dependencia (Para Gerentes, Autoridad sobre todas las subdependencias)
   dependencyId Int?           @map("dependency_id")
@@ -217,8 +221,7 @@ model Warehouse {
   incomingTransactions Transaction[] @relation("DestinationWarehouse")
   users                User[]
   shifts               Shift[]
-  diners               Diner[]
-  dinerRequests        DinerRequest[]
+  diningRooms          DiningRoom[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -365,6 +368,22 @@ model Notification {
 
 // ── MÓDULO COMENSALES (ESTRUCTURA ORGANIZACIONAL) ─────────────────────────
 
+model DiningRoom {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  active      Boolean   @default(true)
+  
+  // Un comedor saca sus insumos de un almacén o cocina
+  warehouseId Int?      @map("warehouse_id")
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  
+  diners        Diner[]
+  dinerRequests DinerRequest[]
+  users         User[]
+
+  @@map("dining_rooms")
+}
+
 model Dependency {
   id              Int             @id @default(autoincrement())
   name            String          @unique
@@ -427,9 +446,9 @@ model Diner {
   positionId  Int?    @map("position_id")
   position    Position? @relation(fields: [positionId], references: [id])
   
-  // Comedor Base asignado al trabajador (Sede Administrativa)
-  warehouseId Int?       @map("warehouse_id")
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  // Comedor Base asignado al trabajador
+  diningRoomId Int?       @map("dining_room_id")
+  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
   
   fingerprint String? @db.Text
   qrCode      String? @unique @map("qr_code")
@@ -451,8 +470,8 @@ model DinerRequest {
   approvedById Int? @map("approved_by_id")
   approvedBy   User? @relation(name: "DinerRequestsApproved", fields: [approvedById], references: [id])
 
-  warehouseId Int?       @map("warehouse_id")
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  diningRoomId Int?       @map("dining_room_id")
+  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
 
   details DinerRequestDetail[]
 

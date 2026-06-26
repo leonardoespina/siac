@@ -4,7 +4,7 @@ import { useSquadsStore } from '~/stores/squads'
 import { useDinersStore } from '~/stores/diners'
 import { useDependenciesStore } from '~/stores/dependencies'
 import { usePositionsStore } from '~/stores/positions'
-import { useWarehousesStore } from '~/stores/warehouses'
+import { useDiningRoomsStore } from '~/stores/diningRooms'
 import { useAuthStore } from '~/stores/auth'
 import { useQuasar } from 'quasar'
 import { useWorkerForm } from '~/composables/features/useWorkerForm'
@@ -17,7 +17,7 @@ const squadsStore = useSquadsStore()
 const dinersStore = useDinersStore()
 const depStore = useDependenciesStore()
 const positionsStore = usePositionsStore()
-const warehousesStore = useWarehousesStore()
+const diningRoomsStore = useDiningRoomsStore()
 const authStore = useAuthStore()
 
 const { showDialog, isEdit, formData, openDialog, openEditDialog, submit } = useWorkerForm()
@@ -34,7 +34,7 @@ const filterSubdependencyId = ref<number | null>(null)
 // Estado del Smart Filter
 const filterState = ref({
   search: '',
-  warehouseId: null,
+  diningRoomId: null,
   positionId: null,
   rationType: null
 })
@@ -62,10 +62,10 @@ const positionOptions = computed(() => {
 })
 
 // Opciones de Comedores
-const warehouseOptions = computed(() => {
-  return warehousesStore.localWarehouses.map(w => ({
-    label: w.name,
-    value: w.id
+const diningRoomOptions = computed(() => {
+  return diningRoomsStore.diningRooms.map(dr => ({
+    label: dr.name,
+    value: dr.id
   }))
 })
 
@@ -77,10 +77,10 @@ const dependencyOptions = computed(() => {
 // Esquema dinámico para el Smart Filter
 const smartFilterSchema = computed(() => [
   { 
-    key: 'warehouseId', 
+    key: 'diningRoomId', 
     label: 'Comedor Base', 
     type: 'select', 
-    options: warehouseOptions.value,
+    options: diningRoomOptions.value,
     colSpan: 4
   },
   { 
@@ -152,7 +152,7 @@ const userDependencyName = computed(() => {
 const columns = [
   { name: 'cedula', label: 'Cédula', field: 'cedula', align: 'left', sortable: true },
   { name: 'name', label: 'Nombre Completo', field: 'name', align: 'left', sortable: true },
-  { name: 'warehouse', label: 'Comedor Base', field: (row: any) => row.warehouse?.name || 'No Asignado', align: 'left', sortable: true },
+  { name: 'diningRoom', label: 'Comedor Base', field: (row: any) => row.diningRoom?.name || 'No Asignado', align: 'left', sortable: true },
   { name: 'position', label: 'Cargo', field: (row: any) => row.position?.name || 'Sin Cargo', align: 'left', sortable: true },
   { name: 'rationType', label: 'Tipo de Ración', field: 'rationType', align: 'center' },
   { name: 'actions', label: 'Opciones', field: 'actions', align: 'center' }
@@ -186,7 +186,7 @@ const customFilter = (rows: readonly any[], terms: any) => {
     }
     
     // 2. Filtrado exacto por Selects
-    if (terms.warehouseId && row.warehouseId !== terms.warehouseId) return false
+    if (terms.diningRoomId && row.diningRoomId !== terms.diningRoomId) return false
     if (terms.positionId && row.positionId !== terms.positionId) return false
     if (terms.rationType && row.rationType !== terms.rationType) return false
     
@@ -218,7 +218,7 @@ watch(filterSubdependencyId, (newVal) => {
 onMounted(() => {
   squadsStore.fetchAll()
   positionsStore.fetchPositions()
-  warehousesStore.fetchAll()
+  diningRoomsStore.fetchAll()
   depStore.fetchAll()
   
   // Solo cargamos los comensales automáticamente si NO es un Admin Global puro
@@ -381,8 +381,8 @@ onMounted(() => {
             clearable
           />
           <q-select
-            v-model="formData.warehouseId"
-            :options="warehouseOptions"
+            v-model="formData.diningRoomId"
+            :options="diningRoomOptions"
             emit-value
             map-options
             label="Comedor Base *"

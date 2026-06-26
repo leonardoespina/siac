@@ -22,7 +22,7 @@ export async function getDinersBySubdependency(subdependencyId: number, squadId?
     include: {
       squad: true,
       position: true,
-      warehouse: true
+      diningRoom: true
     },
     orderBy: { id: 'desc' }
   })
@@ -40,7 +40,7 @@ export async function getDinersByDependency(dependencyId: number) {
       squad: true,
       subdependency: true,
       position: true,
-      warehouse: true
+      diningRoom: true
     },
     orderBy: { id: 'desc' }
   })
@@ -52,30 +52,30 @@ export async function getDinerByCedula(cedula: string) {
     include: {
       squad: true,
       position: true,
-      warehouse: true
+      diningRoom: true
     }
   })
 }
 
-export async function createDiner(data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId: number, positionId?: number, warehouseId?: number }) {
+export async function createDiner(data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId: number, positionId?: number, diningRoomId?: number }) {
   return prisma.diner.create({
     data,
     include: {
       position: true,
       squad: true,
-      warehouse: true
+      diningRoom: true
     }
   })
 }
 
-export async function updateDiner(id: number, data: { cedula?: string, name?: string, rationType?: string, squadId?: number, subdependencyId?: number, positionId?: number, warehouseId?: number }) {
+export async function updateDiner(id: number, data: { cedula?: string, name?: string, rationType?: string, squadId?: number, subdependencyId?: number, positionId?: number, diningRoomId?: number }) {
   return prisma.diner.update({
     where: { id },
     data,
     include: {
       position: true,
       squad: true,
-      warehouse: true
+      diningRoom: true
     }
   })
 }
@@ -108,7 +108,7 @@ export async function getDinerByFingerprint(fingerprint: string) {
     include: {
       squad: true,
       position: true,
-      warehouse: true
+      diningRoom: true
     }
   })
 }

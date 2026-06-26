@@ -16,8 +16,8 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('ID de comensal inválido')
   }
 
-  const warehouseId = Number(body.warehouseId)
-  if (body.warehouseId && isNaN(warehouseId)) {
+  const diningRoomId = Number(body.diningRoomId)
+  if (body.diningRoomId && isNaN(diningRoomId)) {
     throw new ValidationError('ID de comedor inválido')
   }
 
@@ -76,7 +76,7 @@ export default defineApiHandler(async (event) => {
     rationType: body.rationType,
     squadId: body.squadId ? Number(body.squadId) : undefined,
     subdependencyId: finalSubdependencyId,
-    warehouseId: warehouseId || undefined,
+    diningRoomId: diningRoomId || undefined,
     positionId: body.positionId ? Number(body.positionId) : undefined
   })
 

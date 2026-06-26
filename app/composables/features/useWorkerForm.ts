@@ -21,7 +21,8 @@ export function useWorkerForm() {
     squadId: null as number | null,
     dependencyId: null as number | null,
     subdependencyId: null as number | null,
-    positionId: null as number | null
+    positionId: null as number | null,
+    diningRoomId: null as number | null
   })
 
   function openDialog() {
@@ -35,7 +36,7 @@ export function useWorkerForm() {
       dependencyId: null,
       subdependencyId: authStore.user?.subdependencyId || null,
       positionId: null,
-      warehouseId: null
+      diningRoomId: null
     }
     showDialog.value = true
   }
@@ -64,7 +65,7 @@ export function useWorkerForm() {
       dependencyId: depId,
       subdependencyId: diner.subdependencyId,
       positionId: diner.positionId,
-      warehouseId: diner.warehouseId
+      diningRoomId: diner.diningRoomId
     }
     showDialog.value = true
   }
@@ -75,8 +76,8 @@ export function useWorkerForm() {
       return
     }
     
-    if (!formData.value.warehouseId) {
-      $q.notify({ type: 'warning', message: 'Debes seleccionar el comedor base asignado.' })
+    if (!formData.value.diningRoomId) {
+      $q.notify({ type: 'warning', message: 'Debes seleccionar el comedor asignado.' })
       return
     }
 
@@ -94,7 +95,7 @@ export function useWorkerForm() {
           squadId: formData.value.squadId!,
           subdependencyId: formData.value.subdependencyId,
           positionId: formData.value.positionId,
-          warehouseId: formData.value.warehouseId
+          diningRoomId: formData.value.diningRoomId
         })
         $q.notify({ type: 'positive', message: 'Comensal actualizado exitosamente' })
       } else {
@@ -106,7 +107,7 @@ export function useWorkerForm() {
           formData.value.squadId!,
           formData.value.subdependencyId,
           formData.value.positionId,
-          formData.value.warehouseId
+          formData.value.diningRoomId
         )
         $q.notify({ type: 'positive', message: 'Comensal registrado exitosamente' })
       }
@@ -117,7 +118,7 @@ export function useWorkerForm() {
       formData.value.squadId = null
       formData.value.subdependencyId = null
       formData.value.positionId = null
-      formData.value.warehouseId = null
+      formData.value.diningRoomId = null
     } catch (error: any) {
       $q.notify({ type: 'negative', message: error.data?.message || 'Error al registrar comensal' })
     }

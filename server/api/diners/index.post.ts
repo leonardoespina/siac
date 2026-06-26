@@ -12,9 +12,9 @@ export default defineApiHandler(async (event) => {
   const body = await readBody(event)
 
   const squadId = Number(body.squadId)
-  const warehouseId = Number(body.warehouseId)
+  const diningRoomId = Number(body.diningRoomId)
 
-  if (!squadId || !body.cedula || !body.name || !warehouseId) {
+  if (!squadId || !body.cedula || !body.name || !diningRoomId) {
     throw new ValidationError('Cédula, nombre, cuadrilla y comedor son obligatorios.')
   }
   // 2. Aislamiento Multi-Tenant (Seguridad)
@@ -55,7 +55,7 @@ export default defineApiHandler(async (event) => {
     rationType: body.rationType,
     squadId: Number(body.squadId),
     subdependencyId: targetSubdependencyId,
-    warehouseId,
+    diningRoomId,
     positionId: body.positionId ? Number(body.positionId) : undefined
   })
 

@@ -8,7 +8,7 @@ export interface Diner {
   active: boolean
   squadId: number
   positionId?: number | null
-  warehouseId?: number | null
+  diningRoomId?: number | null
 }
 
 export const useDinersStore = defineStore('diners', {
@@ -35,12 +35,12 @@ export const useDinersStore = defineStore('diners', {
       }
     },
     
-    async registerDiner(cedula: string, name: string, rationType: string, squadId: number, subdependencyId?: number | null, positionId?: number | null, warehouseId?: number | null) {
+    async registerDiner(cedula: string, name: string, rationType: string, squadId: number, subdependencyId?: number | null, positionId?: number | null, diningRoomId?: number | null) {
       this.isLoading = true
       try {
         const result = await $fetch('/api/diners', {
           method: 'POST',
-          body: { cedula, name, rationType, squadId, subdependencyId, positionId, warehouseId }
+          body: { cedula, name, rationType, squadId, subdependencyId, positionId, diningRoomId }
         })
         // Opcionalmente podemos pushearlo al state si lo estamos mostrando en pantalla
         this.diners.push(result as Diner)
@@ -50,7 +50,7 @@ export const useDinersStore = defineStore('diners', {
       }
     },
     
-    async updateDiner(id: number, data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId?: number | null, positionId?: number | null, warehouseId?: number | null }) {
+    async updateDiner(id: number, data: { cedula: string, name: string, rationType: string, squadId: number, subdependencyId?: number | null, positionId?: number | null, diningRoomId?: number | null }) {
       this.isLoading = true
       try {
         const result = await $fetch(`/api/diners/${id}`, {

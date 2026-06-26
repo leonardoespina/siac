@@ -96,6 +96,26 @@ async function main() {
   })
   console.log('✅ Usuario Administrador creado (Cédula: V-12345678 | Pass: 123456).')
 
+  // 5. Crear Almacén y Comedor de prueba
+  const warehouse = await prisma.warehouse.upsert({
+    where: { name: 'Almacén Central MSB' },
+    update: {},
+    create: {
+      name: 'Almacén Central MSB',
+      type: 'CENTRAL'
+    }
+  })
+
+  await prisma.diningRoom.upsert({
+    where: { name: 'Comedor MSB' },
+    update: {},
+    create: {
+      name: 'Comedor MSB',
+      warehouseId: warehouse.id
+    }
+  })
+  console.log('✅ Comedor MSB creado y vinculado al Almacén.')
+
   console.log('🚀 Seed terminado exitosamente.')
 }
 
