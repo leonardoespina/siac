@@ -257,6 +257,11 @@ const submitPasswordChange = async () => {
                 <q-item-section>Comensales Físicos</q-item-section>
               </q-item>
 
+              <q-item clickable v-ripple to="/diners/dining-rooms" active-class="text-primary" v-if="auth.hasPermission('DINERS', 'canRead')">
+                <q-item-section avatar><q-icon name="restaurant" size="sm" /></q-item-section>
+                <q-item-section>Gestión de Comedores</q-item-section>
+              </q-item>
+
               <q-item clickable v-ripple to="/diners/squad-catalog" active-class="text-primary" v-if="auth.hasPermission('SQUADS', 'canCreate') || auth.hasPermission('SQUADS', 'canRead')">
                 <q-item-section avatar><q-icon name="list_alt" size="sm" /></q-item-section>
                 <q-item-section>Catálogo de Cuadrillas</q-item-section>

@@ -20,9 +20,40 @@ export const useDiningRoomsStore = defineStore('diningRooms', () => {
     }
   }
 
+  const create = async (payload: any) => {
+    const res = await $fetch('/api/dining-rooms', {
+      method: 'POST',
+      body: payload
+    })
+    diningRooms.value.push(res)
+    return res
+  }
+
+  const update = async (id: number, payload: any) => {
+    const res = await $fetch(`/api/dining-rooms/${id}`, {
+      method: 'PUT',
+      body: payload
+    })
+    const index = diningRooms.value.findIndex(r => r.id === id)
+    if (index !== -1) diningRooms.value[index] = res
+    return res
+  }
+
+  const remove = async (id: number) => {
+    await $fetch(`/api/dining-rooms/${id}`, {
+      method: 'DELETE'
+    })
+    // En lugar de borrar de la lista, podríamos cambiar su estado a inactivo si queremos mantenerlo
+    const item = diningRooms.value.find(r => r.id === id)
+    if (item) item.active = false
+  }
+
   return {
     diningRooms,
     isLoading,
-    fetchAll
+    fetchAll,
+    create,
+    update,
+    remove
   }
 })

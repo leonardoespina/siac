@@ -2,7 +2,6 @@ import { prisma } from '../utils/prisma'
 
 export async function listAll() {
   return await prisma.diningRoom.findMany({
-    where: { active: true },
     include: {
       warehouse: {
         select: {
@@ -15,11 +14,29 @@ export async function listAll() {
   })
 }
 
-export async function createDiningRoom(name: string, warehouseId?: number) {
+export async function createDiningRoom(name: string, warehouseId?: number | null) {
   return await prisma.diningRoom.create({
     data: {
       name: name.toUpperCase().trim(),
       warehouseId
     }
+  })
+}
+
+export async function updateDiningRoom(id: number, name: string, warehouseId?: number | null, active?: boolean) {
+  return await prisma.diningRoom.update({
+    where: { id },
+    data: {
+      name: name.toUpperCase().trim(),
+      warehouseId,
+      ...(active !== undefined && { active })
+    }
+  })
+}
+
+export async function toggleStatus(id: number, active: boolean) {
+  return await prisma.diningRoom.update({
+    where: { id },
+    data: { active }
   })
 }
