@@ -7,10 +7,6 @@ export default defineApiHandler(async (event) => {
   await requirePermission(event, 'SQUADS', 'update')
   const user = await requireUserContext(event)
   
-  if (!user.isGlobal) {
-    throw new ForbiddenError('Solo los administradores globales pueden editar el catálogo base de cuadrillas.')
-  }
-
   const id = Number(event.context.params?.id)
   if (!id) throw new ValidationError('ID inválido')
 

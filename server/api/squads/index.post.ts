@@ -9,11 +9,6 @@ export default defineApiHandler(async (event) => {
   const user = await requireUserContext(event)
   const body = await readBody(event)
 
-  // Solo los administradores globales (RRHH principal) deberían poder crear catálogos globales de cuadrillas
-  if (!user.isGlobal) {
-    throw new ForbiddenError('Solo los administradores globales pueden crear cuadrillas en el catálogo base.')
-  }
-
   if (!body.name) {
     throw new ValidationError('El nombre de la cuadrilla es obligatorio.')
   }

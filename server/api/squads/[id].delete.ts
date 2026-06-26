@@ -7,10 +7,6 @@ export default defineApiHandler(async (event) => {
   await requirePermission(event, 'SQUADS', 'delete')
   const user = await requireUserContext(event)
   
-  if (!user.isGlobal) {
-    throw new ForbiddenError('Solo los administradores globales pueden eliminar cuadrillas del catálogo base.')
-  }
-
   const id = Number(event.context.params?.id)
   if (!id) throw new ValidationError('ID inválido')
 
