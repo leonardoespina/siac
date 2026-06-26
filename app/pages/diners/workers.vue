@@ -11,7 +11,6 @@ import { useWorkerForm } from '~/composables/features/useWorkerForm'
 import { useExcelDinerImport } from '~/composables/features/useExcelDinerImport'
 import SharedDinerExcelUploader from '~/components/SharedDinerExcelUploader.vue'
 import SharedSmartFilter from '~/components/SharedSmartFilter.vue'
-import BiometricRegistrationModal from '~/components/comensales/BiometricRegistrationModal.vue'
 
 const $q = useQuasar()
 const squadsStore = useSquadsStore()
@@ -26,17 +25,6 @@ const { isModalOpen, isProcessing, isValidationScreen, validRows, invalidRows, u
 
 const openExcelModal = () => {
   isModalOpen.value = true
-}
-
-// Modal Biométrico
-const isBiometricModalOpen = ref(false)
-const biometricDinerId = ref<number | null>(null)
-const biometricDinerName = ref('')
-
-const openBiometricModal = (row: any) => {
-  biometricDinerId.value = row.id
-  biometricDinerName.value = row.name
-  isBiometricModalOpen.value = true
 }
 
 // Filtros para Admin Global y Búsqueda
@@ -324,16 +312,6 @@ onMounted(() => {
             >
               <template v-slot:body-cell-actions="props">
                 <q-td :props="props">
-                  <q-btn 
-                    flat 
-                    round 
-                    :color="props.row.fingerprint ? 'positive' : 'grey-7'" 
-                    icon="fingerprint" 
-                    size="sm" 
-                    @click="openBiometricModal(props.row)"
-                  >
-                    <q-tooltip>{{ props.row.fingerprint ? 'Actualizar Huella' : 'Registrar Huella' }}</q-tooltip>
-                  </q-btn>
                   <q-btn flat round color="primary" icon="edit" size="sm" @click="openEditDialog(props.row)">
                     <q-tooltip>Editar Trabajador</q-tooltip>
                   </q-btn>
@@ -485,12 +463,5 @@ onMounted(() => {
         </q-card-actions>
       </q-card>
     </q-dialog>
-
-    <!-- Modal de Registro Biométrico -->
-    <BiometricRegistrationModal
-      v-model="isBiometricModalOpen"
-      :diner-id="biometricDinerId"
-      :diner-name="biometricDinerName"
-    />
   </q-page>
 </template>
