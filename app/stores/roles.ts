@@ -7,11 +7,11 @@ export const useRolesStore = defineStore('roles', {
   }),
   actions: {
     async fetchRoles() {
-      this.roles = await $fetch('/api/roles')
+      this.roles = await $fetch<any[]>('/api/roles')
       return this.roles
     },
     async fetchModules() {
-      this.modules = await $fetch('/api/modules')
+      this.modules = await $fetch<any[]>('/api/modules')
       return this.modules
     },
     async createRole(payload: any) {

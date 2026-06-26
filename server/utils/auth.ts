@@ -6,9 +6,9 @@ import { prisma } from './prisma'
 // ── PROTECCIÓN DE RUTAS Y PERMISOS DINÁMICOS ──────────────────────────────
 // Estas funciones se usarán en todos los endpoints (handlers) que requieran seguridad.
 
-export function hasGlobalAccess(user: { warehouseId?: number | null, roleName?: string }): boolean {
-  // Un usuario tiene acceso global a los datos de sedes (ver todo) SOLO si NO tiene un comedor asignado.
-  return !user.warehouseId
+export function hasGlobalAccess(user: { warehouseId?: number | null, diningRoomId?: number | null, roleName?: string }): boolean {
+  // Un usuario tiene acceso global a los datos de sedes (ver todo) SOLO si NO tiene un comedor/almacén asignado.
+  return !user.warehouseId && !user.diningRoomId
 }
 
 
@@ -49,6 +49,7 @@ export async function requireUserContext(event: H3Event) {
     roleName: user.role.name,
     isGlobal: user.role.isGlobal,
     warehouseId: user.warehouseId,
+    diningRoomId: user.diningRoomId,
     dependencyId: user.dependencyId,
     subdependencyId: user.subdependencyId
   }

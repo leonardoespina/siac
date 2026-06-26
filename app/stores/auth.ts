@@ -13,6 +13,8 @@ export interface UserState {
   id: number
   cedula: string
   name: string
+  warehouseId?: number | null
+  diningRoomId?: number | null
   subdependencyId?: number | null
   subdependency?: {
     name: string

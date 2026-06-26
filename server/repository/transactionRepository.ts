@@ -213,7 +213,7 @@ async function applyStockChanges(tx: any) {
       emitEvent('inventory:updated', {
         warehouseId: tx.destinationId,
         productId: detail.productId,
-        quantity: updatedStock.quantity
+        quantity: Number(updatedStock.quantity)
       })
       
       // [NUEVO] Capturar y guardar el precio de la factura como "Costo Ref" del Producto
@@ -249,7 +249,7 @@ async function applyStockChanges(tx: any) {
       emitEvent('inventory:updated', {
         warehouseId: tx.sourceId,
         productId: detail.productId,
-        quantity: updatedSourceStock.quantity
+        quantity: Number(updatedSourceStock.quantity)
       })
       
       // Alerta de stock mínimo
@@ -284,7 +284,7 @@ async function applyStockChanges(tx: any) {
       emitEvent('inventory:updated', {
         warehouseId: tx.destinationId,
         productId: detail.productId,
-        quantity: updatedDestStock.quantity
+        quantity: Number(updatedDestStock.quantity)
       })
     }
   }
@@ -327,7 +327,7 @@ async function applyStockChanges(tx: any) {
       emitEvent('inventory:updated', {
         warehouseId: tx.sourceId,
         productId: detail.productId,
-        quantity: updatedSourceStock.quantity
+        quantity: Number(updatedSourceStock.quantity)
       })
     }
   }

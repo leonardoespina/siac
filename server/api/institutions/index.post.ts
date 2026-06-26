@@ -2,8 +2,8 @@ import { prisma } from '../../utils/prisma'
 import { requireAuth, requirePermission } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = requireAuth(event)
-  requirePermission(event, 'INSTITUTIONS', 'canCreate')
+  const userId = await requireAuth(event)
+  await requirePermission(event, 'INSTITUTIONS', 'create')
 
   const body = await readBody(event)
 
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     // Log
     await prisma.auditLog.create({
       data: {
-        userId: user.id,
+        userId: userId,
         action: 'CREAR',
         entity: 'INSTITUCION',
         entityId: institution.id,

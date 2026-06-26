@@ -1,9 +1,9 @@
 import { defineApiHandler } from '../../../utils/handler'
 import * as repo from '../../../repository/transactionRepository'
-import { requireAuth } from '../../../utils/auth'
+import { requireUserContext } from '../../../utils/auth'
 
 export default defineApiHandler(async (event) => {
-  const user = await requireAuth(event)
+  const user = await requireUserContext(event)
   const id = parseInt(event.context.params?.id || '0')
   const body = await readBody(event)
   

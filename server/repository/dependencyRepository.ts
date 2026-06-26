@@ -55,9 +55,6 @@ export async function deleteDependency(id: number) {
 export async function getSubdependenciesByDependency(dependencyId: number) {
   return prisma.subdependency.findMany({
     where: { dependencyId },
-    include: {
-      squads: true
-    },
     orderBy: { name: 'asc' }
   })
 }

@@ -20,6 +20,13 @@ export type AppEvents = {
   'diner:created': { diner: any }
   'diner:updated': { diner: any }
   'diner:deleted': { id: number }
+  
+  // Peticiones de Comensales
+  'dinerRequest:created': { requestId: number, subdependencyId: number }
+  'dinerRequest:approved': { requestId: number, shiftType: string, date: Date }
+  
+  // Inventario general
+  'inventory:updated': { warehouseId?: number, productId?: number, quantity?: number }
 }
 
 // Singleton in-memory bus

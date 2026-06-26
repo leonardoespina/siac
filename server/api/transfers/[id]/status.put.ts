@@ -1,7 +1,7 @@
 import { defineApiHandler } from '../../../utils/handler'
 import * as service from '../../../services/transferService'
 import { requireAuth } from '../../../utils/auth'
-import { TransactionStatus } from '../../../domain/transaction'
+import type { TransactionStatus } from '../../../domain/transaction'
 import { prisma } from '../../../utils/prisma'
 
 export default defineApiHandler(async (event) => {

@@ -17,7 +17,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
         $fetch('/api/consumptions')
       ])
 
-      const tasks = []
+      const tasks: any[] = []
       
       receptions.forEach((r: any) => {
         if (r.status === 'PENDING') {

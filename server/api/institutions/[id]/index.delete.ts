@@ -2,8 +2,8 @@ import { prisma } from '../../../utils/prisma'
 import { requireAuth, requirePermission } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = requireAuth(event)
-  requirePermission(event, 'INSTITUTIONS', 'canDelete')
+  const userId = await requireAuth(event)
+  await requirePermission(event, 'INSTITUTIONS', 'delete')
 
   const id = parseInt(event.context.params?.id || '0')
   if (!id) throw createError({ statusCode: 400, message: 'ID inválido' })
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     // Log
     await prisma.auditLog.create({
       data: {
-        userId: user.id,
+        userId: userId,
         action: 'ELIMINAR',
         entity: 'INSTITUCION',
         entityId: id,

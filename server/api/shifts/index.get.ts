@@ -24,7 +24,10 @@ export default defineApiHandler(async (event) => {
     // Buscar todos los turnos que hayan empezado o terminado en esa fecha
     // Buscar todos los turnos que hayan empezado o terminado en esa fecha
     // Solución al problema de Zona Horaria (UTC vs Local)
-    const [year, month, day] = dateStr.split('-').map(Number)
+    const parts = dateStr.split('-')
+    const year = Number(parts[0])
+    const month = Number(parts[1])
+    const day = Number(parts[2])
     const startDate = new Date(year, month - 1, day, 0, 0, 0, 0)
     const endDate = new Date(year, month - 1, day, 23, 59, 59, 999)
 

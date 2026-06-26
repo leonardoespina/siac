@@ -105,7 +105,7 @@ const columns = [
   { name: 'institutionName', label: 'Institución', field: 'institutionName', align: 'left' as const, sortable: true },
   { name: 'institutionType', label: 'Tipo', field: 'institutionType', align: 'center' as const, sortable: true },
   { name: 'itemsCount', label: 'Cant. Productos', field: 'itemsCount', align: 'center' as const, sortable: true },
-  { name: 'details', label: 'Ver Detalle', align: 'center' as const }
+  { name: 'details', label: 'Ver Detalle', field: 'id', align: 'center' as const }
 ]
 
 const getIconForType = (type: string) => {

@@ -40,7 +40,7 @@ export default defineApiHandler(async (event) => {
       cedula: diner.cedula,
       rationType: diner.rationType,
       squadName: diner.squad?.name || 'Sin cuadrilla',
-      warehouseName: diner.warehouse?.name || 'Comedor Principal'
+      diningRoomName: diner.diningRoom?.name || 'Comedor Principal'
     },
     message: 'Despacho Autorizado'
   }

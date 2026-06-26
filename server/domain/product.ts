@@ -30,6 +30,7 @@ export interface CreateProductInput {
   minimumStock?: number
   maximumStock?: number
   isPerishable?: boolean
+  active?: boolean
 }
 
 /**
