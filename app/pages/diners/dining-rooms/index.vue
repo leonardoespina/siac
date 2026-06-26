@@ -91,7 +91,7 @@ const warehouseOptions = computed(() => warehousesStore.warehouses.filter(w => w
 
 const columns = [
   { name: 'name', label: 'Nombre del Comedor', field: 'name', align: 'left' as const, sortable: true },
-  { name: 'warehouse', label: 'Almacén Proveedor', field: 'warehouseId', align: 'left' as const, sortable: true },
+  { name: 'warehouse', label: 'Almacén Proveedor', field: (row: any) => row.warehouse?.name || 'Ninguno', align: 'left' as const, sortable: true },
   { name: 'status', label: 'Estado', field: 'active', align: 'center' as const, sortable: true },
   { name: 'actions', label: 'Acciones', align: 'right' as const }
 ]

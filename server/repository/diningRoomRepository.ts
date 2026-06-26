@@ -19,6 +19,11 @@ export async function createDiningRoom(name: string, warehouseId?: number | null
     data: {
       name: name.toUpperCase().trim(),
       warehouseId
+    },
+    include: {
+      warehouse: {
+        select: { id: true, name: true }
+      }
     }
   })
 }
@@ -30,6 +35,11 @@ export async function updateDiningRoom(id: number, name: string, warehouseId?: n
       name: name.toUpperCase().trim(),
       warehouseId,
       ...(active !== undefined && { active })
+    },
+    include: {
+      warehouse: {
+        select: { id: true, name: true }
+      }
     }
   })
 }
