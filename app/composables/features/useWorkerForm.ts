@@ -111,7 +111,7 @@ export function useWorkerForm() {
         )
         $q.notify({ type: 'positive', message: 'Comensal registrado exitosamente' })
       }
-      
+
       showDialog.value = false
       formData.value.cedula = ''
       formData.value.name = ''

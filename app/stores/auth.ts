@@ -23,7 +23,6 @@ export interface UserState {
   } | null
   role: {
     name: string
-    isGlobal: boolean
     permissions: ModulePermission[]
   }
 }
@@ -90,8 +89,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Helper rápido para verificar un permiso específico
   function hasPermission(moduleCode: string, action: 'canRead' | 'canCreate' | 'canUpdate' | 'canDelete') {
-    const roleName = user.value?.role?.name?.toUpperCase()
-    if (roleName === 'ADMIN' || roleName === 'ADMINISTRADOR') return true // El ADMIN siempre puede hacer todo
+    // Si tiene el permiso GLOBAL_ACCESS y está activo, funciona como un SuperAdmin
+    const hasGlobalAccess = getModulePermissions('GLOBAL_ACCESS')
+    if (hasGlobalAccess && hasGlobalAccess.canRead) return true 
+
     const p = getModulePermissions(moduleCode)
     return p ? p[action] : false
   }

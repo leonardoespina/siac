@@ -26,7 +26,6 @@ export default defineApiHandler(async (event) => {
     data: {
       name: body.name,
       description: body.description,
-      isGlobal: !!body.isGlobal,
       permissions: {
         create: permissionsData
       }

@@ -16,6 +16,13 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('No se enviaron datos válidos para procesar.')
   }
 
+  // Sanitizar todas las cédulas antes de procesar
+  rows.forEach(r => {
+    if (r.cedula) {
+      r.cedula = String(r.cedula).replace(/\D/g, '')
+    }
+  })
+
   const uniqueAreas = [...new Set(rows.map(r => r.areaName))]
   const uniquePositions = [...new Set(rows.filter(r => r.positionName).map(r => r.positionName))]
   const uniqueSquads = [...new Set(rows.map(r => r.squadName))]

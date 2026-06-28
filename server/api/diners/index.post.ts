@@ -17,6 +17,10 @@ export default defineApiHandler(async (event) => {
   if (!squadId || !body.cedula || !body.name || !diningRoomId) {
     throw new ValidationError('Cédula, nombre, cuadrilla y comedor son obligatorios.')
   }
+
+  // Sanitizar cédula (Remover letras, guiones, espacios. Conservar solo números)
+  body.cedula = String(body.cedula).replace(/\D/g, '')
+
   // 2. Aislamiento Multi-Tenant (Seguridad)
   let targetSubdependencyId = user.subdependencyId
   

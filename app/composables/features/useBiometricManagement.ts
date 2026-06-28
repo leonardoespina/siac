@@ -11,6 +11,7 @@ export function useBiometricManagement() {
   const searchAttempted = ref(false)
   const diner = ref<any>(null)
   const isBiometricModalOpen = ref(false)
+  const isGeneralIdentificationModalOpen = ref(false)
 
   async function searchDiner() {
     if (!searchCedula.value) return
@@ -32,8 +33,23 @@ export function useBiometricManagement() {
     }
   }
 
+  function clearSearch() {
+    searchCedula.value = ''
+    diner.value = null
+    searchAttempted.value = false
+  }
+
   function openBiometricModal() {
     isBiometricModalOpen.value = true
+  }
+
+  function openGeneralIdentificationModal() {
+    isGeneralIdentificationModalOpen.value = true
+  }
+
+  function onGeneralIdentification(matchedDiner: any) {
+    searchCedula.value = matchedDiner.cedula
+    searchDiner()
   }
 
   function onFingerprintSaved() {
@@ -65,8 +81,12 @@ export function useBiometricManagement() {
     searchAttempted: readonly(searchAttempted),
     diner: readonly(diner),
     isBiometricModalOpen,
+    isGeneralIdentificationModalOpen,
     searchDiner,
+    clearSearch,
     openBiometricModal,
+    openGeneralIdentificationModal,
+    onGeneralIdentification,
     onFingerprintSaved,
     confirmDeleteFingerprint
   }

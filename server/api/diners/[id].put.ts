@@ -12,6 +12,10 @@ export default defineApiHandler(async (event) => {
   const dinerId = Number(event.context.params?.id)
   const body = await readBody(event)
 
+  if (body.cedula) {
+    body.cedula = String(body.cedula).replace(/\D/g, '')
+  }
+
   if (isNaN(dinerId)) {
     throw new ValidationError('ID de comensal inválido')
   }

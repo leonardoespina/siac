@@ -30,8 +30,7 @@ export default defineApiHandler(async (event) => {
       where: { id },
       data: {
         name: body.name,
-        description: body.description,
-        isGlobal: !!body.isGlobal
+        description: body.description
       }
     })
 

@@ -42,8 +42,10 @@ export const useDinersStore = defineStore('diners', {
           method: 'POST',
           body: { cedula, name, rationType, squadId, subdependencyId, positionId, diningRoomId }
         })
-        // Opcionalmente podemos pushearlo al state si lo estamos mostrando en pantalla
-        this.diners.push(result as Diner)
+        
+        // Usar syncDiner para evitar duplicados si el WebSocket llegó primero
+        this.syncDiner('create', result)
+        
         return result
       } finally {
         this.isLoading = false
@@ -97,13 +99,60 @@ export const useDinersStore = defineStore('diners', {
         })
         const index = this.diners.findIndex(d => d.id === id)
         if (index !== -1) {
-          (this.diners[index] as any).fingerprint = null
+          (this.diners[index] as any).biometricRecord = null
         }
       } finally {
         this.isLoading = false
       }
     },
     
+    async saveBiometricTemplates(dinerId: number, templates: string[]) {
+      this.isLoading = true
+      try {
+        const result = await $fetch(`/api/diners/${dinerId}/biometric`, {
+          method: 'PUT',
+          body: { templates }
+        })
+        return result
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async fetchBiometricTemplates(dinerId: number) {
+      this.isLoading = true
+      try {
+        const result = await $fetch<any>(`/api/diners/${dinerId}/biometric`)
+        return result?.templates || []
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async fetchAllBiometrics() {
+      this.isLoading = true
+      try {
+        return await $fetch<any[]>('/api/diners/biometric/all')
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async bulkMigrate(dinerIds: number[], targetDiningRoomId: number) {
+      this.isLoading = true
+      try {
+        const result = await $fetch('/api/diners/bulk-migrate', {
+          method: 'PUT',
+          body: { dinerIds, targetDiningRoomId }
+        })
+        // Recargar la tabla local para reflejar los cambios
+        await this.fetchAll()
+        return result
+      } finally {
+        this.isLoading = false
+      }
+    },
+
     async submitRequest(targetDate: string, shiftType: string, dinersList: any[]) {
       this.isLoading = true
       try {

@@ -17,6 +17,13 @@ export default defineApiHandler(async (event) => {
   const validRows = []
   const invalidRows = []
 
+  // Sanitizar todas las cédulas antes de agrupar y validar
+  rows.forEach(r => {
+    if (r.cedula) {
+      r.cedula = String(r.cedula).replace(/\D/g, '')
+    }
+  })
+
   // Extraer valores únicos para optimizar consultas
   const uniqueAreas = [...new Set(rows.map(r => r.areaName))]
   const uniquePositions = [...new Set(rows.filter(r => r.positionName).map(r => r.positionName))]

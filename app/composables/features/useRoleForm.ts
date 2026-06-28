@@ -14,7 +14,6 @@ export function useRoleForm() {
     id: 0,
     name: '',
     description: '',
-    isGlobal: false,
     permissions: [] as any[]
   })
 
@@ -25,7 +24,6 @@ export function useRoleForm() {
       id: 0, 
       name: '', 
       description: '', 
-      isGlobal: false,
       permissions: store.modules.map(m => ({ moduleId: m.id, canCreate: false, canRead: false, canUpdate: false, canDelete: false }))
     }
     isOpen.value = true

@@ -1,8 +1,9 @@
 import { defineApiHandler } from '../../../utils/handler'
 import * as service from '../../../services/transferService'
-import { requireAuth } from '../../../utils/auth'
+import { requireAuth, requirePermission } from '../../../utils/auth'
 import type { TransactionStatus } from '../../../domain/transaction'
 import { prisma } from '../../../utils/prisma'
+import { ValidationError } from '../../../domain/errors'
 
 export default defineApiHandler(async (event) => {
   const userId = await requireAuth(event)
@@ -10,7 +11,14 @@ export default defineApiHandler(async (event) => {
   const body = await readBody(event)
   
   if (!body.status) {
-    throw new Error('Estado requerido')
+    throw new ValidationError('Estado requerido')
+  }
+
+  // Validación granular de la Matriz de Permisos
+  if (body.status === 'APPROVED' || body.status === 'REJECTED') {
+    await requirePermission(event, 'APPROVAL_TRANSFERS', 'read')
+  } else {
+    await requirePermission(event, 'TRANSFERS', 'update')
   }
 
   const userRecord = await prisma.user.findUnique({

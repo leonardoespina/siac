@@ -1,13 +1,13 @@
 import { defineApiHandler } from '../../utils/handler'
 import * as service from '../../services/transferService'
-import { requireAuth } from '../../utils/auth'
+import { requireUserContext, requirePermission } from '../../utils/auth'
 
 export default defineApiHandler(async (event) => {
-  const userId = await requireAuth(event)
+  await requirePermission(event, 'TRANSFERS', 'create')
+  const userContext = await requireUserContext(event)
   const body = await readBody(event)
   
-  const userContext = { id: userId }
-  const transfer = await service.createTransfer(body, userContext as any)
+  const transfer = await service.createTransfer(body, userContext)
   setResponseStatus(event, 201)
   return transfer
 })

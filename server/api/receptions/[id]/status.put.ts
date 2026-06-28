@@ -1,12 +1,13 @@
 import { defineApiHandler } from '../../../utils/handler'
 import * as repo from '../../../repository/transactionRepository'
-import { requireAuth } from '../../../utils/auth'
+import { requireAuth, requirePermission } from '../../../utils/auth'
 import { ValidationError } from '../../../domain/errors'
 import { logAudit } from '../../../utils/audit'
 import { prisma } from '../../../utils/prisma'
 import type { TransactionStatus } from '../../../domain/transaction'
 
 export default defineApiHandler(async (event) => {
+  // Inicialmente solo validamos auth genérico para leer el body
   const userId = await requireAuth(event)
   
   const id = parseInt(event.context.params?.id || '0')
@@ -17,6 +18,13 @@ export default defineApiHandler(async (event) => {
   const notes = body.notes
 
   if (!newStatus) throw new ValidationError('El nuevo estado (status) es requerido')
+
+  // Validación granular de la Matriz de Permisos según el estado objetivo
+  if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
+    await requirePermission(event, 'APPROVAL_RECEPTIONS', 'read')
+  } else {
+    await requirePermission(event, 'RECEPTIONS', 'update')
+  }
 
   // Obtener rol del usuario para validaciones de negocio
   const user = await prisma.user.findUnique({

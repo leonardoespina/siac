@@ -80,3 +80,26 @@ export async function approveDinerRequest(requestId: number, approverId: number)
 
   return updatedRequest
 }
+
+/**
+ * Migra masivamente a un grupo de comensales a un nuevo comedor.
+ * 
+ * @param dinerIds Arreglo de IDs de los comensales a mover.
+ * @param targetDiningRoomId ID del comedor destino.
+ */
+export async function bulkMigrate(dinerIds: number[], targetDiningRoomId: number) {
+  if (!dinerIds || dinerIds.length === 0) {
+    throw new Error('ValidationError: Debe proveer al menos un comensal para migrar.')
+  }
+  if (!targetDiningRoomId) {
+    throw new Error('ValidationError: Debe especificar un comedor destino.')
+  }
+
+  // Delegar al repositorio la actualización masiva
+  const result = await dinerRepo.updateDiningRoomBulk(dinerIds, targetDiningRoomId)
+  
+  // Emitir evento por si otros sistemas necesitan reaccionar
+  emitEvent('diner:migratedBulk', { count: result.count, targetDiningRoomId })
+
+  return result
+}

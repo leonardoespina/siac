@@ -22,11 +22,27 @@ async function main() {
     { code: 'RECEPTIONS', name: 'Recepciones y Compras' },
     { code: 'TRANSFERS', name: 'Transferencias' },
     { code: 'OPERATIONS', name: 'Operación Diaria y Consumos' },
-    { code: 'REPORTS', name: 'Reportes e Historial' },
+    { code: 'REPORT_DASHBOARD', name: 'Reporte: Dashboard Principal' },
+    { code: 'REPORT_VALUE', name: 'Reporte: Valor del Inventario' },
+    { code: 'REPORT_ALERTS', name: 'Reporte: Alertas de Stop' },
+    { code: 'REPORT_MINMAX', name: 'Reporte: Mínimos y Máximos' },
+    { code: 'REPORT_CONSUMPTIONS', name: 'Reporte: Consumos y Mermas' },
+    { code: 'REPORT_INSTITUTIONS', name: 'Reporte: Apoyos Institucionales' },
+    { code: 'REPORT_SHIFTS', name: 'Reporte: Historial de Turnos' },
     { code: 'POSITIONS', name: 'Catálogo de Cargos' },
     { code: 'DINERS', name: 'Directorio de Comensales' },
     { code: 'DISPATCH', name: 'Despacho Rápido' },
-    { code: 'BIOMETRIC', name: 'Gestión Biométrica' }
+    { code: 'BIOMETRIC', name: 'Gestión Biométrica' },
+    { code: 'DEPENDENCIES', name: 'Estructura Organizacional' },
+    { code: 'SQUADS', name: 'Catálogo de Cuadrillas' },
+    { code: 'DINERS_REQUESTS', name: 'Solicitud de Comidas' },
+    { code: 'DINING_ROOMS', name: 'Gestión de Comedores' },
+    { code: 'SUPPLIERS', name: 'Catálogo de Proveedores' },
+    { code: 'INSTITUTIONS', name: 'Instituciones (Apoyos)' },
+    { code: 'AUDIT', name: 'Auditoría del Sistema' },
+    { code: 'GLOBAL_ACCESS', name: 'Acceso Global sin Restricciones' },
+    { code: 'APPROVAL_RECEPTIONS', name: 'Firma: Aprobar Recepciones' },
+    { code: 'APPROVAL_TRANSFERS', name: 'Firma: Aprobar Despachos' }
   ]
 
   const modules = []

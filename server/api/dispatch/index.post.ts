@@ -8,18 +8,14 @@ export default defineApiHandler(async (event) => {
   await requirePermission(event, 'DINERS', 'read')
 
   const body = await readBody(event)
-  const { identifier, isFingerprint } = body
+  const { identifier } = body // identifier es la cédula
 
   if (!identifier) {
-    throw createError({ statusCode: 400, message: 'Identificador requerido' })
+    throw createError({ statusCode: 400, message: 'Identificador requerido (cédula)' })
   }
 
-  let diner = null
-  if (isFingerprint) {
-    diner = await dinerRepo.getDinerByFingerprint(identifier)
-  } else {
-    diner = await dinerRepo.getDinerByCedula(identifier)
-  }
+  // Ahora SIEMPRE buscamos por cédula, ya que la validación biométrica se hace en el Kiosco local (C#)
+  const diner = await dinerRepo.getDinerByCedula(identifier)
 
   if (!diner) {
     throw createError({ statusCode: 404, message: 'Comensal no encontrado o huella no registrada.' })

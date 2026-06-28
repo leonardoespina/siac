@@ -17,7 +17,6 @@ model Role {
   id          Int              @id @default(autoincrement())
   name        String           @unique // Ej: "Administrador", "Almacenista"
   description String?
-  isGlobal    Boolean          @default(false) @map("is_global")
   users       User[]
   permissions RolePermission[]
 
@@ -450,10 +449,11 @@ model Diner {
   diningRoomId Int?       @map("dining_room_id")
   diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
   
-  fingerprint String? @db.Text
+  fingerprint String? @db.Text // TODO: Eliminar en futura migración cuando todos usen BiometricRecord
   qrCode      String? @unique @map("qr_code")
 
   requestDetails DinerRequestDetail[]
+  biometricRecord BiometricRecord?
 
   @@map("diners")
 }
@@ -493,4 +493,18 @@ model DinerRequestDetail {
 
   @@unique([requestId, dinerId])
   @@map("diner_request_details")
+}
+
+model BiometricRecord {
+  id        Int      @id @default(autoincrement())
+  dinerId   Int      @unique @map("diner_id")
+  diner     Diner    @relation(fields: [dinerId], references: [id], onDelete: Cascade)
+  
+  templates String[] // Arreglo de strings con los FMD Base64 ultraligeros
+  active    Boolean  @default(true)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("biometric_records")
 }

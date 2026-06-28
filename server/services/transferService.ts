@@ -9,6 +9,15 @@ export async function listTransfers(warehouseId?: number) {
 }
 
 export async function createTransfer(input: any, user: UserContext) {
+  // AISLAMIENTO DE TENANT (Zero-Trust): Si el usuario no es global, forzamos que
+  // el despacho salga única y exclusivamente del almacén que tiene asignado.
+  if (!user.isGlobal) {
+    if (!user.warehouseId) {
+      throw new ValidationError('No tienes un almacén/comedor asignado para registrar despachos.')
+    }
+    input.sourceId = user.warehouseId
+  }
+
   if (!input.sourceId || !input.destinationId) {
     throw new ValidationError('Faltan datos de almacenes de origen o destino')
   }

@@ -41,9 +41,8 @@ export function validateApproval(currentStatus: TransactionStatus, creatorId: nu
   //   throw new UnauthorizedError('No puedes aprobar una transacción creada por ti mismo (Segregación de funciones).')
   // }
   
-  if (approver.roleName !== 'ADMIN' && approver.roleName !== 'GERENTE') {
-    throw new UnauthorizedError('Solo los Gerentes o Administradores pueden aprobar transacciones.')
-  }
+  // La validación de autoridad ahora se delega a los middlewares de la API
+  // mediante los módulos 'APPROVAL_RECEPTIONS' y 'APPROVAL_TRANSFERS'.
 }
 
 /**

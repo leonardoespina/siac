@@ -27,7 +27,7 @@ export function useTransferDetails() {
   const searchQuery = ref('')
   const transferItems = ref<any[]>([])
 
-  const canApprove = computed(() => auth.user?.role?.name === 'ADMIN' || auth.user?.role?.name === 'GERENTE')
+  const canApprove = computed(() => auth.hasPermission('APPROVAL_TRANSFERS', 'read') || auth.hasPermission('GLOBAL_ACCESS', 'read'))
   
   const canEdit = computed(() => {
     if (!transfer.value) return false

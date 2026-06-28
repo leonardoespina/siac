@@ -41,13 +41,13 @@ export async function requireUserContext(event: H3Event) {
   const userId = await requireAuth(event)
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { role: true }
+    include: { role: { include: { permissions: { include: { module: true } } } } }
   })
   if (!user) throw new UnauthorizedError('Usuario no encontrado')
   return {
     id: user.id,
     roleName: user.role.name,
-    isGlobal: user.role.isGlobal,
+    isGlobal: user.role.permissions?.some(p => p.module.code === 'GLOBAL_ACCESS' && p.canRead) || false,
     warehouseId: user.warehouseId,
     diningRoomId: user.diningRoomId,
     dependencyId: user.dependencyId,
@@ -74,7 +74,13 @@ export async function requirePermission(
       role: {
         include: {
           permissions: {
-            where: { module: { code: moduleCode } }
+            where: {
+              OR: [
+                { module: { code: moduleCode } },
+                { module: { code: 'GLOBAL_ACCESS' } }
+              ]
+            },
+            include: { module: true }
           }
         }
       }
@@ -85,12 +91,13 @@ export async function requirePermission(
     throw new ForbiddenError('El usuario no tiene un rol asignado')
   }
 
-  // Si tiene rol ADMIN (isGlobal), lo dejamos pasar siempre
-  if (user.role.isGlobal) {
+  // Si tiene el permiso GLOBAL_ACCESS activo, lo dejamos pasar siempre
+  const hasGlobalAccess = user.role.permissions.some(p => p.module.code === 'GLOBAL_ACCESS' && p.canRead)
+  if (hasGlobalAccess) {
     return userId
   }
 
-  const modulePerm = user.role.permissions[0]
+  const modulePerm = user.role.permissions.find(p => p.module.code === moduleCode)
 
   if (!modulePerm) {
     throw new ForbiddenError(`Tu rol no tiene permisos configurados para el módulo: ${moduleCode}`)
@@ -118,11 +125,13 @@ export async function requireAdmin(event: H3Event) {
   const userId = await requireAuth(event)
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { role: true }
+    include: { role: { include: { permissions: { include: { module: true } } } } }
   })
   
-  if (!user?.role?.isGlobal) {
-    throw new UnauthorizedError('Solo administradores pueden realizar esta acción')
+  const hasGlobalAccess = user?.role?.permissions?.some(p => p.module.code === 'GLOBAL_ACCESS')
+  
+  if (!hasGlobalAccess) {
+    throw new UnauthorizedError('Solo administradores globales pueden realizar esta acción')
   }
   
   return user

@@ -16,11 +16,6 @@
           <q-btn flat round dense color="negative" icon="delete" @click="deleteRole(props.row.id)" />
         </q-td>
       </template>
-      <template v-slot:body-cell-isGlobal="props">
-        <q-td :props="props" class="text-center">
-          <q-icon :name="props.row.isGlobal ? 'check_circle' : 'cancel'" :color="props.row.isGlobal ? 'positive' : 'grey'" size="sm" />
-        </q-td>
-      </template>
     </SharedCrudTable>
 
     <!-- Modal Formulario de Rol -->
@@ -36,9 +31,6 @@
         </div>
         <div class="col-12 col-md-6">
           <q-input v-model="form.description" label="Descripción (Opcional)" outlined dense />
-        </div>
-        <div class="col-12">
-          <q-checkbox v-model="form.isGlobal" label="Administrador Global (Modo Dios: acceso a todo)" color="warning" />
         </div>
       </div>
 
@@ -57,10 +49,17 @@
               {{ item.moduleName }}
             </div>
             <div class="col-12 col-md-8 row q-col-gutter-sm">
-              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canCreate" label="Crear" color="primary" dense /></div>
-              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Leer" color="primary" dense /></div>
-              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canUpdate" label="Editar" color="primary" dense /></div>
-              <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canDelete" label="Borrar" color="negative" dense /></div>
+              <template v-if="item.moduleCode === 'GLOBAL_ACCESS'">
+                <div class="col-12">
+                  <q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Otorgar Privilegios Globales (Ignorar filtros)" color="warning" dense />
+                </div>
+              </template>
+              <template v-else>
+                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canCreate" label="Crear" color="primary" dense /></div>
+                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Leer" color="primary" dense /></div>
+                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canUpdate" label="Editar" color="primary" dense /></div>
+                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canDelete" label="Borrar" color="negative" dense /></div>
+              </template>
             </div>
           </div>
         </template>
@@ -84,26 +83,29 @@ const filter = ref('')
 const columns = [
   { name: 'name', label: 'Nombre', field: 'name', align: 'left', sortable: true },
   { name: 'description', label: 'Descripción', field: 'description', align: 'left' },
-  { name: 'isGlobal', label: '¿Global?', field: 'isGlobal', align: 'center', sortable: true },
   { name: 'actions', label: 'Acciones', align: 'right' }
 ]
 
 const CATEGORIES = {
   DINERS: {
-    label: '🧑‍🤝‍🧑 Módulo de Comensales',
-    codes: ['DEPENDENCIES', 'SQUADS', 'POSITIONS', 'DINERS', 'DINERS_REQUESTS']
+    label: '🧑‍🤝‍🧑 Gestión de Comensales',
+    codes: ['DINERS', 'DINERS_REQUESTS', 'DISPATCH']
   },
   WAREHOUSE: {
-    label: '📦 Módulo de Almacén y Operaciones',
-    codes: ['RECEPTIONS', 'TRANSFERS', 'OPERATIONS', 'REPORTS']
+    label: '📦 Almacén y Operaciones',
+    codes: ['RECEPTIONS', 'TRANSFERS', 'OPERATIONS', 'APPROVAL_RECEPTIONS', 'APPROVAL_TRANSFERS']
+  },
+  REPORTS: {
+    label: '📊 Reportes del Sistema',
+    codes: ['REPORT_DASHBOARD', 'REPORT_VALUE', 'REPORT_ALERTS', 'REPORT_MINMAX', 'REPORT_CONSUMPTIONS', 'REPORT_INSTITUTIONS', 'REPORT_SHIFTS']
   },
   INVENTORY: {
     label: '📋 Catálogos Base (Inventario)',
-    codes: ['PRODUCTS', 'CATEGORIES', 'UNITS', 'WAREHOUSES']
+    codes: ['PRODUCTS', 'CATEGORIES', 'UNITS', 'WAREHOUSES', 'SUPPLIERS', 'INSTITUTIONS']
   },
   SECURITY: {
-    label: '⚙️ Seguridad del Sistema',
-    codes: ['SECURITY']
+    label: '⚙️ Seguridad y Estructura Organizacional',
+    codes: ['SECURITY', 'BIOMETRIC', 'DINING_ROOMS', 'DEPENDENCIES', 'SQUADS', 'POSITIONS', 'AUDIT', 'GLOBAL_ACCESS']
   }
 }
 
@@ -113,6 +115,7 @@ const groupedPermissions = computed(() => {
     WAREHOUSE: [],
     INVENTORY: [],
     SECURITY: [],
+    REPORTS: [],
     OTHER: []
   }
 
@@ -123,13 +126,13 @@ const groupedPermissions = computed(() => {
     let assigned = false
     for (const [key, category] of Object.entries(CATEGORIES)) {
       if (category.codes.includes(code)) {
-        groups[key].push({ perm, originalIndex, moduleName: module?.name || 'Desconocido' })
+        groups[key].push({ perm, originalIndex, moduleName: module?.name || 'Desconocido', moduleCode: code })
         assigned = true
         break
       }
     }
     if (!assigned) {
-      groups.OTHER.push({ perm, originalIndex, moduleName: module?.name || 'Desconocido' })
+      groups.OTHER.push({ perm, originalIndex, moduleName: module?.name || 'Desconocido', moduleCode: code })
     }
   })
 

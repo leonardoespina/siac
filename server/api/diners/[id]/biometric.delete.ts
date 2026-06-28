@@ -10,6 +10,6 @@ export default defineApiHandler(async (event) => {
   const id = Number(event.context.params?.id)
   if (!id) throw new ValidationError(['ID de comensal inválido'])
 
-  const diner = await dinerRepo.clearDinerFingerprint(id)
-  return diner
+  await dinerRepo.clearBiometricRecord(id)
+  return { success: true }
 })

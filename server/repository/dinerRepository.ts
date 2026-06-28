@@ -22,7 +22,8 @@ export async function getDinersBySubdependency(subdependencyId: number, squadId?
     include: {
       squad: true,
       position: true,
-      diningRoom: true
+      diningRoom: true,
+      biometricRecord: true
     },
     orderBy: { id: 'desc' }
   })
@@ -40,19 +41,33 @@ export async function getDinersByDependency(dependencyId: number) {
       squad: true,
       subdependency: true,
       position: true,
-      diningRoom: true
+      diningRoom: true,
+      biometricRecord: true
     },
     orderBy: { id: 'desc' }
   })
 }
 
 export async function getDinerByCedula(cedula: string) {
-  return prisma.diner.findUnique({
-    where: { cedula },
+  // Normalizar: extraer solo los números
+  const numericCedula = cedula.replace(/\D/g, '')
+
+  return prisma.diner.findFirst({
+    where: {
+      OR: [
+        { cedula: cedula },
+        { cedula: numericCedula },
+        { cedula: `V-${numericCedula}` },
+        { cedula: `E-${numericCedula}` },
+        { cedula: `V${numericCedula}` },
+        { cedula: `E${numericCedula}` }
+      ]
+    },
     include: {
       squad: true,
       position: true,
-      diningRoom: true
+      diningRoom: true,
+      biometricRecord: true
     }
   })
 }
@@ -88,27 +103,39 @@ export async function deleteDiner(id: number) {
   })
 }
 
-export async function updateDinerFingerprint(id: number, fingerprint: string) {
-  return prisma.diner.update({
-    where: { id },
-    data: { fingerprint }
+export async function saveBiometricRecord(dinerId: number, templates: string[]) {
+  return prisma.biometricRecord.upsert({
+    where: { dinerId },
+    update: { templates },
+    create: { dinerId, templates }
   })
 }
 
-export async function clearDinerFingerprint(id: number) {
-  return prisma.diner.update({
-    where: { id },
-    data: { fingerprint: null }
+export async function clearBiometricRecord(dinerId: number) {
+  return prisma.biometricRecord.delete({
+    where: { dinerId }
   })
 }
 
-export async function getDinerByFingerprint(fingerprint: string) {
-  return prisma.diner.findFirst({
-    where: { fingerprint, active: true },
+export async function getBiometricRecord(dinerId: number) {
+  return prisma.biometricRecord.findUnique({
+    where: { dinerId }
+  })
+}
+
+export async function getAllBiometricRecords() {
+  // Retornamos todos los registros activos junto con la info mínima del comensal
+  return prisma.biometricRecord.findMany({
+    where: { active: true },
     include: {
-      squad: true,
-      position: true,
-      diningRoom: true
+      diner: {
+        select: {
+          id: true,
+          cedula: true,
+          name: true,
+          active: true
+        }
+      }
     }
   })
 }
@@ -184,6 +211,20 @@ export async function updateRequestStatus(id: number, status: string, approvedBy
     data: {
       status,
       approvedById
+    }
+  })
+}
+
+// --- MIGRACIÓN MASIVA (BULK ACTIONS) ---
+
+export async function updateDiningRoomBulk(dinerIds: number[], targetDiningRoomId: number, tx?: any) {
+  const db = tx || prisma
+  return db.diner.updateMany({
+    where: {
+      id: { in: dinerIds }
+    },
+    data: {
+      diningRoomId: targetDiningRoomId
     }
   })
 }
