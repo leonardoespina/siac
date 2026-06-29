@@ -61,23 +61,23 @@ model User {
 
   // Relación obligatoria: Todo usuario debe tener un Rol
   roleId Int  @map("role_id")
-  role   Role @relation(fields: [roleId], references: [id])
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
   // Aislamiento por Almacén Local
   warehouseId Int?       @map("warehouse_id")
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
 
   // Aislamiento por Comedor
-  diningRoomId Int?      @map("dining_room_id")
-  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
+  diningRoomId Int?        @map("dining_room_id")
+  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id], onDelete: Restrict)
 
   // Aislamiento por Dependencia (Para Gerentes, Autoridad sobre todas las subdependencias)
-  dependencyId Int?           @map("dependency_id")
-  dependency   Dependency?    @relation(fields: [dependencyId], references: [id])
+  dependencyId Int?        @map("dependency_id")
+  dependency   Dependency? @relation(fields: [dependencyId], references: [id], onDelete: Restrict)
 
   // Aislamiento por Subdependencia (Para Solicitantes/Aprobadores de Comensales)
   subdependencyId Int?           @map("subdependency_id")
-  subdependency   Subdependency? @relation(fields: [subdependencyId], references: [id])
+  subdependency   Subdependency? @relation(fields: [subdependencyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
@@ -92,6 +92,11 @@ model User {
   createdDinerRequests  DinerRequest[] @relation("DinerRequestsCreated")
   approvedDinerRequests DinerRequest[] @relation("DinerRequestsApproved")
 
+  @@index([roleId])
+  @@index([warehouseId])
+  @@index([diningRoomId])
+  @@index([dependencyId])
+  @@index([subdependencyId])
   @@map("users")
 }
 
@@ -100,7 +105,7 @@ model AuditLog {
   id        Int      @id @default(autoincrement())
   //Quien hizo la Accion (Opcional, porque algunas Acciones Automaticas del sistema no tienen USuarios)
   userId    Int?     @map("user_id")
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action    String // Ej: "Login", "Crear Producto", "Eliminar Almacen"
   entity    String // Ej: "Producto", "Almacen"
   entityId  Int?     @map("entity_id")
@@ -108,19 +113,22 @@ model AuditLog {
   details   String?  @db.Text // Detalles adicionales (JSON stringificado, por ejemplo)
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
 // ── PROVEEDORES ────────────────────────────────────────────────────────────
 
 model Supplier {
-  id          Int      @id @default(autoincrement())
-  document    String   @unique // RIF, RUT, NIT, etc.
-  name        String
-  address     String?
-  phone       String?
-  email       String?
-  active      Boolean  @default(true)
+  id       Int     @id @default(autoincrement())
+  document String  @unique // RIF, RUT, NIT, etc.
+  name     String
+  address  String?
+  phone    String?
+  email    String?
+  active   Boolean @default(true)
 
   transactions Transaction[] // Historial de compras a este proveedor
 
@@ -133,11 +141,11 @@ model Supplier {
 // ── INSTITUCIONES (APOYOS Y DONACIONES) ────────────────────────────────────
 
 model Institution {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  type        String?  // Ej: "Educativa", "Salud", "Comunitaria", "Gubernamental"
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  type        String? // Ej: "Educativa", "Salud", "Comunitaria", "Gubernamental"
   description String?
-  active      Boolean  @default(true)
+  active      Boolean @default(true)
 
   transactions Transaction[]
 
@@ -164,7 +172,7 @@ model Category {
 
 model Unit {
   id           Int       @id @default(autoincrement())
-  name         String    // Ej: "Kilogramos", "Litros"
+  name         String // Ej: "Kilogramos", "Litros"
   abbreviation String    @unique // Ej: "KG", "L", "UN"
   active       Boolean   @default(true)
   products     Product[]
@@ -176,26 +184,28 @@ model Unit {
 }
 
 model Product {
-  id           Int      @id @default(autoincrement())
-  code         String   @unique // Código de barras o SKU interno
-  name         String
-  description  String?
-  categoryId   Int      @map("category_id")
-  category     Category @relation(fields: [categoryId], references: [id])
-  unitId       Int      @map("unit_id")
-  unit         Unit     @relation(fields: [unitId], references: [id])
-  minimumStock Decimal  @default(0) @map("minimum_stock") @db.Decimal(10, 2)
-  maximumStock Decimal? @map("maximum_stock") @db.Decimal(10, 2)
-  referencePrice Decimal @default(0) @map("reference_price") @db.Decimal(10, 2) // Precio base para cálculo de reportes
-  isPerishable Boolean  @default(false) @map("is_perishable")
-  active       Boolean  @default(true)
+  id             Int      @id @default(autoincrement())
+  code           String   @unique // Código de barras o SKU interno
+  name           String
+  description    String?
+  categoryId     Int      @map("category_id")
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  unitId         Int      @map("unit_id")
+  unit           Unit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  minimumStock   Decimal  @default(0) @map("minimum_stock") @db.Decimal(10, 2)
+  maximumStock   Decimal? @map("maximum_stock") @db.Decimal(10, 2)
+  referencePrice Decimal  @default(0) @map("reference_price") @db.Decimal(10, 2) // Precio base para cálculo de reportes
+  isPerishable   Boolean  @default(false) @map("is_perishable")
+  active         Boolean  @default(true)
 
-  stocks Stock[]
+  stocks             Stock[]
   transactionDetails TransactionDetail[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([categoryId])
+  @@index([unitId])
   @@map("products")
 }
 
@@ -207,14 +217,14 @@ enum WarehouseType {
 }
 
 model Warehouse {
-  id          Int           @id @default(autoincrement())
-  name        String        @unique
-  type        WarehouseType @default(LOCAL)
-  location    String?
-  active      Boolean       @default(true)
-  
-  stocks      Stock[]
-  
+  id       Int           @id @default(autoincrement())
+  name     String        @unique
+  type     WarehouseType @default(LOCAL)
+  location String?
+  active   Boolean       @default(true)
+
+  stocks Stock[]
+
   // Relaciones inversas
   outgoingTransactions Transaction[] @relation("SourceWarehouse")
   incomingTransactions Transaction[] @relation("DestinationWarehouse")
@@ -231,76 +241,90 @@ model Warehouse {
 model Stock {
   id          Int       @id @default(autoincrement())
   warehouseId Int       @map("warehouse_id")
-  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   productId   Int       @map("product_id")
-  product     Product   @relation(fields: [productId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity    Decimal   @default(0) @db.Decimal(10, 2)
 
+  createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Un producto solo tiene un registro de stock por almacén
   @@unique([warehouseId, productId])
+  @@index([warehouseId])
+  @@index([productId])
   @@map("stocks")
 }
 
 // ── FASE 2: MOTOR TRANSACCIONAL Y SOCKETS ──────────────────────────────────
 
 enum TransactionType {
-  RECEPTION    // Entrada por compra (Carga Excel o Manual)
-  TRANSFER     // Envío de Central a Local
-  ADJUSTMENT   // Ajuste manual de inventario
-  CONSUMPTION  // Despacho/Consumo diario de cocina
-  LOSS         // Merma o pérdida
-  SUPPORT      // Apoyo o Donación a Institución
+  RECEPTION // Entrada por compra (Carga Excel o Manual)
+  TRANSFER // Envío de Central a Local
+  ADJUSTMENT // Ajuste manual de inventario
+  CONSUMPTION // Despacho/Consumo diario de cocina
+  LOSS // Merma o pérdida
+  SUPPORT // Apoyo o Donación a Institución
 }
 
 enum TransactionStatus {
-  DRAFT        // Borrador (Se está editando, no avisa a nadie)
-  PENDING      // Pendiente de Aprobación (Avisa a Gerentes)
-  APPROVED     // Aprobado por Gerente (Avisa al almacenista que puede confirmar)
-  REJECTED     // Rechazado por Gerente
-  CONFIRMED    // Confirmado físicamente (ACTUALIZA EL STOCK REAL)
+  DRAFT // Borrador (Se está editando, no avisa a nadie)
+  PENDING // Pendiente de Aprobación (Avisa a Gerentes)
+  APPROVED // Aprobado por Gerente (Avisa al almacenista que puede confirmar)
+  REJECTED // Rechazado por Gerente
+  CONFIRMED // Confirmado físicamente (ACTUALIZA EL STOCK REAL)
 }
 
 model Transaction {
-  id          Int               @id @default(autoincrement())
-  type        TransactionType
-  status      TransactionStatus @default(DRAFT)
-  
+  id     Int               @id @default(autoincrement())
+  type   TransactionType
+  status TransactionStatus @default(DRAFT)
+
   // Origen y Destino (Son opcionales porque una Recepción no tiene origen interno)
-  sourceId    Int?              @map("source_id")
-  source      Warehouse?        @relation("SourceWarehouse", fields: [sourceId], references: [id])
-  
-  destinationId Int?            @map("destination_id")
-  destination   Warehouse?      @relation("DestinationWarehouse", fields: [destinationId], references: [id])
-  
+  sourceId Int?       @map("source_id")
+  source   Warehouse? @relation("SourceWarehouse", fields: [sourceId], references: [id], onDelete: SetNull)
+
+  destinationId Int?       @map("destination_id")
+  destination   Warehouse? @relation("DestinationWarehouse", fields: [destinationId], references: [id], onDelete: SetNull)
+
   // Proveedor (Solo para Recepciones)
-  supplierId  Int?              @map("supplier_id")
-  supplier    Supplier?         @relation(fields: [supplierId], references: [id])
+  supplierId Int?      @map("supplier_id")
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   // Institución (Solo para Apoyos/Donaciones)
-  institutionId Int?            @map("institution_id")
-  institution   Institution?    @relation(fields: [institutionId], references: [id])
+  institutionId Int?         @map("institution_id")
+  institution   Institution? @relation(fields: [institutionId], references: [id], onDelete: SetNull)
 
   // Seguimiento de Usuarios
-  createdById Int               @map("created_by_id")
-  createdBy   User              @relation("CreatedBy", fields: [createdById], references: [id])
-  
-  approvedById Int?             @map("approved_by_id")
-  approvedBy   User?            @relation("ApprovedBy", fields: [approvedById], references: [id])
+  createdById Int  @map("created_by_id")
+  createdBy   User @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  approvedById Int?  @map("approved_by_id")
+  approvedBy   User? @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
 
   // Vinculación con el Turno (Para consumos y mermas locales)
-  shiftId     Int?              @map("shift_id")
-  shift       Shift?            @relation(fields: [shiftId], references: [id])
+  shiftId Int?   @map("shift_id")
+  shift   Shift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
 
-  referenceNumber String?         @map("reference_number") // Número de factura, guía de despacho o nota de entrega
-  notes       String?           @db.Text
-  
-  details     TransactionDetail[]
+  referenceNumber String? @map("reference_number") // Número de factura, guía de despacho o nota de entrega
+  notes           String? @db.Text
+
+  details TransactionDetail[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([sourceId])
+  @@index([destinationId])
+  @@index([supplierId])
+  @@index([institutionId])
+  @@index([createdById])
+  @@index([approvedById])
+  @@index([shiftId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([referenceNumber])
   @@map("transactions")
 }
 
@@ -309,9 +333,9 @@ model Transaction {
 model Shift {
   id          Int       @id @default(autoincrement())
   warehouseId Int       @map("warehouse_id")
-  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   userId      Int       @map("user_id")
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
   startTime   DateTime  @default(now()) @map("start_time")
   endTime     DateTime? @map("end_time")
   status      String    @default("OPEN") // 'OPEN' o 'CLOSED'
@@ -320,9 +344,12 @@ model Shift {
 
   transactions Transaction[]
 
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([warehouseId])
+  @@index([userId])
+  @@index([status])
   @@map("shifts")
 }
 
@@ -330,35 +357,37 @@ model TransactionDetail {
   id            Int         @id @default(autoincrement())
   transactionId Int         @map("transaction_id")
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  
-  productId     Int         @map("product_id")
-  product       Product     @relation(fields: [productId], references: [id])
 
-  quantity      Decimal     @db.Decimal(10, 2)
+  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity         Decimal  @db.Decimal(10, 2)
   expectedQuantity Decimal? @map("expected_quantity") @db.Decimal(10, 2)
-  
-  unitPrice     Decimal     @default(0) @map("unit_price") @db.Decimal(10, 2) // Precio exacto sin afectar el producto maestro
-  
-  expirationDate DateTime?  @map("expiration_date") @db.Date // Lote de vencimiento opcional
-  
+
+  unitPrice Decimal @default(0) @map("unit_price") @db.Decimal(10, 2) // Precio exacto sin afectar el producto maestro
+
+  expirationDate DateTime? @map("expiration_date") @db.Date // Lote de vencimiento opcional
+
   discrepancyReason String? @map("discrepancy_reason") @db.VarChar(255)
 
+  @@index([transactionId])
+  @@index([productId])
   @@map("transaction_details")
 }
 
 // ── SISTEMA DE NOTIFICACIONES PUSH ─────────────────────────────────────────
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id") // A quién va dirigida
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  title     String
-  message   String
-  isRead    Boolean  @default(false) @map("is_read")
-  
+  id     Int  @id @default(autoincrement())
+  userId Int  @map("user_id") // A quién va dirigida
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String
+  message String
+  isRead  Boolean @default(false) @map("is_read")
+
   // Para saber a qué pantalla redirigir cuando hacen clic en la campana
-  link      String?  
+  link String?
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -368,18 +397,22 @@ model Notification {
 // ── MÓDULO COMENSALES (ESTRUCTURA ORGANIZACIONAL) ─────────────────────────
 
 model DiningRoom {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  active      Boolean   @default(true)
-  
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  active Boolean @default(true)
+
   // Un comedor saca sus insumos de un almacén o cocina
-  warehouseId Int?      @map("warehouse_id")
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
-  
+  warehouseId Int?       @map("warehouse_id")
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+
   diners        Diner[]
   dinerRequests DinerRequest[]
   users         User[]
 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([warehouseId])
   @@map("dining_rooms")
 }
 
@@ -389,20 +422,28 @@ model Dependency {
   active          Boolean         @default(true)
   subdependencies Subdependency[]
   users           User[]
-  
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
   @@map("dependencies")
 }
 
 model Subdependency {
-  id            Int        @id @default(autoincrement())
-  name          String
-  active        Boolean    @default(true)
-  dependencyId  Int        @map("dependency_id")
-  dependency    Dependency @relation(fields: [dependencyId], references: [id])
-  
-  users         User[]    
-  diners        Diner[]   
+  id           Int        @id @default(autoincrement())
+  name         String
+  active       Boolean    @default(true)
+  dependencyId Int        @map("dependency_id")
+  dependency   Dependency @relation(fields: [dependencyId], references: [id], onDelete: Restrict)
 
+  users  User[]
+  diners Diner[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([dependencyId, name])
+  @@index([dependencyId])
   @@map("subdependencies")
 }
 
@@ -410,8 +451,11 @@ model Squad {
   id     Int     @id @default(autoincrement())
   name   String  @unique
   active Boolean @default(true)
-  
-  diners Diner[]       
+
+  diners Diner[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("squads")
 }
@@ -420,91 +464,108 @@ model Position {
   id     Int     @id @default(autoincrement())
   name   String  @unique
   active Boolean @default(true)
-  
+
   diners Diner[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("positions")
 }
 
 model Diner {
-  id          Int     @id @default(autoincrement())
-  cedula      String  @unique
-  name        String
-  rationType  String  @default("NORMAL") @map("ration_type") // NORMAL o DIETA
-  active      Boolean @default(true)
-  
+  id         Int     @id @default(autoincrement())
+  cedula     String  @unique
+  name       String
+  rationType String  @default("NORMAL") @map("ration_type") // NORMAL o DIETA
+  active     Boolean @default(true)
+
   // A qué subdependencia/área pertenece el trabajador
   subdependencyId Int           @map("subdependency_id")
-  subdependency   Subdependency @relation(fields: [subdependencyId], references: [id])
+  subdependency   Subdependency @relation(fields: [subdependencyId], references: [id], onDelete: Restrict)
 
   // A qué cuadrilla/turno (catálogo base) está asignado
-  squadId     Int     @map("squad_id")
-  squad       Squad   @relation(fields: [squadId], references: [id])
-  
+  squadId Int   @map("squad_id")
+  squad   Squad @relation(fields: [squadId], references: [id], onDelete: Restrict)
+
   // Cargo o puesto del trabajador (opcional por retrocompatibilidad)
-  positionId  Int?    @map("position_id")
-  position    Position? @relation(fields: [positionId], references: [id])
-  
+  positionId Int?      @map("position_id")
+  position   Position? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+
   // Comedor Base asignado al trabajador
-  diningRoomId Int?       @map("dining_room_id")
-  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
-  
+  diningRoomId Int?        @map("dining_room_id")
+  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id], onDelete: SetNull)
+
   fingerprint String? @db.Text // TODO: Eliminar en futura migración cuando todos usen BiometricRecord
   qrCode      String? @unique @map("qr_code")
 
-  requestDetails DinerRequestDetail[]
+  requestDetails  DinerRequestDetail[]
   biometricRecord BiometricRecord?
 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([subdependencyId])
+  @@index([squadId])
+  @@index([positionId])
+  @@index([diningRoomId])
   @@map("diners")
 }
 
 model DinerRequest {
   id        Int      @id @default(autoincrement())
   date      DateTime @db.Date
-  shiftType String   @map("shift_type")  // DESAYUNO, ALMUERZO, CENA, SOBRECENA
+  shiftType String   @map("shift_type") // DESAYUNO, ALMUERZO, CENA, SOBRECENA
   status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  
-  createdById Int   @map("created_by_id")
-  createdBy   User  @relation(name: "DinerRequestsCreated", fields: [createdById], references: [id])
-  
-  approvedById Int? @map("approved_by_id")
-  approvedBy   User? @relation(name: "DinerRequestsApproved", fields: [approvedById], references: [id])
 
-  diningRoomId Int?       @map("dining_room_id")
-  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id])
+  createdById Int  @map("created_by_id")
+  createdBy   User @relation(name: "DinerRequestsCreated", fields: [createdById], references: [id], onDelete: Restrict)
+
+  approvedById Int?  @map("approved_by_id")
+  approvedBy   User? @relation(name: "DinerRequestsApproved", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  diningRoomId Int?        @map("dining_room_id")
+  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id], onDelete: SetNull)
 
   details DinerRequestDetail[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([createdById])
+  @@index([approvedById])
+  @@index([diningRoomId])
+  @@index([date])
   @@map("diner_requests")
 }
 
 model DinerRequestDetail {
-  id        Int    @id @default(autoincrement())
-  requestId Int    @map("request_id")
+  id        Int          @id @default(autoincrement())
+  requestId Int          @map("request_id")
   request   DinerRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  
-  dinerId   Int    @map("diner_id")
-  diner     Diner  @relation(fields: [dinerId], references: [id])
-  
+
+  dinerId Int   @map("diner_id")
+  diner   Diner @relation(fields: [dinerId], references: [id])
+
   rationType String @default("NORMAL") @map("ration_type")
 
   @@unique([requestId, dinerId])
+  @@index([requestId])
+  @@index([dinerId])
   @@map("diner_request_details")
 }
 
 model BiometricRecord {
-  id        Int      @id @default(autoincrement())
-  dinerId   Int      @unique @map("diner_id")
-  diner     Diner    @relation(fields: [dinerId], references: [id], onDelete: Cascade)
-  
+  id      Int   @id @default(autoincrement())
+  dinerId Int   @unique @map("diner_id")
+  diner   Diner @relation(fields: [dinerId], references: [id], onDelete: Cascade)
+
   templates String[] // Arreglo de strings con los FMD Base64 ultraligeros
   active    Boolean  @default(true)
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([dinerId])
   @@map("biometric_records")
 }

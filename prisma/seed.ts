@@ -101,8 +101,8 @@ async function main() {
   await prisma.user.upsert({
     where: { cedula: 'V-12345678' },
     update: {
-      passwordHash: passwordHash, // Restaura la contraseña si alguien la cambió
       roleId: roleAdmin.id,
+      // ELIMINADO: No sobreescribir la contraseña si el usuario ya existe
     },
     create: {
       cedula: 'V-12345678',

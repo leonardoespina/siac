@@ -1,10 +1,10 @@
 import { defineApiHandler } from '../../utils/handler'
 import { prisma } from '../../utils/prisma'
 import { ValidationError } from '../../domain/errors'
-import { requireAuth } from '../../utils/auth'
+import { requirePermission } from '../../utils/auth'
 
 export default defineApiHandler(async (event) => {
-  await requireAuth(event)
+  await requirePermission(event, 'PRODUCTS', 'read')
   const query = getQuery(event)
   const productId = parseInt(query.productId as string)
   
