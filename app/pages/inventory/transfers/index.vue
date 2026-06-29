@@ -2,7 +2,7 @@
   <q-page padding>
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h4 text-weight-bold text-primary">Historial de Transferencias</div>
-      <q-btn v-if="isAdmin" color="primary" icon="add" label="Nueva Transferencia" to="/inventory/transfers/new" />
+      <q-btn v-if="canCreate" color="primary" icon="add" label="Nueva Transferencia" to="/inventory/transfers/new" />
     </div>
 
     <q-card bordered flat>
@@ -63,10 +63,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useTransfersList } from '~/composables/features/useTransfersList'
 
 const auth = useAuthStore()
-const isAdmin = computed(() => {
-  const role = auth.user?.role?.name?.toUpperCase()
-  return role === 'ADMIN' || role === 'ADMINISTRADOR'
-})
+const canCreate = computed(() => auth.hasPermission('TRANSFERS', 'canCreate'))
 
 const { transfers, loading, columns, getStatusColor, getStatusLabel } = useTransfersList()
 </script>

@@ -35,6 +35,7 @@ async function main() {
     { code: 'BIOMETRIC', name: 'Gestión Biométrica' },
     { code: 'DEPENDENCIES', name: 'Estructura Organizacional' },
     { code: 'SQUADS', name: 'Catálogo de Cuadrillas' },
+    { code: 'MY_SQUADS', name: 'Mis Cuadrillas (Local)' },
     { code: 'DINERS_REQUESTS', name: 'Solicitud de Comidas' },
     { code: 'DINING_ROOMS', name: 'Gestión de Comedores' },
     { code: 'SUPPLIERS', name: 'Catálogo de Proveedores' },

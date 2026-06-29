@@ -198,11 +198,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 import { useSuppliersStore } from '~/stores/suppliers'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useExcelImport } from '~/composables/features/useExcelImport'
 
 const $q = useQuasar()
+const router = useRouter()
+const auth = useAuthStore()
+
+// Protección de Ruta mediante Matriz de Permisos
+if (!auth.hasPermission('RECEPTIONS', 'canCreate')) {
+  router.push('/inventory/receptions')
+}
+
 const suppliersStore = useSuppliersStore()
 const warehousesStore = useWarehousesStore()
 

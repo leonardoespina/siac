@@ -19,7 +19,7 @@ export function useReceptionDetails() {
   const searchQuery = ref('')
 
   const canApprove = computed(() => {
-    return auth.hasPermission('APPROVAL_RECEPTIONS', 'read') || auth.hasPermission('GLOBAL_ACCESS', 'read')
+    return auth.hasPermission('APPROVAL_RECEPTIONS', 'canUpdate') || auth.hasPermission('GLOBAL_ACCESS', 'canRead')
   })
 
   const grandTotal = computed(() => {

@@ -89,7 +89,7 @@ const columns = [
 const CATEGORIES = {
   DINERS: {
     label: '🧑‍🤝‍🧑 Gestión de Comensales',
-    codes: ['DINERS', 'DINERS_REQUESTS', 'DISPATCH']
+    codes: ['DINERS', 'DINERS_REQUESTS', 'DISPATCH', 'MY_SQUADS']
   },
   WAREHOUSE: {
     label: '📦 Almacén y Operaciones',

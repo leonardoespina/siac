@@ -81,7 +81,7 @@ export function useWorkerForm() {
       return
     }
 
-    if (authStore.user?.role?.isGlobal && !authStore.user?.subdependencyId && !formData.value.subdependencyId) {
+    if (authStore.hasPermission('GLOBAL_ACCESS', 'canRead') && !authStore.user?.subdependencyId && !formData.value.subdependencyId) {
       $q.notify({ type: 'warning', message: 'Como Administrador Global, debes seleccionar a qué subdependencia pertenecerá el trabajador.' })
       return
     }

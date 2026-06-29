@@ -239,7 +239,7 @@ const submitPasswordChange = async () => {
           <q-expansion-item
             icon="groups"
             label="Gestión de Comensales"
-            v-if="auth.isAuthenticated && (auth.hasPermission('DINERS', 'canRead') || auth.hasPermission('DISPATCH', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canRead'))"
+            v-if="auth.isAuthenticated && (auth.hasPermission('DINERS', 'canRead') || auth.hasPermission('DISPATCH', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canRead') || auth.hasPermission('MY_SQUADS', 'canRead'))"
           >
             <q-list class="q-pl-lg">
               <q-item clickable v-ripple to="/dispatch" active-class="text-primary" v-if="auth.hasPermission('DISPATCH', 'canRead')">
@@ -252,7 +252,7 @@ const submitPasswordChange = async () => {
                 <q-item-section>Solicitar Comidas</q-item-section>
               </q-item>
               
-              <q-item clickable v-ripple to="/diners/squads" active-class="text-primary" v-if="auth.hasPermission('SQUADS', 'canRead')">
+              <q-item clickable v-ripple to="/diners/squads" active-class="text-primary" v-if="auth.hasPermission('MY_SQUADS', 'canRead')">
                 <q-item-section avatar><q-icon name="engineering" size="sm" /></q-item-section>
                 <q-item-section>Mis Cuadrillas</q-item-section>
               </q-item>

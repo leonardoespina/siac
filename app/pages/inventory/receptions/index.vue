@@ -2,7 +2,7 @@
   <q-page padding>
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h4 text-weight-bold text-primary">Recepciones</div>
-      <q-btn color="primary" icon="add" label="Nueva Recepción" to="/inventory/receptions/import" />
+      <q-btn v-if="canCreate" color="primary" icon="add" label="Nueva Recepción" to="/inventory/receptions/import" />
     </div>
 
     <q-table :grid="$q.screen.lt.md"
@@ -64,8 +64,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 import { useReceptionsList } from '~/composables/features/useReceptionsList'
+
+const auth = useAuthStore()
+const canCreate = computed(() => auth.hasPermission('RECEPTIONS', 'canCreate'))
 
 const router = useRouter()
 const openReport = (id: number) => {

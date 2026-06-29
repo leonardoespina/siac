@@ -140,9 +140,8 @@ import { useProductsStore } from '~/stores/products'
 const auth = useAuthStore()
 const router = useRouter()
 
-// Protección de Ruta: Solo Admin puede crear transferencias
-const role = auth.user?.role?.name?.toUpperCase()
-if (role !== 'ADMIN' && role !== 'ADMINISTRADOR') {
+// Protección de Ruta mediante Matriz de Permisos
+if (!auth.hasPermission('TRANSFERS', 'canCreate')) {
   router.push('/inventory/transfers')
 }
 

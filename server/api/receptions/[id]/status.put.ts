@@ -21,7 +21,7 @@ export default defineApiHandler(async (event) => {
 
   // Validación granular de la Matriz de Permisos según el estado objetivo
   if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
-    await requirePermission(event, 'APPROVAL_RECEPTIONS', 'read')
+    await requirePermission(event, 'APPROVAL_RECEPTIONS', 'update')
   } else {
     await requirePermission(event, 'RECEPTIONS', 'update')
   }

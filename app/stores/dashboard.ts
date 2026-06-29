@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, readonly } from 'vue'
+import { useAuthStore } from './auth'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const pendingTasks = ref<any[]>([])
@@ -18,9 +19,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
       ])
 
       const tasks: any[] = []
-      
+      const auth = useAuthStore()
+      const canApproveReceptions = auth.hasPermission('APPROVAL_RECEPTIONS', 'canUpdate')
+      const canApproveTransfers = auth.hasPermission('APPROVAL_TRANSFERS', 'canUpdate')
+      const canApproveOperations = auth.hasPermission('OPERATIONS', 'canUpdate')
+
       receptions.forEach((r: any) => {
-        if (r.status === 'PENDING') {
+        if (r.status === 'PENDING' && canApproveReceptions) {
           tasks.push({
             id: `R-${r.id}`,
             type: 'Recepción',
@@ -34,7 +39,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       })
 
       transfers.forEach((t: any) => {
-        if (t.status === 'PENDING') {
+        if (t.status === 'PENDING' && canApproveTransfers) {
           tasks.push({
             id: `T-${t.id}`,
             type: 'Transferencia',
@@ -48,7 +53,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       })
 
       consumptions.forEach((c: any) => {
-        if (c.status === 'PENDING') {
+        if (c.status === 'PENDING' && canApproveOperations) {
           tasks.push({
             id: `C-${c.id}`,
             type: 'Consumo / Operación',

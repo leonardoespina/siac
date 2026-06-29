@@ -34,7 +34,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
       '/kitchen/operation': 'OPERATIONS',
       '/inventory/approvals': 'OPERATIONS',
       '/kitchen/shifts': 'OPERATIONS',
-      '/reports/shifts': 'REPORTS'
+      '/reports/shifts': 'REPORTS',
+      '/diners/squad-catalog': 'SQUADS',
+      '/diners/squads': 'MY_SQUADS',
+      '/diners/workers': 'DINERS',
+      '/diners/dining-rooms': 'DINING_ROOMS',
+      '/diners/dependencies': 'DEPENDENCIES',
+      '/diners/positions': 'POSITIONS'
     }
 
     // Buscamos si la ruta actual requiere algún módulo

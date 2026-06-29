@@ -23,15 +23,9 @@ export function useTransfersList() {
       const data = await $fetch('/api/transfers')
       const allTransfers = data as any[]
 
-      const role = auth.user?.role?.name?.toUpperCase()
-      const isGlobal = role === 'ADMIN' || role === 'ADMINISTRADOR' || role === 'GERENTE'
-
-      if (isGlobal) {
-        transfers.value = allTransfers
-      } else {
-        const userWhId = auth.user?.warehouseId
-        transfers.value = allTransfers.filter(t => t.sourceId === userWhId || t.destinationId === userWhId)
-      }
+      // El backend ya se encarga de filtrar la lista según el tenant (warehouseId)
+      // o devolver todo si el usuario tiene acceso global.
+      transfers.value = allTransfers
     } catch (e) {
       $q.notify({ type: 'negative', message: 'Error al cargar el historial de transferencias' })
     } finally {

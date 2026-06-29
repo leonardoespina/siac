@@ -93,8 +93,10 @@
             fill-input
             input-debounce="0"
             @filter="filterWarehouses"
-            @update:model-value="form.warehouseId ? (form.dependencyId = null, form.subdependencyId = null) : null"
           >
+            <template v-slot:append>
+              <SharedTooltip text="Disponible exclusivamente para usuarios con permisos en el módulo de Inventarios de Comedores." />
+            </template>
             <template v-slot:no-option>
               <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
             </template>
@@ -117,7 +119,7 @@
             fill-input
             input-debounce="0"
             @filter="filterDependencies"
-            @update:model-value="form.subdependencyId = null; form.dependencyId ? form.warehouseId = null : null"
+            @update:model-value="form.subdependencyId = null"
           >
             <template v-slot:no-option>
               <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
@@ -142,7 +144,6 @@
             fill-input
             input-debounce="0"
             @filter="filterSubdependencies"
-            @update:model-value="form.subdependencyId ? form.warehouseId = null : null"
           >
             <template v-slot:no-option>
               <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>

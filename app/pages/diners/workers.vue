@@ -69,7 +69,7 @@ onMounted(() => {
   
   // Solo cargamos los comensales automáticamente si NO es un Admin Global puro
   // (es decir, si es supervisor o admin asignado a una subdependencia, o si es Gerente asignado a una dependencia)
-  if (!authStore.user?.role?.isGlobal || authStore.user?.subdependencyId || authStore.user?.dependencyId) {
+  if (!authStore.hasPermission('GLOBAL_ACCESS', 'canRead') || authStore.user?.subdependencyId || authStore.user?.dependencyId) {
     dinersStore.fetchAll()
   }
 })
@@ -92,7 +92,7 @@ onMounted(() => {
           <q-card-section>
             <!-- Panel de Filtros y Búsqueda -->
             <div class="row q-col-gutter-md q-mb-md">
-              <template v-if="authStore.user?.role?.isGlobal && !authStore.user?.subdependencyId">
+              <template v-if="authStore.hasPermission('GLOBAL_ACCESS', 'canRead') && !authStore.user?.subdependencyId">
                 <div class="col-12 col-md-4">
                   <q-select
                     v-model="filterDependencyId"
@@ -124,7 +124,7 @@ onMounted(() => {
                 </div>
               </template>
               
-              <div :class="authStore.user?.role?.isGlobal && !authStore.user?.subdependencyId ? 'col-12 col-md-4' : 'col-12 col-md-4 offset-md-8'">
+              <div :class="authStore.hasPermission('GLOBAL_ACCESS', 'canRead') && !authStore.user?.subdependencyId ? 'col-12 col-md-4' : 'col-12 col-md-4 offset-md-8'">
                 <q-input
                   v-model="filterState.search"
                   dense
@@ -177,6 +177,7 @@ onMounted(() => {
             </transition>
 
             <q-table
+              :grid="$q.screen.lt.md"
               :rows="dinersStore.diners"
               :columns="columns"
               :loading="dinersStore.isLoading"
@@ -198,6 +199,39 @@ onMounted(() => {
                     <q-tooltip>Eliminar Trabajador</q-tooltip>
                   </q-btn>
                 </q-td>
+              </template>
+
+              <!-- MODO GRID DINÁMICO PARA MÓVILES -->
+              <template v-slot:item="props">
+                <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+                  <q-card bordered flat>
+                    <q-card-section class="q-pb-none">
+                      <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm">
+                        <div class="text-caption text-grey-7">{{ col.label }}</div>
+                        <div class="text-weight-bold text-right" style="max-width: 60%; word-break: break-word;">
+                          <template v-if="col.name === 'rationType'">
+                            <q-badge :color="col.value === 'NORMAL' ? 'primary' : 'warning'">
+                              {{ col.value === 'NORMAL' ? 'Normal' : 'Dieta Médica' }}
+                            </q-badge>
+                          </template>
+                          <template v-else>
+                            {{ col.value }}
+                          </template>
+                        </div>
+                      </div>
+                    </q-card-section>
+                    
+                    <q-separator />
+                    <q-card-actions align="right" class="bg-grey-1">
+                      <q-btn flat round color="primary" icon="edit" size="sm" @click="openEditDialog(props.row)">
+                        <q-tooltip>Editar Trabajador</q-tooltip>
+                      </q-btn>
+                      <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteDiner(props.row)">
+                        <q-tooltip>Eliminar Trabajador</q-tooltip>
+                      </q-btn>
+                    </q-card-actions>
+                  </q-card>
+                </div>
               </template>
             </q-table>
           </q-card-section>
@@ -279,7 +313,7 @@ onMounted(() => {
             dense
           />
           <!-- Cascada de Dependencias para Admins Globales -->
-          <template v-if="authStore.user?.role?.isGlobal && !authStore.user?.subdependencyId && !authStore.user?.dependencyId">
+          <template v-if="authStore.hasPermission('GLOBAL_ACCESS', 'canRead') && !authStore.user?.subdependencyId && !authStore.user?.dependencyId">
             <q-select
               v-model="formData.dependencyId"
               :options="dependencyOptions"

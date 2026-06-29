@@ -18,8 +18,10 @@ export function useDashboard() {
   // y encendemos los widgets correspondientes en la pantalla.
 
   const canApprove = computed(() => {
-    // Bandeja de Aprobaciones: Solo si puede Editar Operaciones
-    return auth.hasPermission('OPERATIONS', 'canUpdate')
+    // Bandeja de Aprobaciones: Si puede aprobar algo
+    return auth.hasPermission('OPERATIONS', 'canUpdate') ||
+           auth.hasPermission('APPROVAL_RECEPTIONS', 'canUpdate') ||
+           auth.hasPermission('APPROVAL_TRANSFERS', 'canUpdate')
   })
 
   const canOperateLocal = computed(() => {

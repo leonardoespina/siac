@@ -25,8 +25,17 @@ export default defineApiHandler(async (event) => {
   }
 
   // 3. Aislamiento Multi-Tenant (Seguridad)
-  if (!user.isGlobal && currentDiner.subdependencyId !== user.subdependencyId) {
-    throw new ForbiddenError('No tienes permiso para eliminar un comensal de otra área.')
+  if (!user.isGlobal) {
+    if (user.subdependencyId && currentDiner.subdependencyId !== user.subdependencyId) {
+      throw new ForbiddenError('No tienes permiso para eliminar un comensal de otra área.')
+    }
+    // Si es gerente, el comensal debe pertenecer a una subdependencia de su gerencia
+    if (user.dependencyId && !user.subdependencyId) {
+      const dinerSub = await prisma.subdependency.findUnique({ where: { id: currentDiner.subdependencyId }})
+      if (dinerSub?.dependencyId !== user.dependencyId) {
+        throw new ForbiddenError('No tienes permiso para eliminar un comensal fuera de tu Gerencia.')
+      }
+    }
   }
 
   // 4. Soft Delete

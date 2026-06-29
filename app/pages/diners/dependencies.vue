@@ -7,8 +7,10 @@ import { useDependenciesForm } from '~/composables/features/useDependenciesForm'
 const store = useDependenciesStore()
 const authStore = useAuthStore()
 
-// Verificación de Rol Administrativo Global
-const isGlobalAdmin = computed(() => !!authStore.user?.role?.isGlobal)
+// Verificación de Permisos Granulares
+const canCreate = computed(() => authStore.hasPermission('DEPENDENCIES', 'canCreate'))
+const canUpdate = computed(() => authStore.hasPermission('DEPENDENCIES', 'canUpdate'))
+const canDelete = computed(() => authStore.hasPermission('DEPENDENCIES', 'canDelete'))
 
 // Lógica extraída al composable para mantener el componente limpio y cumplir la regla de <= 3 refs
 const {
@@ -79,8 +81,8 @@ onMounted(() => {
                 <q-icon name="search" />
               </template>
             </q-input>
-            <q-btn v-if="isGlobalAdmin" color="secondary" icon="account_tree" label="Nueva Subdependencia" @click="openCreateSub" class="q-mr-sm" />
-            <q-btn v-if="isGlobalAdmin" color="primary" icon="domain" label="Nueva Dependencia" @click="openCreateDep" />
+            <q-btn v-if="canCreate" color="secondary" icon="account_tree" label="Nueva Subdependencia" @click="openCreateSub" class="q-mr-sm" />
+            <q-btn v-if="canCreate" color="primary" icon="domain" label="Nueva Dependencia" @click="openCreateDep" />
           </q-card-section>
           
           <q-card-section>
@@ -103,12 +105,12 @@ onMounted(() => {
                     <div class="text-weight-bold">{{ dep.name }}</div>
                   </q-item-section>
 
-                  <q-item-section v-if="isGlobalAdmin" side>
+                  <q-item-section v-if="canUpdate || canDelete" side>
                     <div class="row items-center">
-                      <q-btn flat round icon="edit" color="primary" size="sm" @click.stop="openEditDep(dep)">
+                      <q-btn v-if="canUpdate" flat round icon="edit" color="primary" size="sm" @click.stop="openEditDep(dep)">
                         <q-tooltip>Editar Dependencia</q-tooltip>
                       </q-btn>
-                      <q-btn flat round icon="delete" color="negative" size="sm" @click.stop="confirmDeleteDep(dep.id, dep.name)">
+                      <q-btn v-if="canDelete" flat round icon="delete" color="negative" size="sm" @click.stop="confirmDeleteDep(dep.id, dep.name)">
                         <q-tooltip>Eliminar Dependencia</q-tooltip>
                       </q-btn>
                     </div>
@@ -125,12 +127,12 @@ onMounted(() => {
                       <q-item-label caption>{{ getUniqueSquadsCount(sub) }} cuadrillas activas</q-item-label>
                     </q-item-section>
                     
-                    <q-item-section v-if="isGlobalAdmin" side>
+                    <q-item-section v-if="canUpdate || canDelete" side>
                       <div class="row items-center">
-                        <q-btn flat round icon="edit" color="primary" size="sm" @click.stop="openEditSub(sub)">
+                        <q-btn v-if="canUpdate" flat round icon="edit" color="primary" size="sm" @click.stop="openEditSub(sub)">
                           <q-tooltip>Editar Subdependencia</q-tooltip>
                         </q-btn>
-                        <q-btn flat round icon="delete" color="negative" size="sm" @click.stop="confirmDeleteSub(sub.id, sub.name)">
+                        <q-btn v-if="canDelete" flat round icon="delete" color="negative" size="sm" @click.stop="confirmDeleteSub(sub.id, sub.name)">
                           <q-tooltip>Eliminar Subdependencia</q-tooltip>
                         </q-btn>
                       </div>
