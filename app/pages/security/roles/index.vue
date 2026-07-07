@@ -38,32 +38,46 @@
       <q-separator class="q-mb-sm" />
       
       <!-- Matriz de permisos agrupada -->
-      <div v-for="(groupData, groupKey) in groupedPermissions" :key="groupKey">
-        <template v-if="groupData.length > 0">
-          <div class="q-mt-md q-mb-sm q-pa-sm bg-grey-2 text-primary text-weight-bold rounded-borders">
-            {{ CATEGORIES[groupKey as keyof typeof CATEGORIES]?.label || 'Otros Módulos' }}
-          </div>
-          
-          <div v-for="item in groupData" :key="item.perm.moduleId" class="row items-center q-mb-sm q-py-sm" style="border-bottom: 1px solid #eee;">
-            <div class="col-12 col-md-4 text-weight-medium q-mb-xs q-mb-md-none q-pl-sm">
-              {{ item.moduleName }}
-            </div>
-            <div class="col-12 col-md-8 row q-col-gutter-sm">
-              <template v-if="item.moduleCode === 'GLOBAL_ACCESS'">
-                <div class="col-12">
-                  <q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Otorgar Privilegios Globales (Ignorar filtros)" color="warning" dense />
+      <q-list bordered class="rounded-borders q-mb-md">
+        <template v-for="(groupData, groupKey) in groupedPermissions" :key="groupKey">
+          <q-expansion-item
+            v-if="groupData.length > 0"
+            :label="CATEGORIES[groupKey as keyof typeof CATEGORIES]?.label || 'Otros Módulos'"
+            header-class="bg-grey-2 text-primary text-weight-bold"
+            expand-icon-class="text-primary"
+            default-closed
+          >
+            <q-card>
+              <q-card-section>
+                <!-- Botones de selección masiva -->
+                <div class="row justify-end q-mb-md q-gutter-sm">
+                  <q-btn flat dense color="primary" label="Marcar Todos" icon="check_box" @click="setGroupPermissions(groupData, true)" />
+                  <q-btn flat dense color="negative" label="Desmarcar Todos" icon="check_box_outline_blank" @click="setGroupPermissions(groupData, false)" />
                 </div>
-              </template>
-              <template v-else>
-                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canCreate" label="Crear" color="primary" dense /></div>
-                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Leer" color="primary" dense /></div>
-                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canUpdate" label="Editar" color="primary" dense /></div>
-                <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canDelete" label="Borrar" color="negative" dense /></div>
-              </template>
-            </div>
-          </div>
+
+                <div v-for="item in groupData" :key="item.perm.moduleId" class="row items-center q-mb-sm q-py-sm" style="border-bottom: 1px solid #eee;">
+                  <div class="col-12 col-md-4 text-weight-medium q-mb-xs q-mb-md-none q-pl-sm">
+                    {{ item.moduleName }}
+                  </div>
+                  <div class="col-12 col-md-8 row q-col-gutter-sm">
+                    <template v-if="item.moduleCode === 'GLOBAL_ACCESS'">
+                      <div class="col-12">
+                        <q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Otorgar Privilegios Globales (Ignorar filtros)" color="warning" dense />
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canCreate" label="Crear" color="primary" dense /></div>
+                      <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canRead" label="Leer" color="primary" dense /></div>
+                      <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canUpdate" label="Editar" color="primary" dense /></div>
+                      <div class="col-6 col-sm-3"><q-checkbox v-model="form.permissions[item.originalIndex].canDelete" label="Borrar" color="negative" dense /></div>
+                    </template>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </q-expansion-item>
         </template>
-      </div>
+      </q-list>
     </SharedFormDialog>
   </q-page>
 </template>
@@ -138,6 +152,20 @@ const groupedPermissions = computed(() => {
 
   return groups
 })
+
+const setGroupPermissions = (groupData: any[], value: boolean) => {
+  groupData.forEach(item => {
+    const p = form.value.permissions[item.originalIndex]
+    if (item.moduleCode === 'GLOBAL_ACCESS') {
+      p.canRead = value
+    } else {
+      p.canCreate = value
+      p.canRead = value
+      p.canUpdate = value
+      p.canDelete = value
+    }
+  })
+}
 
 const deleteRole = (id: number) => {
   $q.dialog({

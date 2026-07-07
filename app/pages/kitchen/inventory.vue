@@ -18,7 +18,7 @@
           <q-icon name="inventory" class="q-mr-sm" /> Mi Inventario Local
         </div>
         
-        <!-- Selector Modo Dios -->
+        <!-- Selector Administrador Global -->
         <div v-if="isGlobalUser" style="min-width: 300px;">
           <q-select
             v-model="activeWarehouseId"

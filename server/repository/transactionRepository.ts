@@ -9,13 +9,26 @@ export async function createConsumption(data: any, user: UserContext, type: 'CON
     throw new ValidationError('No tienes un almacén/comedor asignado para registrar despachos.')
   }
 
-  // REGLA 4: Sin turno abierto no hay consumo
+  // REGLA 4 FLEXIBILIZADA: El turno solo es obligatorio para CONSUMPTION.
   const activeShift = await prisma.shift.findFirst({
     where: { warehouseId: user.warehouseId, status: 'OPEN' }
   })
 
-  if (!activeShift) {
+  if (type === 'CONSUMPTION' && !activeShift) {
     throw new ValidationError('No puedes registrar consumos porque no tienes un turno abierto en tu comedor.')
+  }
+
+  // VALIDACIÓN ATÓMICA DE STOCK EN CREACIÓN (Evitar stock negativo)
+  const currentStocks = await prisma.stock.findMany({
+    where: { warehouseId: user.warehouseId, productId: { in: data.details.map((d: any) => d.productId) } }
+  })
+  const stockMap = new Map(currentStocks.map(s => [s.productId, s]))
+
+  for (const detail of data.details) {
+    const current = stockMap.get(detail.productId)
+    if (!current || Number(current.quantity) < detail.quantity) {
+      throw new ValidationError(`Stock insuficiente para el producto ID ${detail.productId}. Tienes ${current ? current.quantity : 0}, intentas registrar ${detail.quantity}.`)
+    }
   }
 
   return prisma.transaction.create({
@@ -24,7 +37,7 @@ export async function createConsumption(data: any, user: UserContext, type: 'CON
       status: 'DRAFT',
       sourceId: user.warehouseId,
       createdById: user.id,
-      shiftId: activeShift.id,
+      shiftId: activeShift ? activeShift.id : null,
       institutionId: data.institutionId || null,
       details: {
         create: data.details.map((d: any) => ({
@@ -55,12 +68,18 @@ export async function listReceptions() {
   })
 }
 
-export async function listConsumptions(warehouseId?: number, status?: string) {
+export async function listConsumptions(warehouseId?: number, status?: string, startDate?: string, endDate?: string) {
   const where: any = {
     type: { in: ['CONSUMPTION', 'LOSS', 'SUPPORT'] }
   }
   if (warehouseId) where.sourceId = warehouseId
   if (status) where.status = status
+
+  if (startDate || endDate) {
+    where.createdAt = {}
+    if (startDate) where.createdAt.gte = new Date(startDate)
+    if (endDate) where.createdAt.lte = new Date(endDate)
+  }
 
   return prisma.transaction.findMany({
     where,

@@ -19,59 +19,57 @@ export interface Warehouse {
 /**
  * Store Pinia para gestionar los Almacenes y sus configuraciones.
  */
-export const useWarehousesStore = defineStore('warehouses', {
-  state: () => ({
-    warehouses: [] as Warehouse[],
-    loading: false
-  }),
-  getters: {
-    localWarehouses: (state) => state.warehouses.filter(w => w.type === 'LOCAL'),
-    centralWarehouses: (state) => state.warehouses.filter(w => w.type === 'CENTRAL')
-  },
-  actions: {
-    /**
-     * Carga todos los almacenes registrados (Centrales y Locales).
-     */
-    async fetchAll() {
-      this.loading = true
-      try {
-        const data = await $fetch<Warehouse[]>('/api/warehouses')
-        this.warehouses = data
-      } finally {
-        this.loading = false
-      }
-    },
+export const useWarehousesStore = defineStore('warehouses', () => {
+  const warehouses = ref<Warehouse[]>([])
+  const loading = ref(false)
 
-    /**
-     * Registra un nuevo almacén físico.
-     */
-    async create(data: Partial<Warehouse>) {
-      await $fetch('/api/warehouses', {
-        method: 'POST',
-        body: data
-      })
-      await this.fetchAll()
-    },
+  // Getters
+  const activeWarehouses = computed(() => warehouses.value.filter(w => w.active))
+  const localWarehouses = computed(() => warehouses.value.filter(w => w.type === 'LOCAL'))
+  const centralWarehouses = computed(() => warehouses.value.filter(w => w.type === 'CENTRAL'))
 
-    /**
-     * Actualiza los datos de un almacén existente.
-     */
-    async update(id: number, data: Partial<Warehouse>) {
-      await $fetch(`/api/warehouses/${id}`, {
-        method: 'PUT',
-        body: data
-      })
-      await this.fetchAll()
-    },
-
-    /**
-     * Deshabilita un almacén para evitar futuros movimientos en él.
-     */
-    async remove(id: number) {
-      await $fetch(`/api/warehouses/${id}`, {
-        method: 'DELETE'
-      })
-      await this.fetchAll()
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const data = await $fetch<Warehouse[]>('/api/warehouses')
+      warehouses.value = data
+    } finally {
+      loading.value = false
     }
+  }
+
+  async function create(data: Partial<Warehouse>) {
+    await $fetch('/api/warehouses', {
+      method: 'POST',
+      body: data
+    })
+    await fetchAll()
+  }
+
+  async function update(id: number, data: Partial<Warehouse>) {
+    await $fetch(`/api/warehouses/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+    await fetchAll()
+  }
+
+  async function remove(id: number) {
+    await $fetch(`/api/warehouses/${id}`, {
+      method: 'DELETE'
+    })
+    await fetchAll()
+  }
+
+  return {
+    warehouses,
+    loading,
+    activeWarehouses,
+    localWarehouses,
+    centralWarehouses,
+    fetchAll,
+    create,
+    update,
+    remove
   }
 })

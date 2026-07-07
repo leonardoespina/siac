@@ -11,7 +11,7 @@
         <div class="col-12 col-md-3">
           <q-select
             v-model="supplierId"
-            :options="suppliersStore.suppliers"
+            :options="suppliersStore.activeSuppliers"
             option-value="id"
             option-label="name"
             emit-value map-options
@@ -217,7 +217,7 @@ const suppliersStore = useSuppliersStore()
 const warehousesStore = useWarehousesStore()
 
 const centralWarehouses = computed(() => {
-  return warehousesStore.warehouses.filter(w => w.type === 'CENTRAL')
+  return warehousesStore.activeWarehouses.filter(w => w.type === 'CENTRAL')
 })
 
 // ── LÓGICA DELEGADA AL COMPOSABLE ───────────────────────────────────────────

@@ -87,7 +87,7 @@
         <div class="col-12 col-md-6">
           <q-select
             v-model="form.categoryId"
-            :options="categoriesStore.categories"
+            :options="categoriesStore.activeCategories"
             option-value="id"
             option-label="name"
             emit-value
@@ -100,7 +100,7 @@
         <div class="col-12 col-md-6">
           <q-select
             v-model="form.unitId"
-            :options="unitsStore.units"
+            :options="unitsStore.activeUnits"
             option-value="id"
             option-label="abbreviation"
             emit-value

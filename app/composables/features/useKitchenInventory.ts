@@ -77,7 +77,7 @@ export function useKitchenInventory() {
     loading,
     isGlobalUser,
     activeWarehouseId,
-    warehouses: computed(() => warehousesStore.warehouses),
+    warehouses: computed(() => warehousesStore.activeWarehouses),
     hasAssignedWarehouse,
     searchQuery,
     hideOutOfStock,

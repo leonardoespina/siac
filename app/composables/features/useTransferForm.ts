@@ -20,10 +20,10 @@ export function useTransferForm() {
   const showPrices = ref(false)
 
   // Almacenes disponibles
-  const availableSources = computed(() => warehousesStore.warehouses)
+  const availableSources = computed(() => warehousesStore.activeWarehouses)
 
   const availableDestinations = computed(() => 
-    warehousesStore.warehouses.filter(w => w.id !== sourceId.value)
+    warehousesStore.activeWarehouses.filter(w => w.id !== sourceId.value)
   )
 
   // Limpiar carrito si cambian el origen

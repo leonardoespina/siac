@@ -1,22 +1,41 @@
 import { DomainError } from '../domain/errors'
 import type { EventHandler } from 'h3'
+import { logger } from './logger'
 
 // ── WRAPPER DE API HANDLERS ─────────────────────────────────────────────────
 // Cumple con la regla de la Arquitectura Híbrida:
 // Los endpoints en server/api/ NUNCA deben usar bloques try/catch manuales.
 // En su lugar, se envuelven con `defineApiHandler`.
-// 
-// Si la capa Service o Domain lanza un error de negocio (DomainError), 
-// este wrapper lo atrapa automáticamente y lo transforma en una respuesta 
-// HTTP limpia (ej: 404, 400) para el frontend.
 
 export function defineApiHandler(handler: EventHandler): EventHandler {
   return defineEventHandler(async (event) => {
+    const start = Date.now()
+    const method = event.node.req.method
+    const url = event.node.req.url
+    const ip = getRequestIP(event) || 'unknown'
+
     try {
-      return await handler(event)
+      const response = await handler(event)
+      
+      // Loguear petición exitosa
+      const ms = Date.now() - start
+      logger.http(`HTTP ${method} ${url}`, {
+        method,
+        url,
+        statusCode: event.node.res.statusCode || 200,
+        responseTimeMs: ms,
+        ip
+      })
+      
+      return response
     } catch (error: any) {
+      const ms = Date.now() - start
+      
       // Si el error viene de nuestras reglas de negocio (ej. NotFoundError)
       if (error instanceof DomainError) {
+        logger.warn(`Domain Error: ${error.message}`, {
+          method, url, statusCode: error.statusCode, code: error.code, responseTimeMs: ms, ip
+        })
         throw createError({
           statusCode: error.statusCode,
           message: error.message,
@@ -24,7 +43,12 @@ export function defineApiHandler(handler: EventHandler): EventHandler {
         })
       }
       
-      // Si es un error inesperado (BD caída, sintaxis, etc), lanza 500
+      // Si es un error inesperado (BD caída, sintaxis, etc)
+      logger.error(`Unhandled Error: ${error.message || 'Unknown'}`, {
+        method, url, responseTimeMs: ms, ip,
+        stack: error.stack
+      })
+      
       throw error
     }
   })

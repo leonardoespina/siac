@@ -50,24 +50,33 @@
           flat bordered
           :pagination="{ rowsPerPage: 10, sortBy: 'date', descending: true }"
         >
-          <template v-slot:body-cell-institutionType="props">
-            <q-td :props="props">
-              <q-chip :color="`bg-${getColorForType(props.row.institutionType)}-1`" :text-color="getColorForType(props.row.institutionType)" size="sm" :icon="getIconForType(props.row.institutionType)">
-                {{ props.row.institutionType }}
-              </q-chip>
-            </q-td>
-          </template>
-          
-          <template v-slot:body-cell-details="props">
-            <q-td :props="props">
-              <q-btn flat round color="primary" icon="visibility" @click="props.expand = !props.expand">
-                <q-tooltip>Ver Productos</q-tooltip>
-              </q-btn>
-            </q-td>
-          </template>
-          
-          <template v-slot:expanded-row="props">
+          <template v-slot:body="props">
             <q-tr :props="props">
+              <q-td key="date" :props="props">
+                {{ new Date(props.row.date).toLocaleDateString() }}
+              </q-td>
+              <q-td key="warehouse" :props="props">
+                {{ props.row.warehouse }}
+              </q-td>
+              <q-td key="institutionName" :props="props">
+                {{ props.row.institutionName }}
+              </q-td>
+              <q-td key="institutionType" :props="props">
+                <q-chip :color="`bg-${getColorForType(props.row.institutionType)}-1`" :text-color="getColorForType(props.row.institutionType)" size="sm" :icon="getIconForType(props.row.institutionType)">
+                  {{ props.row.institutionType }}
+                </q-chip>
+              </q-td>
+              <q-td key="itemsCount" :props="props">
+                {{ props.row.itemsCount }}
+              </q-td>
+              <q-td key="details" :props="props">
+                <q-btn flat round color="primary" :icon="props.expand ? 'visibility_off' : 'visibility'" @click="props.expand = !props.expand">
+                  <q-tooltip>Ver Productos</q-tooltip>
+                </q-btn>
+              </q-td>
+            </q-tr>
+            
+            <q-tr :props="props" v-show="props.expand">
               <q-td colspan="100%" class="bg-grey-1 q-pa-md">
                 <div class="text-weight-bold q-mb-sm">Productos Entregados:</div>
                 <div class="row q-gutter-sm">
@@ -77,6 +86,59 @@
                 </div>
               </q-td>
             </q-tr>
+          </template>
+
+          <!-- MODO GRID MÓVIL -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+              <q-card bordered flat>
+                <q-card-section class="q-pb-none">
+                  <div class="row justify-between q-mb-sm">
+                    <div class="text-caption text-grey-7">Fecha</div>
+                    <div class="text-weight-bold">{{ new Date(props.row.date).toLocaleDateString() }}</div>
+                  </div>
+                  <div class="row justify-between q-mb-sm">
+                    <div class="text-caption text-grey-7">Despachado Desde</div>
+                    <div class="text-weight-bold text-right">{{ props.row.warehouse }}</div>
+                  </div>
+                  <div class="row justify-between q-mb-sm">
+                    <div class="text-caption text-grey-7">Institución</div>
+                    <div class="text-weight-bold text-right">{{ props.row.institutionName }}</div>
+                  </div>
+                  <div class="row justify-between q-mb-sm">
+                    <div class="text-caption text-grey-7">Tipo</div>
+                    <div class="text-right">
+                      <q-chip :color="`bg-${getColorForType(props.row.institutionType)}-1`" :text-color="getColorForType(props.row.institutionType)" size="sm" :icon="getIconForType(props.row.institutionType)">
+                        {{ props.row.institutionType }}
+                      </q-chip>
+                    </div>
+                  </div>
+                  <div class="row justify-between q-mb-sm">
+                    <div class="text-caption text-grey-7">Cant. Productos</div>
+                    <div class="text-weight-bold">{{ props.row.itemsCount }}</div>
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-card-actions align="between">
+                  <span class="text-grey-7 text-caption q-ml-sm">Ver Productos</span>
+                  <q-btn flat round color="primary" :icon="props.expand ? 'visibility_off' : 'visibility'" @click="props.expand = !props.expand" />
+                </q-card-actions>
+                
+                <q-slide-transition>
+                  <div v-show="props.expand">
+                    <q-separator />
+                    <q-card-section class="bg-grey-1">
+                      <div class="text-caption text-weight-bold q-mb-xs">Productos Entregados:</div>
+                      <div class="row q-gutter-sm">
+                        <q-chip v-for="(item, idx) in props.row.details" :key="idx" color="white" text-color="black" size="sm">
+                          {{ item.quantity }} {{ item.unit }} - {{ item.productName }}
+                        </q-chip>
+                      </div>
+                    </q-card-section>
+                  </div>
+                </q-slide-transition>
+              </q-card>
+            </div>
           </template>
         </q-table>
       </q-card>

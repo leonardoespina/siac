@@ -27,6 +27,7 @@ export const useNotificationsStore = defineStore('notifications', {
     },
     // Este método lo llamaremos desde el socket cuando llegue una alerta nueva
     addRealtimeNotification(notification: Notification) {
+      if (this.notifications.some(n => n.id === notification.id)) return
       this.notifications.unshift(notification)
       this.unreadCount++
     },

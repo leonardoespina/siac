@@ -13,55 +13,52 @@ export interface Unit {
 /**
  * Store Pinia para gestionar las Unidades de Medida.
  */
-export const useUnitsStore = defineStore('units', {
-  state: () => ({
-    units: [] as Unit[],
-    loading: false
-  }),
-  actions: {
-    /**
-     * Carga todas las unidades desde el servidor.
-     */
-    async fetchAll() {
-      this.loading = true
-      try {
-        const data = await $fetch<Unit[]>('/api/units')
-        this.units = data
-      } finally {
-        this.loading = false
-      }
-    },
+export const useUnitsStore = defineStore('units', () => {
+  const units = ref<Unit[]>([])
+  const loading = ref(false)
 
-    /**
-     * Registra una nueva unidad de medida.
-     */
-    async create(data: Partial<Unit>) {
-      await $fetch('/api/units', {
-        method: 'POST',
-        body: data
-      })
-      await this.fetchAll()
-    },
+  const activeUnits = computed(() => units.value.filter(u => u.active))
 
-    /**
-     * Edita una unidad existente.
-     */
-    async update(id: number, data: Partial<Unit>) {
-      await $fetch(`/api/units/${id}`, {
-        method: 'PUT',
-        body: data
-      })
-      await this.fetchAll()
-    },
-
-    /**
-     * Desactiva lógicamente una unidad.
-     */
-    async remove(id: number) {
-      await $fetch(`/api/units/${id}`, {
-        method: 'DELETE'
-      })
-      await this.fetchAll()
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const data = await $fetch<Unit[]>('/api/units')
+      units.value = data
+    } finally {
+      loading.value = false
     }
+  }
+
+  async function create(data: Partial<Unit>) {
+    await $fetch('/api/units', {
+      method: 'POST',
+      body: data
+    })
+    await fetchAll()
+  }
+
+  async function update(id: number, data: Partial<Unit>) {
+    await $fetch(`/api/units/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+    await fetchAll()
+  }
+
+  async function remove(id: number) {
+    await $fetch(`/api/units/${id}`, {
+      method: 'DELETE'
+    })
+    await fetchAll()
+  }
+
+  return {
+    units,
+    loading,
+    activeUnits,
+    fetchAll,
+    create,
+    update,
+    remove
   }
 })

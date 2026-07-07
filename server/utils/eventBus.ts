@@ -29,8 +29,9 @@ export type AppEvents = {
   'inventory:updated': { warehouseId?: number, productId?: number, quantity?: number }
 }
 
-// Singleton in-memory bus
-export const eventBus = mitt<AppEvents>()
+// Singleton in-memory bus (Resistente a HMR de Nuxt en desarrollo)
+const globalObj = globalThis as any
+export const eventBus = globalObj.__appEventBus || (globalObj.__appEventBus = mitt<AppEvents>())
 
 /**
  * Función Helper para emitir eventos fuertemente tipados

@@ -9,6 +9,8 @@ export default defineApiHandler(async (event) => {
   const requestedWarehouseId = query.warehouseId ? Number(query.warehouseId) : undefined
   const targetWarehouseId = hasGlobalAccess(user) ? requestedWarehouseId : (user.warehouseId || undefined)
   const status = query.status ? String(query.status) : undefined
+  const startDate = query.startDate ? String(query.startDate) : undefined
+  const endDate = query.endDate ? String(query.endDate) : undefined
   
-  return await repo.listConsumptions(targetWarehouseId, status)
+  return await repo.listConsumptions(targetWarehouseId, status, startDate, endDate)
 })

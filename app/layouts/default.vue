@@ -29,11 +29,18 @@ onMounted(() => {
     $socket.emit('join', { userId: auth.user.id, warehouseId: auth.user.warehouseId })
     interactiveTour.checkAndOpenTour()
     
-    // Escuchar notificaciones en vivo (Silencioso para no ensuciar pantalla)
+    // Escuchar notificaciones en vivo
+    $socket.off('notification')
     $socket.on('notification', (newNotif: Notification) => {
       notifications.addRealtimeNotification(newNotif)
-      // Se eliminó el $q.notify aquí para evitar SPAM visual. 
-      // El usuario se enterará por el contador rojo de la campanita.
+      $q.notify({
+        type: newNotif.title.includes('Alerta') || newNotif.title.includes('Crítico') ? 'negative' : 'info',
+        message: newNotif.title,
+        caption: newNotif.message,
+        position: 'top-right',
+        timeout: 5000,
+        actions: [{ icon: 'close', color: 'white' }]
+      })
     })
     
     // Escuchar actualizaciones de inventario en vivo (Reactividad)

@@ -25,7 +25,7 @@
             :options="warehouses"
             option-value="id"
             option-label="name"
-            label="Supervisar Comedor (Modo Dios)"
+            label="Supervisar Comedor"
             outlined
             dense
             emit-value
@@ -72,6 +72,14 @@
         </q-list>
       </q-card>
 
+      <!-- SECCIÓN 1.5: BOTONERA DE ACCIONES EXTRAORDINARIAS (SIEMPRE VISIBLE) -->
+      <q-card bordered flat class="q-mb-md bg-grey-1">
+        <q-card-section class="row q-gutter-md justify-center">
+          <q-btn color="red-8" size="md" outline icon="delete_sweep" label="Registrar Merma" @click="openConsumptionDialog('LOSS')" />
+          <q-btn color="purple-8" size="md" outline icon="volunteer_activism" label="Apoyo Institucional" @click="openConsumptionDialog('SUPPORT')" />
+        </q-card-section>
+      </q-card>
+
       <!-- SECCIÓN 2: CONTROL DE TURNO -->
       <q-card bordered flat class="q-mb-lg text-center q-pa-xl" v-if="!activeShift">
         <q-icon name="lock_clock" size="64px" color="grey-4" />
@@ -94,19 +102,18 @@
           
           <q-card-section class="row q-gutter-sm justify-center q-py-lg">
             <q-btn color="blue-8" size="lg" icon="restaurant" label="Registrar Consumo Diario" @click="openConsumptionDialog('CONSUMPTION')" />
-            <q-btn color="red-8" size="lg" outline icon="delete_sweep" label="Registrar Merma" @click="openConsumptionDialog('LOSS')" />
-            <q-btn color="purple-8" size="lg" outline icon="volunteer_activism" label="Apoyo Institucional" @click="openConsumptionDialog('SUPPORT')" />
           </q-card-section>
         </q-card>
+      </template>
 
-        <!-- SECCIÓN 4: HISTORIAL DE CONSUMOS DEL TURNO (CRUD) -->
+        <!-- SECCIÓN 4: HISTORIAL DE CONSUMOS (SIEMPRE VISIBLE) -->
         <q-card bordered flat class="q-mb-lg">
           <q-card-section class="bg-grey-2">
             <div class="text-h6 text-grey-8 row items-center">
-              <q-icon name="list_alt" class="q-mr-sm" /> Historial de Registros de Hoy
+              <q-icon name="list_alt" class="q-mr-sm" /> Movimientos de la Operación (Hoy)
             </div>
             <div class="text-caption text-grey-6">
-              Todos los consumos o mermas que registres hoy aparecerán aquí hasta que el Gerente los apruebe. Puedes eliminarlos si cometiste un error.
+              Todos los consumos, apoyos o mermas que registres hoy aparecerán aquí hasta que el Gerente los apruebe. Puedes eliminarlos si cometiste un error.
             </div>
           </q-card-section>
           
@@ -187,10 +194,10 @@
           
           <q-card-section v-else class="text-center text-grey-5 q-pa-xl">
             <q-icon name="receipt_long" size="48px" class="q-mb-sm block q-mx-auto" />
-            Aún no has registrado ningún consumo o merma en este turno.
+            Aún no hay movimientos registrados el día de hoy.
           </q-card-section>
         </q-card>
-      </template>
+      <!-- FIN HISTORIAL -->
 
       <!-- DIALOGO DE REGISTRO DE CONSUMO/MERMA/APOYO -->
       <q-dialog v-model="isConsumptionDialogVisible" maximized transition-show="slide-up" transition-hide="slide-down">

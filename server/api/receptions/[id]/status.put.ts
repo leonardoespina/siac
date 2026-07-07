@@ -5,6 +5,7 @@ import { ValidationError } from '../../../domain/errors'
 import { logAudit } from '../../../utils/audit'
 import { prisma } from '../../../utils/prisma'
 import type { TransactionStatus } from '../../../domain/transaction'
+import { emitEvent } from '../../../utils/eventBus'
 
 export default defineApiHandler(async (event) => {
   // Inicialmente solo validamos auth genérico para leer el body
@@ -38,7 +39,10 @@ export default defineApiHandler(async (event) => {
 
   await logAudit(userId, 'UPDATE_STATUS', 'TRANSACTION', id, `Recepción cambió a estado: ${newStatus}`)
 
-  // TODO: Emitir evento Socket si pasa a PENDING o APPROVED/REJECTED
+  // Emitir evento Socket para notificar a los aprobadores/interesados
+  if (['PENDING', 'APPROVED', 'REJECTED'].includes(newStatus)) {
+    emitEvent('transfer:status_changed', { id: updatedTx.id, status: newStatus, userId: user!.id })
+  }
 
   return updatedTx
 })

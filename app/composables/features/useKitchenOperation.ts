@@ -99,14 +99,20 @@ export function useKitchenOperation() {
   }
 
   const fetchShiftConsumptions = async () => {
-    if (!activeShift.value || !activeWarehouseId.value) {
+    if (!activeWarehouseId.value) {
       shiftConsumptions.value = []
       return
     }
     try {
-      const data = await $fetch(`/api/consumptions?warehouseId=${activeWarehouseId.value}`) as any[]
-      // Filtrar solo los del turno actual
-      shiftConsumptions.value = data.filter(c => c.shiftId === activeShift.value.id)
+      // Calculamos la fecha de hoy
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(today)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      const data = await $fetch(`/api/consumptions?warehouseId=${activeWarehouseId.value}&startDate=${today.toISOString()}&endDate=${endOfDay.toISOString()}`) as any[]
+      // Ahora shiftConsumptions guarda TODO lo del día (con o sin turno)
+      shiftConsumptions.value = data
     } catch (e) {
       console.error(e)
     }
@@ -337,7 +343,7 @@ export function useKitchenOperation() {
   return {
     loading, saving, hasAssignedWarehouse, assignedWarehouseName,
     isGlobalUser, activeWarehouseId,
-    warehouses: computed(() => warehousesStore.warehouses),
+    warehouses: computed(() => warehousesStore.activeWarehouses.filter(w => w.type === 'LOCAL')),
     incomingTransfers, confirmReception,
     activeShift, openShiftDialog, submitOpenShift,
     openCloseShiftDialog, submitCloseShift,

@@ -26,68 +26,66 @@ export interface Product {
 /**
  * Store Pinia para el catálogo maestro de Productos.
  */
-export const useProductsStore = defineStore('products', {
-  state: () => ({
-    products: [] as Product[],
-    loading: false
-  }),
-  actions: {
-    /**
-     * Obtiene el listado completo de productos (con categorías y unidades).
-     */
-    async fetchAll() {
-      this.loading = true
-      try {
-        const data = await $fetch<Product[]>('/api/products')
-        this.products = data
-      } finally {
-        this.loading = false
-      }
-    },
+export const useProductsStore = defineStore('products', () => {
+  const products = ref<Product[]>([])
+  const loading = ref(false)
 
-    /**
-     * Crea un nuevo producto en el catálogo.
-     */
-    async create(data: Partial<Product>) {
-      await $fetch('/api/products', {
-        method: 'POST',
-        body: data
-      })
-      await this.fetchAll()
-    },
+  const activeProducts = computed(() => products.value.filter(p => p.active))
 
-    /**
-     * Actualiza la información de un producto maestro.
-     */
-    async update(id: number, data: Partial<Product>) {
-      await $fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        body: data
-      })
-      await this.fetchAll()
-    },
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const data = await $fetch<Product[]>('/api/products')
+      products.value = data
+    } finally {
+      loading.value = false
+    }
+  }
 
-    async remove(id: number) {
-      await $fetch(`/api/products/${id}`, {
-        method: 'DELETE'
-      })
-      await this.fetchAll()
-    },
+  async function create(data: Partial<Product>) {
+    await $fetch('/api/products', {
+      method: 'POST',
+      body: data
+    })
+    await fetchAll()
+  }
 
-    /**
-     * Actualiza el stock de un producto específico en la memoria (Reatividad Socket)
-     */
-    updateProductStock(productId: number, warehouseId: number, newQuantity: number | string) {
-      const product = this.products.find(p => p.id === productId)
-      if (product) {
-        if (!product.stocks) product.stocks = []
-        const stockIndex = product.stocks.findIndex((s: any) => s.warehouseId === warehouseId)
-        if (stockIndex >= 0) {
-          product.stocks[stockIndex].quantity = newQuantity
-        } else {
-          product.stocks.push({ warehouseId, productId, quantity: newQuantity })
-        }
+  async function update(id: number, data: Partial<Product>) {
+    await $fetch(`/api/products/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+    await fetchAll()
+  }
+
+  async function remove(id: number) {
+    await $fetch(`/api/products/${id}`, {
+      method: 'DELETE'
+    })
+    await fetchAll()
+  }
+
+  function updateProductStock(productId: number, warehouseId: number, newQuantity: number | string) {
+    const product = products.value.find(p => p.id === productId)
+    if (product) {
+      if (!product.stocks) product.stocks = []
+      const stockIndex = product.stocks.findIndex((s: any) => s.warehouseId === warehouseId)
+      if (stockIndex >= 0) {
+        product.stocks[stockIndex].quantity = newQuantity
+      } else {
+        product.stocks.push({ warehouseId, productId, quantity: newQuantity })
       }
     }
+  }
+
+  return {
+    products,
+    loading,
+    activeProducts,
+    fetchAll,
+    create,
+    update,
+    remove,
+    updateProductStock
   }
 })
