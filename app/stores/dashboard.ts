@@ -22,7 +22,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       const auth = useAuthStore()
       const canApproveReceptions = auth.hasPermission('APPROVAL_RECEPTIONS', 'canUpdate')
       const canApproveTransfers = auth.hasPermission('APPROVAL_TRANSFERS', 'canUpdate')
-      const canApproveOperations = auth.hasPermission('OPERATIONS', 'canUpdate')
+      const canApproveOperations = auth.hasPermission('APPROVAL_OPERATIONS', 'canUpdate')
 
       receptions.forEach((r: any) => {
         if (r.status === 'PENDING' && canApproveReceptions) {

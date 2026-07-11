@@ -123,23 +123,14 @@
 
           <template v-slot:body-cell-quantity="props">
             <q-td :props="props" :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'bg-red-1' : ''">
+              <!-- MODO VISUALIZACIÓN: Solo mostrar la cantidad. Si es menor, se pinta de rojo para indicar discrepancia. -->
               <template v-if="!isEditing">
                 <span :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'text-red-9 text-weight-bold' : ''">{{ props.row.quantity }}</span>
-                <div v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity)" class="text-caption text-red-9 q-mt-xs" style="max-width: 150px; white-space: normal;">
-                  <strong>Motivo:</strong> {{ props.row.discrepancyReason || 'No especificado' }}
-                </div>
               </template>
+              
+              <!-- MODO EDICIÓN: Solo el input numérico para ajustar la cantidad física real ingresada. -->
               <div v-else>
                 <q-input v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 auto" />
-                <q-input v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity || props.row.quantity)" 
-                         v-model="props.row.discrepancyReason" 
-                         type="text" 
-                         dense 
-                         outlined 
-                         placeholder="Motivo del faltante..." 
-                         class="q-mt-sm bg-white" 
-                         color="negative" 
-                         style="max-width: 150px; margin: 0 auto" />
               </div>
             </q-td>
           </template>
@@ -178,22 +169,14 @@
                         {{ props.row.expectedQuantity || props.row.quantity }}
                       </template>
                       <template v-else-if="col.name === 'quantity'">
+                        <!-- MODO MÓVIL (GRID) - VISUALIZACIÓN: Se omite el texto descriptivo del faltante, solo color rojo. -->
                         <div v-if="!isEditing">
                           <span :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'text-red-9 text-weight-bold' : ''">{{ props.row.quantity }}</span>
-                          <div v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity)" class="text-caption text-red-9 text-left q-mt-xs">
-                            <strong>Motivo:</strong> {{ props.row.discrepancyReason || 'No especificado' }}
-                          </div>
                         </div>
+                        
+                        <!-- MODO MÓVIL (GRID) - EDICIÓN: Input numérico simplificado sin requerir texto explicativo. -->
                         <div v-else>
                           <q-input v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" />
-                          <q-input v-if="Number(props.row.quantity) < Number(props.row.expectedQuantity || props.row.quantity)" 
-                                  v-model="props.row.discrepancyReason" 
-                                  type="text" 
-                                  dense 
-                                  outlined 
-                                  placeholder="Motivo..." 
-                                  class="q-mt-sm bg-white" 
-                                  color="negative" />
                         </div>
                       </template>
                       <template v-else-if="col.name === 'price'">

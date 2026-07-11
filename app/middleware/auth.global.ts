@@ -3,9 +3,8 @@ import { useAuthStore } from '~/stores/auth'
 export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuthStore()
   
-  // Si tenemos token guardado pero el usuario es null (ej: recargó la página con F5)
-  // intentamos recuperar la sesión antes de tomar decisiones.
-  if (auth.token && !auth.user) {
+  // Intentar hidratar el usuario si la página se recarga (F5) o se abre en nueva pestaña
+  if (!auth.isAuthenticated) {
     await auth.fetchUser()
   }
 

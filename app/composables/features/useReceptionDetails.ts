@@ -100,19 +100,13 @@ export function useReceptionDetails() {
   const saveDraftChanges = async () => {
     saving.value = true
     try {
-      for (const d of transaction.value.details) {
-        if (Number(d.quantity) < Number(d.expectedQuantity) && (!d.discrepancyReason || d.discrepancyReason.trim() === '')) {
-          $q.notify({ type: 'negative', message: `Debe indicar el motivo del faltante para: ${d.product?.name}` })
-          saving.value = false
-          return
-        }
-      }
+      // Se eliminó la validación obligatoria del "Motivo de Faltante"
+      // para mejorar la experiencia de usuario (UX) en la recepción física.
 
       const updatedDetails = transaction.value.details.map((d: any) => ({
         productId: d.productId,
         quantity: Number(d.quantity),
         expectedQuantity: Number(d.expectedQuantity || d.quantity),
-        discrepancyReason: d.discrepancyReason,
         unitPrice: Number(d.unitPrice),
         expirationDate: d.expirationDate
       }))

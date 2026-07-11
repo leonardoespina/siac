@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useDashboard } from '~/composables/features/useDashboard'
+import { useKitchenOperation } from '~/composables/features/useKitchenOperation'
 
 const {
   auth,
@@ -9,12 +10,18 @@ const {
   canManageDiners,
   canViewReports,
   canManageProducts,
+  canManageTransfers,
   warehouseName,
   isShiftOpen,
   localInventory,
   handleOpenShift,
   goTo
 } = useDashboard()
+
+const {
+  incomingTransfers,
+  confirmReception
+} = useKitchenOperation()
 </script>
 
 <template>
@@ -38,6 +45,30 @@ const {
       <!-- ========================================== -->
       <div class="col-12" v-if="canOperateLocal">
         <div class="text-h6 text-weight-bold text-grey-8 q-mb-md">Gestión Operativa de Sede: {{ warehouseName }}</div>
+
+        <!-- Recepciones Pendientes (Camiones en Puerta) -->
+        <q-card bordered flat class="q-mb-lg" v-if="incomingTransfers.length > 0">
+          <q-card-section class="bg-orange-1 text-orange-9 row items-center">
+            <q-icon name="local_shipping" size="sm" class="q-mr-sm" />
+            <div class="text-h6">Recepciones Pendientes (Camiones en Puerta)</div>
+          </q-card-section>
+          <q-list bordered separator>
+            <q-item v-for="tx in incomingTransfers" :key="tx.id" class="q-py-md">
+              <q-item-section avatar>
+                <q-avatar color="orange-2" text-color="orange-9" icon="inventory" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold">Transferencia #{{ tx.id }}</q-item-label>
+                <q-item-label caption>Desde: {{ tx.source?.name || 'Central' }}</q-item-label>
+                <q-item-label caption>Aprobado el: {{ new Date(tx.updatedAt).toLocaleString() }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn color="green-8" icon="done_all" label="Recibir Mercancía" @click="confirmReception(tx.id)" />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card>
+
         <div class="row q-col-gutter-lg">
           
           <!-- Control de Turno Gigante -->
@@ -148,7 +179,7 @@ const {
       <!-- ========================================== -->
       <!-- WIDGET: BANDEJA GERENCIAL Y APROBACIONES   -->
       <!-- ========================================== -->
-      <div class="col-12" v-if="canApprove || canViewReports || canManageProducts">
+      <div class="col-12" v-if="canApprove || canViewReports || canManageProducts || canManageTransfers">
         <div class="text-h6 text-weight-bold text-grey-8 q-mb-md">Gestión Administrativa e Inventarios</div>
         <div class="row q-col-gutter-lg">
           
@@ -203,7 +234,7 @@ const {
                 </q-card>
               </div>
 
-              <div class="col-12" v-if="canApprove">
+              <div class="col-12" v-if="canManageTransfers">
                 <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/inventory/transfers/new')">
                   <q-card-section class="row items-center">
                     <q-avatar color="blue-1" text-color="blue-7" icon="sync_alt" class="q-mr-md" />

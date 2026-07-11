@@ -4,8 +4,28 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 // Extraer los formatos que necesitamos
 const { combine, timestamp, printf, colorize, json, errors } = winston.format
 
+// Filtro de enmascaramiento de datos sensibles
+const redactFormat = winston.format((info) => {
+  const SENSITIVE_KEYS = ['password', 'token', 'passwordhash', 'jwt', 'auth_token']
+  
+  const redact = (obj: any, depth = 0) => {
+    if (!obj || typeof obj !== 'object' || depth > 5) return
+    for (const key of Object.keys(obj)) {
+      if (SENSITIVE_KEYS.includes(key.toLowerCase())) {
+        obj[key] = '[REDACTED]'
+      } else if (typeof obj[key] === 'object') {
+        redact(obj[key], depth + 1)
+      }
+    }
+  }
+
+  redact(info)
+  return info
+})
+
 // Formato personalizado para la consola (desarrollo humano)
 const consoleFormat = combine(
+  redactFormat(),
   colorize(),
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   printf(({ level, message, timestamp, stack, ...meta }) => {
@@ -35,6 +55,7 @@ const consoleFormat = combine(
 
 // Formato para los archivos (máquina / JSON)
 const fileFormat = combine(
+  redactFormat(),
   timestamp(),
   errors({ stack: true }), // Asegura que el stack se vuelva string dentro del JSON
   json()

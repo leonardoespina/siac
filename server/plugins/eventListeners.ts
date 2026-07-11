@@ -100,6 +100,13 @@ export default defineNitroPlugin((nitroApp) => {
         }
 
         for (const manager of managers) {
+          // RLS: Si el manager es local, su almacén debe coincidir con el origen o el destino
+          if (manager.warehouseId) {
+            const isSource = manager.warehouseId === tx?.sourceId
+            const isDest = manager.warehouseId === tx?.destinationId
+            if (!isSource && !isDest) continue
+          }
+
           const notif = await prisma.notification.create({
             data: {
               userId: manager.id,
@@ -215,6 +222,9 @@ export default defineNitroPlugin((nitroApp) => {
       const prName = product?.name || `ID ${payload.productId}`
 
       for (const user of targetUsers) {
+        // RLS: Si el usuario es local, descartar si la alerta no pertenece a su propio almacén
+        if (user.warehouseId && user.warehouseId !== payload.warehouseId) continue
+
         const notif = await prisma.notification.create({
           data: {
             userId: user.id,

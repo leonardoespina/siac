@@ -19,7 +19,7 @@ export function useDashboard() {
 
   const canApprove = computed(() => {
     // Bandeja de Aprobaciones: Si puede aprobar algo
-    return auth.hasPermission('OPERATIONS', 'canUpdate') ||
+    return auth.hasPermission('APPROVAL_OPERATIONS', 'canUpdate') ||
            auth.hasPermission('APPROVAL_RECEPTIONS', 'canUpdate') ||
            auth.hasPermission('APPROVAL_TRANSFERS', 'canUpdate')
   })
@@ -37,6 +37,7 @@ export function useDashboard() {
   // Atajos (Ejemplo: Transferencias, Reportes)
   const canViewReports = computed(() => auth.hasPermission('REPORTS', 'canRead'))
   const canManageProducts = computed(() => auth.hasPermission('PRODUCTS', 'canRead'))
+  const canManageTransfers = computed(() => auth.hasPermission('TRANSFERS', 'canCreate'))
 
   const isOperator = computed(() => canOperateLocal.value)
 
@@ -128,6 +129,7 @@ export function useDashboard() {
     canManageDiners,
     canViewReports,
     canManageProducts,
+    canManageTransfers,
     warehouseName,
     isShiftOpen,
     localInventory,

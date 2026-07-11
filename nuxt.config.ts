@@ -6,7 +6,38 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
     'nuxt-quasar-ui',
     '@pinia/nuxt',
+    'nuxt-security'
   ],
+
+  security: {
+    headers: {
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: 'unsafe-none',
+    },
+    rateLimiter: {
+      tokensPerInterval: 150,
+      interval: 60000,
+    },
+    requestSizeLimiter: {
+      maxRequestSizeInBytes: 2000000, // 2MB for normal payload
+      maxUploadFileRequestInBytes: 8000000, // 8MB for multipart forms (Excel uploads)
+    },
+    corsHandler: {
+      origin: '*',
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    }
+  },
+
+  routeRules: {
+    '/api/auth/login': {
+      security: {
+        rateLimiter: {
+          tokensPerInterval: 5,
+          interval: 60000,
+        }
+      }
+    }
+  },
 
   quasar: {
     plugins: ['Notify', 'Dialog', 'Loading'],

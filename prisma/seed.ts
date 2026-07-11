@@ -29,6 +29,7 @@ async function main() {
     { code: 'REPORT_CONSUMPTIONS', name: 'Reporte: Consumos y Mermas' },
     { code: 'REPORT_INSTITUTIONS', name: 'Reporte: Apoyos Institucionales' },
     { code: 'REPORT_SHIFTS', name: 'Reporte: Historial de Turnos' },
+    { code: 'REPORT_RECEPTIONS', name: 'Reporte: Matriz de Recepciones' },
     { code: 'POSITIONS', name: 'Catálogo de Cargos' },
     { code: 'DINERS', name: 'Directorio de Comensales' },
     { code: 'DISPATCH', name: 'Despacho Rápido' },

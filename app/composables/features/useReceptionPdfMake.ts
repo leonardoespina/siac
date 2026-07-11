@@ -123,7 +123,7 @@ export function useReceptionPdfMake() {
           {
             table: {
               headerRows: 1,
-              widths: ['auto', '*', 'auto', 'auto', 'auto', '30%'],
+              widths: ['auto', '*', 'auto', 'auto', 'auto'],
               body: [
                 // Fila Header
                 [
@@ -131,8 +131,7 @@ export function useReceptionPdfMake() {
                   { text: 'Producto', style: 'tableHeader' },
                   { text: 'Cant. Facturada', style: 'tableHeader', alignment: 'center' },
                   { text: 'Cant. Recibida', style: 'tableHeader', alignment: 'center' },
-                  { text: 'Diferencia', style: 'tableHeader', alignment: 'center' },
-                  { text: 'Motivo / Obs.', style: 'tableHeader' }
+                  { text: 'Diferencia', style: 'tableHeader', alignment: 'center' }
                 ],
                 // Filas de Datos
                 ...transaction.details.map(det => {
@@ -144,8 +143,7 @@ export function useReceptionPdfMake() {
                      det.product?.name,
                      { text: `${expected} ${det.product?.unit?.abbreviation || ''}`, alignment: 'center' },
                      { text: `${received} ${det.product?.unit?.abbreviation || ''}`, alignment: 'center', bold: true },
-                     { text: diff.toString(), alignment: 'center', color: diff < 0 ? 'red' : 'black', bold: diff < 0 },
-                     det.discrepancyReason || '-'
+                     { text: diff.toString(), alignment: 'center', color: diff < 0 ? 'red' : 'black', bold: diff < 0 }
                    ]
                 })
               ]

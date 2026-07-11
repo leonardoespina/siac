@@ -63,6 +63,13 @@ const reports = [
     icon: 'history',
     color: 'teal-8',
     route: '/reports/shifts'
+  },
+  {
+    title: 'Matriz de Recepciones',
+    description: 'Reporte consolidado de recepciones exportable a formato matricial (Excel).',
+    icon: 'table_chart',
+    color: 'cyan-8',
+    route: '/reports/receptions'
   }
 ]
 </script>

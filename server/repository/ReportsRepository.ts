@@ -271,9 +271,11 @@ export class ReportsRepository {
   /**
    * Reporte 5: Apoyos Institucionales
    */
-  async getInstitutionsSupport(startDate?: Date, endDate?: Date) {
+  async getInstitutionsSupport(warehouseId?: number, startDate?: Date, endDate?: Date) {
     const whereClause: any = { type: 'SUPPORT', status: 'CONFIRMED' }
     
+    if (warehouseId) whereClause.sourceId = warehouseId
+
     if (startDate && endDate) whereClause.createdAt = { gte: startDate, lte: endDate }
     else if (startDate) whereClause.createdAt = { gte: startDate }
     else if (endDate) whereClause.createdAt = { lte: endDate }

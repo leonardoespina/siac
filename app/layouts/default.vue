@@ -38,8 +38,7 @@ onMounted(() => {
         message: newNotif.title,
         caption: newNotif.message,
         position: 'top-right',
-        timeout: 5000,
-        actions: [{ icon: 'close', color: 'white' }]
+        timeout: 5000
       })
     })
     
@@ -297,7 +296,7 @@ const submitPasswordChange = async () => {
           <q-expansion-item
             icon="analytics"
             label="Reportes"
-            v-if="auth.isAuthenticated && (auth.hasPermission('REPORT_DASHBOARD', 'canRead') || auth.hasPermission('REPORT_VALUE', 'canRead') || auth.hasPermission('REPORT_ALERTS', 'canRead') || auth.hasPermission('REPORT_MINMAX', 'canRead') || auth.hasPermission('REPORT_CONSUMPTIONS', 'canRead') || auth.hasPermission('REPORT_INSTITUTIONS', 'canRead') || auth.hasPermission('REPORT_SHIFTS', 'canRead') || auth.hasPermission('REPORTS', 'canRead'))"
+            v-if="auth.isAuthenticated && (auth.hasPermission('REPORT_DASHBOARD', 'canRead') || auth.hasPermission('REPORT_VALUE', 'canRead') || auth.hasPermission('REPORT_ALERTS', 'canRead') || auth.hasPermission('REPORT_MINMAX', 'canRead') || auth.hasPermission('REPORT_CONSUMPTIONS', 'canRead') || auth.hasPermission('REPORT_INSTITUTIONS', 'canRead') || auth.hasPermission('REPORT_SHIFTS', 'canRead') || auth.hasPermission('REPORT_RECEPTIONS', 'canRead'))"
           >
             <q-list class="q-pl-lg">
               <q-item clickable v-ripple to="/reports" active-class="text-primary" exact v-if="auth.hasPermission('REPORT_DASHBOARD', 'canRead')">
@@ -327,6 +326,10 @@ const submitPasswordChange = async () => {
               <q-item clickable v-ripple to="/reports/shifts" active-class="text-primary" v-if="auth.hasPermission('REPORT_SHIFTS', 'canRead')">
                 <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
                 <q-item-section>Historial de Turnos</q-item-section>
+              </q-item>
+              <q-item clickable v-ripple to="/reports/receptions" active-class="text-primary" v-if="auth.hasPermission('REPORT_RECEPTIONS', 'canRead')">
+                <q-item-section avatar><q-icon name="table_chart" size="sm" /></q-item-section>
+                <q-item-section>Matriz de Recepciones</q-item-section>
               </q-item>
             </q-list>
           </q-expansion-item>

@@ -68,7 +68,6 @@
             <th class="text-center">Cant. Facturada</th>
             <th class="text-center">Cant. Recibida</th>
             <th class="text-center">Diferencia</th>
-            <th class="text-left" style="width: 30%">Motivo de Merma / Obs.</th>
           </tr>
         </thead>
         <tbody>
@@ -80,7 +79,6 @@
             <td class="text-center" :class="Number(det.quantity) < Number(det.expectedQuantity || det.quantity) ? 'text-red text-weight-bold' : ''">
               {{ Number(det.quantity) - Number(det.expectedQuantity || det.quantity) }}
             </td>
-            <td class="text-left">{{ det.discrepancyReason || '-' }}</td>
           </tr>
         </tbody>
       </q-markup-table>

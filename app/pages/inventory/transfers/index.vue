@@ -21,8 +21,13 @@
           </q-td>
         </template>
         <template v-slot:body-cell-actions="props">
-          <q-td :props="props">
-            <q-btn flat round color="primary" icon="visibility" :to="`/inventory/transfers/${props.row.id}`" />
+          <q-td :props="props" class="text-right">
+            <q-btn flat round dense color="secondary" icon="print" @click="openReport(props.row.id)">
+              <q-tooltip>Imprimir Acta de Tránsito</q-tooltip>
+            </q-btn>
+            <q-btn flat round dense color="primary" icon="visibility" :to="`/inventory/transfers/${props.row.id}`">
+              <q-tooltip>Ver Detalles</q-tooltip>
+            </q-btn>
           </q-td>
         </template>
 
@@ -66,5 +71,9 @@ const auth = useAuthStore()
 const canCreate = computed(() => auth.hasPermission('TRANSFERS', 'canCreate'))
 
 const { transfers, loading, columns, getStatusColor, getStatusLabel } = useTransfersList()
+
+const openReport = (id: number) => {
+  window.open(`/inventory/transfers/report-${id}`, '_blank')
+}
 </script>
 

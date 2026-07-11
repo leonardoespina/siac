@@ -28,54 +28,43 @@ export interface UserState {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  // El token lo guardamos usando useCookie() nativo de Nuxt.
-  // Esto es mejor que localStorage porque persiste mejor, es más seguro y
-  // el SSR de Nuxt lo entiende automáticamente.
-  const token = useCookie<string | null>('auth_token', { 
-    default: () => null,
-    watch: true, // Se actualiza reactivamente
-    maxAge: 60 * 60 * 24 // 24 horas de vida
-  })
-  
-  // Variable reactiva para guardar los datos del usuario logueado
+  // Variable reactiva para saber si hay sesión iniciada
+  // NOTA: Como la cookie ahora es HttpOnly, el frontend no puede leer el token directamente con useCookie('auth_token').
+  // Por lo tanto, dependemos de 'user.value' para saber si está autenticado.
   const user = ref<UserState | null>(null)
 
-  // Computed property para saber rápido si alguien está logueado
-  const isAuthenticated = computed(() => !!token.value && !!user.value)
+  const isAuthenticated = computed(() => !!user.value)
 
-  // Método: Iniciar Sesión (guarda la data que nos devuelve el backend)
-  function setAuth(newToken: string, userData: UserState) {
-    token.value = newToken
+  function setAuth(userData: UserState | null) {
     user.value = userData
   }
 
-  // Método: Cerrar Sesión (Borra todo y expulsa)
-  function logout() {
-    token.value = null
+  async function logout() {
+    // Para borrar la cookie HttpOnly, debemos llamar a un endpoint (o recargar y borrar local state)
+    // O mejor, crear un endpoint /api/auth/logout que limpie la cookie.
     user.value = null
-    navigateTo('/login') // Redirige a la pantalla de login
+    await $fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    navigateTo('/login')
   }
 
-  // Método: Iniciar Sesión desde API
   async function login(cedula: string, password: string) {
     const response = await $fetch('/api/auth/login', {
       method: 'POST',
       body: { cedula, password }
     })
-    setAuth(response.token, response.user)
+    setAuth(response.user)
   }
 
   // Método: Hidratar estado del usuario (cuando se recarga la página)
   async function fetchUser() {
-    if (!token.value) return false
     try {
-      // Intentamos recuperar la información del usuario usando el token (cookie)
-      const data = await $fetch('/api/auth/me')
+      // Usar useRequestFetch para reenviar la cookie HttpOnly durante SSR (SSR cookie forwarding)
+      const fetcher = import.meta.server ? useRequestFetch() : $fetch
+      const data = await fetcher('/api/auth/me')
       user.value = data.user
       return true
     } catch (error) {
-      // Si el token expiró o es inválido, cerramos sesión
-      token.value = null
+      // Si la petición falla (ej. token expirado o no existe), limpiamos el estado
       user.value = null
       return false
     }
@@ -106,7 +95,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    token,
     user,
     isAuthenticated,
     login,

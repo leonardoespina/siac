@@ -10,6 +10,9 @@
         <div class="row items-center">
           <q-btn flat round icon="arrow_back" color="primary" to="/inventory/transfers" class="q-mr-sm" :disable="isEditing" />
           <div class="text-h4 text-weight-bold text-primary">Transferencia #{{ transfer.id }}</div>
+          <q-btn flat round dense color="secondary" icon="print" class="q-ml-md" @click="openReport(transfer.id)" v-if="!isEditing">
+            <q-tooltip>Imprimir Acta</q-tooltip>
+          </q-btn>
           <q-chip :color="getStatusColor(transfer.status)" text-color="white" class="q-ml-md" v-if="!isEditing">
             {{ getStatusLabel(transfer.status) }}
           </q-chip>
@@ -115,9 +118,17 @@
                   type="number" 
                   dense outlined 
                   style="max-width: 120px; margin: 0 auto;"
-                  :error="props.row.quantity > props.row.availableStock"
-                  :error-message="`Max: ${props.row.availableStock}`"
-                  bottom-slots
+                  :min="1"
+                  :max="props.row.availableStock"
+                  :rules="[
+                    val => val > 0 || 'Inválido',
+                    val => val <= props.row.availableStock || `Max ${props.row.availableStock}`
+                  ]"
+                  hide-bottom-space
+                  @update:model-value="(val) => { 
+                    if (val < 1) props.row.quantity = 1; 
+                    if (val > props.row.availableStock) props.row.quantity = props.row.availableStock; 
+                  }"
                 />
               </template>
               <template v-else>
@@ -154,7 +165,25 @@
                     <div class="text-weight-bold text-right" style="max-width: 60%">
                       <template v-if="col.name === 'quantity'">
                         <template v-if="!isEditing">{{ props.row.quantity }}</template>
-                        <q-input v-else v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" :error="props.row.quantity > props.row.availableStock" :error-message="`Max: ${props.row.availableStock}`" bottom-slots />
+                        <q-input 
+                          v-else 
+                          v-model.number="props.row.quantity" 
+                          type="number" 
+                          dense 
+                          outlined 
+                          style="max-width: 90px; margin: 0 0 0 auto" 
+                          :min="1"
+                          :max="props.row.availableStock"
+                          :rules="[
+                            val => val > 0 || 'Inválido',
+                            val => val <= props.row.availableStock || `Max ${props.row.availableStock}`
+                          ]"
+                          hide-bottom-space
+                          @update:model-value="(val) => { 
+                            if (val < 1) props.row.quantity = 1; 
+                            if (val > props.row.availableStock) props.row.quantity = props.row.availableStock; 
+                          }"
+                        />
                       </template>
                       <template v-else-if="col.name === 'price'">
                         <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
@@ -196,4 +225,8 @@ const {
   updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addItem, removeItem, saveChanges,
   getStatusColor, getStatusLabel 
 } = useTransferDetails()
+
+const openReport = (id: number) => {
+  window.open(`/inventory/transfers/report-${id}`, '_blank')
+}
 </script>

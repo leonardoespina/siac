@@ -105,7 +105,25 @@
               </q-item-section>
 
               <q-item-section style="max-width: 150px">
-                <q-input v-model.number="item.quantity" type="number" label="Cantidad a enviar" dense outlined :suffix="item.unit" />
+                <q-input 
+                  v-model.number="item.quantity" 
+                  type="number" 
+                  label="Cantidad a enviar" 
+                  dense 
+                  outlined 
+                  :suffix="item.unit"
+                  :min="1"
+                  :max="item.availableStock"
+                  :rules="[
+                    val => val > 0 || 'Inválido',
+                    val => val <= item.availableStock || `Max ${item.availableStock}`
+                  ]"
+                  hide-bottom-space
+                  @update:model-value="(val) => { 
+                    if (val < 1) item.quantity = 1; 
+                    if (val > item.availableStock) item.quantity = item.availableStock; 
+                  }"
+                />
               </q-item-section>
 
               <q-item-section side>

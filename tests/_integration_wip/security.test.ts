@@ -30,4 +30,28 @@ describe('Security (API endpoints)', async () => {
       expect(err.statusCode).toBeLessThanOrEqual(403);
     }
   });
+
+  it('debería rechazar peticiones de login con payload incompleto (Zod Validation)', async () => {
+    try {
+      await $fetch('/api/auth/login', {
+        method: 'POST',
+        body: { cedula: '' } // falta password, cedula vacía
+      });
+      expect.unreachable('Zod debió haber lanzado error 400');
+    } catch (err: any) {
+      expect(err.statusCode).toBe(400); // Bad Request (Zod)
+    }
+  });
+
+  it('debería rechazar peticiones de login con caracteres muy largos (OOM Protection)', async () => {
+    try {
+      await $fetch('/api/auth/login', {
+        method: 'POST',
+        body: { cedula: '1234', password: 'a'.repeat(200) } // Supera el max() de Zod
+      });
+      expect.unreachable('Zod debió haber bloqueado payload excesivo');
+    } catch (err: any) {
+      expect(err.statusCode).toBe(400); // Bad Request
+    }
+  });
 });

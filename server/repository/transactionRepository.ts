@@ -180,7 +180,7 @@ export async function updateDraftDetails(id: number, newDetails: any[], user: Us
           productId: d.productId,
           quantity: d.quantity,
           expectedQuantity: d.expectedQuantity,
-          discrepancyReason: d.discrepancyReason || null,
+          discrepancyReason: null,
           unitPrice: d.unitPrice,
           expirationDate: d.expirationDate ? new Date(d.expirationDate) : null
         }))

@@ -5,15 +5,19 @@ import { logAudit } from '../../utils/audit'
 import { UnauthorizedError, NotFoundError, ValidationError } from '../../domain/errors'
 import bcrypt from 'bcryptjs'
 
-export default defineApiHandler(async (event) => {
-  // 1. Leer el cuerpo de la petición (lo que envía el frontend)
-  const body = await readBody(event)
-  const cedula = body.cedula?.trim()
-  const password = body.password
+import { z } from 'zod'
+import { useValidatedBody } from 'h3-zod'
 
-  if (!cedula || !password) {
-    throw new ValidationError('Cédula y contraseña son requeridas')
-  }
+const loginSchema = z.object({
+  cedula: z.string().min(4, 'Cédula inválida').max(20, 'Cédula muy larga').trim(),
+  password: z.string().min(4, 'Contraseña requerida').max(100)
+})
+
+export default defineApiHandler(async (event) => {
+  // 1. Validar estrictamente el payload usando Zod
+  const body = await useValidatedBody(event, loginSchema)
+  const cedula = body.cedula
+  const password = body.password
 
   // 2. Buscar al usuario por cédula, incluyendo su Rol y Permisos
   const user = await prisma.user.findUnique({
@@ -49,6 +53,14 @@ export default defineApiHandler(async (event) => {
   // 4. Generar Token JWT
   const token = signToken({ userId: user.id }, '24h')
 
+  // 4.1. Setear token en Cookie segura (HttpOnly)
+  setCookie(event, 'auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 // 24 horas
+  })
+
   // 5. REGISTRAR AUDITORÍA 🔥
   await logAudit(user.id, 'LOGIN', 'AUTH', user.id, 'Inicio de sesión desde la web')
 
@@ -56,7 +68,6 @@ export default defineApiHandler(async (event) => {
   const { passwordHash, ...safeUser } = user
 
   return {
-    token,
     user: safeUser
   }
 })
