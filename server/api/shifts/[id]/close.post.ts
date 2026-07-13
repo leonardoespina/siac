@@ -2,6 +2,7 @@ import { defineApiHandler } from '../../../utils/handler'
 import { prisma } from '../../../utils/prisma'
 import { requireUserContext } from '../../../utils/auth'
 import { ValidationError } from '../../../domain/errors'
+import { emitEvent } from '../../../utils/eventBus'
 
 export default defineApiHandler(async (event) => {
   const user = await requireUserContext(event)
@@ -39,8 +40,14 @@ export default defineApiHandler(async (event) => {
     data: {
       status: 'CLOSED',
       endTime: endTime
+    },
+    include: {
+      warehouse: true,
+      user: { select: { id: true, name: true } }
     }
   })
+
+  emitEvent('shift:sync', { action: 'update', shift: updated })
 
   return updated
 })

@@ -27,6 +27,12 @@ export type AppEvents = {
   
   // Inventario general
   'inventory:updated': { warehouseId?: number, productId?: number, quantity?: number }
+  
+  // Transacciones en tiempo real (Sockets)
+  'transaction:sync': { action: 'create' | 'update' | 'delete', transaction: any }
+  
+  // Turnos en tiempo real (Sockets)
+  'shift:sync': { action: 'create' | 'update', shift: any }
 }
 
 // Singleton in-memory bus (Resistente a HMR de Nuxt en desarrollo)

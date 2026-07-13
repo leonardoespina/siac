@@ -1,6 +1,6 @@
 import { ValidationError, UnauthorizedError } from './errors'
 
-export type TransactionStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONFIRMED'
+export type TransactionStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONFIRMED' | 'CANCELED'
 export type TransactionType = 'RECEPTION' | 'TRANSFER' | 'ADJUSTMENT'
 
 export interface UserContext {
@@ -13,13 +13,22 @@ export interface UserContext {
 /**
  * Valida si una transición de estado es matemáticamente y lógicamente posible.
  */
-export function validateStateTransition(currentStatus: TransactionStatus, newStatus: TransactionStatus) {
+export function validateStateTransition(currentStatus: TransactionStatus, newStatus: TransactionStatus, txType?: TransactionType) {
+  // Excepción: Los Consumos (CONSUMPTION) y Mermas (LOSS) locales pueden pasar de DRAFT a CONFIRMED (Auto-Aprobación por usuario local)
+  // Nota: Los Apoyos Institucionales (SUPPORT) siguen requiriendo aprobación gerencial.
+  if (txType && ['CONSUMPTION', 'LOSS'].includes(txType) && newStatus === 'CONFIRMED') {
+    if (currentStatus === 'DRAFT' || currentStatus === 'PENDING') {
+      return // Permitido
+    }
+  }
+
   const validTransitions: Record<TransactionStatus, TransactionStatus[]> = {
     DRAFT: ['PENDING'],
     PENDING: ['APPROVED', 'REJECTED', 'CONFIRMED'],
-    APPROVED: ['CONFIRMED'],
+    APPROVED: ['CONFIRMED', 'CANCELED'],
     REJECTED: [],
-    CONFIRMED: []
+    CONFIRMED: [],
+    CANCELED: []
   }
 
   const allowed = validTransitions[currentStatus]

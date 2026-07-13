@@ -138,8 +138,8 @@
             <!-- COLUMNA ESTADO -->
             <template v-slot:body-cell-status="props">
               <q-td :props="props">
-                <q-badge :color="props.row.status === 'PENDING' ? 'orange' : (props.row.status === 'CONFIRMED' ? 'green' : 'grey')">
-                  {{ props.row.status === 'PENDING' ? 'Pendiente' : (props.row.status === 'CONFIRMED' ? 'Aprobado' : props.row.status) }}
+                <q-badge :color="props.row.status === 'DRAFT' ? 'grey' : (props.row.status === 'PENDING' ? 'orange' : (props.row.status === 'CONFIRMED' ? 'green' : 'grey'))">
+                  {{ props.row.status === 'DRAFT' ? 'Borrador (Por Aprobar)' : (props.row.status === 'PENDING' ? 'Pendiente' : (props.row.status === 'CONFIRMED' ? 'Aprobado' : props.row.status)) }}
                 </q-badge>
               </q-td>
             </template>
@@ -152,8 +152,18 @@
                   <q-tooltip>Ver / Modificar Detalles</q-tooltip>
                 </q-btn>
                 
+                <!-- BOTÓN IMPRIMIR ACTA "DESDE AFUERA" -->
+                <q-btn flat round color="secondary" icon="print" @click="openReport(props.row.id)" size="sm">
+                  <q-tooltip>Imprimir Acta</q-tooltip>
+                </q-btn>
+                
+              <!-- BOTÓN APROBAR "DESDE AFUERA" -->
+              <q-btn flat round color="positive" icon="check_circle" @click="approveConsumption(props.row.id)" v-if="props.row.type !== 'SUPPORT' && (props.row.status === 'DRAFT' || props.row.status === 'PENDING')" size="sm">
+                <q-tooltip>Aprobar y Descontar Stock</q-tooltip>
+              </q-btn>
+                
               <!-- BOTÓN ELIMINAR "DESDE AFUERA" -->
-              <q-btn flat round color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'PENDING'" size="sm">
+              <q-btn flat round color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'DRAFT' || props.row.status === 'PENDING'" size="sm">
                 <q-tooltip>Eliminar Registro</q-tooltip>
               </q-btn>
             </q-td>
@@ -174,8 +184,8 @@
                         </q-chip>
                       </template>
                       <template v-else-if="col.name === 'status'">
-                        <q-badge :color="props.row.status === 'PENDING' ? 'orange' : (props.row.status === 'CONFIRMED' ? 'green' : 'grey')">
-                          {{ props.row.status === 'PENDING' ? 'Pendiente' : (props.row.status === 'CONFIRMED' ? 'Aprobado' : props.row.status) }}
+                        <q-badge :color="props.row.status === 'DRAFT' ? 'grey' : (props.row.status === 'PENDING' ? 'orange' : (props.row.status === 'CONFIRMED' ? 'green' : 'grey'))">
+                          {{ props.row.status === 'DRAFT' ? 'Borrador (Por Aprobar)' : (props.row.status === 'PENDING' ? 'Pendiente' : (props.row.status === 'CONFIRMED' ? 'Aprobado' : props.row.status)) }}
                         </q-badge>
                       </template>
                       <template v-else>{{ col.value }}</template>
@@ -185,7 +195,9 @@
                 <q-separator />
                 <q-card-actions align="right">
                   <q-btn flat color="primary" label="Ver" icon="visibility" :to="`/kitchen/consumptions/${props.row.id}`" />
-                  <q-btn flat color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'PENDING'" />
+                  <q-btn flat color="secondary" icon="print" @click="openReport(props.row.id)" />
+                  <q-btn flat color="positive" icon="check_circle" @click="approveConsumption(props.row.id)" v-if="props.row.type !== 'SUPPORT' && (props.row.status === 'DRAFT' || props.row.status === 'PENDING')" />
+                  <q-btn flat color="negative" icon="delete" @click="deleteConsumption(props.row.id)" v-if="props.row.status === 'DRAFT' || props.row.status === 'PENDING'" />
                 </q-card-actions>
               </q-card>
             </div>
@@ -283,6 +295,32 @@
                         <q-btn flat round dense color="negative" icon="delete" @click="removeConsumptionItem(consumptionItems.indexOf(props.row))" />
                       </q-td>
                     </template>
+                    
+                    <!-- MODO MÓVIL (NUEVO): Diseño de tarjeta -->
+                    <template v-slot:item="props">
+                      <div class="q-pa-xs col-12">
+                        <q-card bordered flat class="bg-grey-1">
+                          <q-card-section class="row items-center justify-between">
+                            <div>
+                              <div class="text-weight-bold">{{ props.row.productName }}</div>
+                              <div class="text-caption text-grey-8">Stock Disponible: <span class="text-positive text-weight-bold">{{ props.row.availableStock }}</span></div>
+                            </div>
+                            <q-btn flat round dense color="negative" icon="delete" @click="removeConsumptionItem(consumptionItems.indexOf(props.row))" />
+                          </q-card-section>
+                          
+                          <q-card-section class="q-pt-none">
+                            <q-input 
+                              v-model.number="props.row.quantity" 
+                              type="number" dense outlined bg-color="white"
+                              label="Cantidad a despachar"
+                              :error="props.row.quantity > props.row.availableStock"
+                              :error-message="`Supera stock local (${props.row.availableStock})`"
+                              bottom-slots
+                            />
+                          </q-card-section>
+                        </q-card>
+                      </div>
+                    </template>
                   </q-table>
                 </q-card>
               </div>
@@ -373,9 +411,16 @@ const {
   shiftConsumptions, deleteConsumption, consumptionColumns,
   isConsumptionDialogVisible, consumptionType, consumptionItems, searchQuery, filteredProducts,
   selectedInstitutionId, institutions,
-  openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption,
+  openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption, approveConsumption,
   isGlobalUser, activeWarehouseId, warehouses
 } = useKitchenOperation()
+
+const router = useRouter()
+
+const openReport = (id: number) => {
+  const url = router.resolve(`/kitchen/consumptions/report-${id}`).href
+  window.open(url, '_blank')
+}
 
 // ── LÓGICA DE OCR ───────────────────────────────────────────────
 const isOcrOpen = ref(false)

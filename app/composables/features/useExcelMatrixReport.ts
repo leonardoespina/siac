@@ -8,7 +8,7 @@ export function useExcelMatrixReport() {
   const reportsStore = useReportsStore()
   const loading = ref(false)
 
-  const fetchMatrix = async (filters: { startDate: string, endDate: string, categoryId?: number, warehouseId?: number }) => {
+  const fetchMatrix = async (filters: { startDate: string, endDate: string, categoryId?: number, unitId?: number, warehouseId?: number }) => {
     loading.value = true
     try {
       await reportsStore.fetchReceptionsMatrix(filters)

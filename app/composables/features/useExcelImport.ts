@@ -114,9 +114,9 @@ export function useExcelImport() {
 
   const downloadTemplate = () => {
     const wsData = [
-      ['Código', 'Producto', 'Categoría', 'Unidad', 'Cantidad', 'Precio', 'Vencimiento'],
-      ['P-001', 'Arroz Blanco', 'Víveres Secos', 'Kilo', 50, 1.25, '01/12/2027'],
-      ['', 'Tomates', 'Vegetales', 'Kilo', 20, 0.80, ''],
+      ['Código', 'Producto', 'Categoría', 'Unidad', 'Cantidad', 'Precio', 'Vencimiento', 'Stock Min', 'Stock Max'],
+      ['P-001', 'Arroz Blanco', 'Víveres Secos', 'Kilo', 50, 1.25, '01/12/2027', 10, 50],
+      ['', 'Tomates', 'Vegetales', 'Kilo', 20, 0.80, '', 5, 20],
     ]
     const ws = XLSX.utils.aoa_to_sheet(wsData)
     const wb = XLSX.utils.book_new()
@@ -172,6 +172,9 @@ export function useExcelImport() {
           expirationDate = null
         }
 
+        const minimumStock = Number(r['Stock Min']) || 0
+        const maximumStock = Number(r['Stock Max']) || null
+
         return {
           index,
           isValid,
@@ -183,7 +186,9 @@ export function useExcelImport() {
           unitName,
           quantity,
           unitPrice: Number(r['Precio']) || 0,
-          expirationDate
+          expirationDate,
+          minimumStock,
+          maximumStock
         }
       })
 
@@ -227,6 +232,15 @@ export function useExcelImport() {
     }
   }
 
+  const clearImport = () => {
+    parsedRows.value = []
+    file.value = null
+    searchQuery.value = ''
+    supplierId.value = null
+    referenceNumber.value = ''
+    // Nota: destinationId no se borra para conservar el almacén por defecto
+  }
+
   return {
     file,
     supplierId,
@@ -240,6 +254,7 @@ export function useExcelImport() {
     grandTotal,
     parseExcel,
     saveImport,
+    clearImport,
     downloadTemplate,
     revalidateRow
   }

@@ -14,11 +14,41 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Estado requerido')
   }
 
-  // Validación granular de la Matriz de Permisos
+  // Necesitamos saber el tipo de transacción, almacenes involucrados y su tipo
+  const tx = await prisma.transaction.findUnique({ 
+    where: { id }, 
+    select: { type: true, sourceId: true, destinationId: true, source: { select: { type: true } } } 
+  })
+  if (!tx) throw new ValidationError('Transacción no encontrada')
+
   if (body.status === 'APPROVED' || body.status === 'REJECTED') {
-    await requirePermission(event, 'APPROVAL_TRANSFERS', 'update')
+    // Si es una transferencia Local a Local, el almacén de Origen (LOCAL) puede auto-aprobar su salida
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    
+    if (tx.type === 'TRANSFER' && tx.source?.type === 'LOCAL' && user?.warehouseId === tx.sourceId) {
+      try {
+        await requirePermission(event, 'OPERATIONS', 'update')
+      } catch (e) {
+        await requirePermission(event, 'TRANSFERS', 'update')
+      }
+    } else {
+      // Regla general: Si viene de Central, o cualquier otra cosa, exige Aprobación Gerencial
+      await requirePermission(event, 'APPROVAL_TRANSFERS', 'update')
+    }
   } else {
-    await requirePermission(event, 'TRANSFERS', 'update')
+    // Si es un consumo local o merma, la acción 'Aprobar Consumo' la hace el operador local.
+    // Por tanto, requerimos el permiso de OPERATIONS o TRANSFERS.
+    if (tx.type === 'CONSUMPTION' || tx.type === 'LOSS') {
+      try {
+        await requirePermission(event, 'OPERATIONS', 'update')
+      } catch (e) {
+        // Fallback: si no tiene OPERATIONS, probamos con TRANSFERS por si es un rol legado
+        await requirePermission(event, 'TRANSFERS', 'update')
+      }
+    } else {
+      // Para Transferencias entre almacenes (TRANSFER) y Recepciones (RECEPTION), pedimos TRANSFERS
+      await requirePermission(event, 'TRANSFERS', 'update')
+    }
   }
 
   const userRecord = await prisma.user.findUnique({

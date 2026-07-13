@@ -74,6 +74,7 @@
     <div v-else>
       <q-card bordered flat>
         <q-table
+          :grid="$q.screen.lt.md"
           :rows="shifts"
           :columns="columns"
           row-key="id"
@@ -147,6 +148,79 @@
                 </div>
               </q-td>
             </q-tr>
+          </template>
+
+          <!-- MODO MÓVIL (GRID): Tarjeta Compacta -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+              <q-card bordered flat class="bg-grey-1">
+                <q-card-section class="row items-center justify-between">
+                  <div>
+                    <div class="text-weight-bold text-subtitle1">{{ props.row.warehouse?.name }}</div>
+                    <div class="text-caption text-grey-8"><q-icon name="person" /> {{ props.row.user?.name }}</div>
+                  </div>
+                  <q-chip :color="props.row.shiftType === 'NOCTURNO' ? 'indigo-10' : 'amber-8'" text-color="white" size="sm" icon="schedule">
+                    {{ props.row.shiftType }}
+                  </q-chip>
+                </q-card-section>
+                
+                <q-card-section class="q-pt-none row justify-between">
+                  <div>
+                    <div class="text-caption text-grey-6">Apertura</div>
+                    <div class="text-weight-medium">{{ new Date(props.row.startTime).toLocaleString() }}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-caption text-grey-6">Cierre</div>
+                    <div class="text-weight-medium" v-if="props.row.endTime">{{ new Date(props.row.endTime).toLocaleString() }}</div>
+                    <div class="text-weight-medium" v-else>-</div>
+                  </div>
+                </q-card-section>
+                
+                <q-separator />
+                
+                <q-card-actions align="between" class="bg-white">
+                  <q-badge :color="props.row.status === 'OPEN' ? 'primary' : 'grey'">
+                    {{ props.row.status === 'OPEN' ? 'EN CURSO' : 'CERRADO' }}
+                  </q-badge>
+                  <q-btn flat color="primary" :label="props.expand ? 'Ocultar' : 'Ver Detalles'" @click="props.expand = !props.expand" :icon="props.expand ? 'expand_less' : 'expand_more'" />
+                </q-card-actions>
+                
+                <!-- Detalles de Transacciones (Móvil) -->
+                <q-slide-transition>
+                  <div v-show="props.expand">
+                    <q-separator />
+                    <div class="q-pa-sm bg-white">
+                      <div v-if="props.row.transactions && props.row.transactions.length > 0">
+                        <div class="text-subtitle2 q-mb-sm text-grey-8">Movimientos:</div>
+                        <q-list separator dense>
+                          <q-item v-for="tx in props.row.transactions" :key="tx.id" class="q-px-none">
+                            <q-item-section avatar style="min-width: 40px;">
+                              <q-avatar size="sm" :color="tx.type === 'CONSUMPTION' ? 'blue-2' : (tx.type === 'SUPPORT' ? 'purple-2' : 'red-2')" 
+                                        :text-color="tx.type === 'CONSUMPTION' ? 'blue-9' : (tx.type === 'SUPPORT' ? 'purple-9' : 'red-9')" 
+                                        :icon="tx.type === 'CONSUMPTION' ? 'restaurant' : (tx.type === 'SUPPORT' ? 'volunteer_activism' : 'delete')" />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label class="text-weight-bold">{{ tx.type === 'CONSUMPTION' ? 'Consumo' : (tx.type === 'SUPPORT' ? 'Apoyo' : 'Merma') }} #{{ tx.id }}</q-item-label>
+                              <q-item-label caption v-for="det in tx.details" :key="det.id">
+                                • {{ det.quantity }} {{ det.product?.unit?.abbreviation }} - {{ det.product?.name }}
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side>
+                               <q-badge :color="tx.status === 'PENDING' ? 'orange' : (tx.status === 'CONFIRMED' ? 'green' : 'grey')">
+                                {{ tx.status === 'PENDING' ? 'Pdte' : (tx.status === 'CONFIRMED' ? 'OK' : tx.status) }}
+                              </q-badge>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </div>
+                      <div v-else class="text-grey text-italic text-caption q-pa-sm text-center">
+                        No se registraron movimientos.
+                      </div>
+                    </div>
+                  </div>
+                </q-slide-transition>
+              </q-card>
+            </div>
           </template>
         </q-table>
       </q-card>

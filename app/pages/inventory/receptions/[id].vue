@@ -41,12 +41,19 @@
               :loading="saving"
             />
           </template>
-          <q-btn 
-            v-if="transaction.status === 'APPROVED'"
-            color="green-8" icon="done_all" label="Confirmar Ingreso" 
-            @click="updateStatus('CONFIRMED')" 
-            :loading="saving"
-          />
+          <template v-if="transaction.status === 'APPROVED'">
+            <q-btn 
+              color="red-10" icon="cancel" label="Anular Recepción" outline
+              @click="promptCancel" 
+              :loading="saving"
+              class="q-mr-sm"
+            />
+            <q-btn 
+              color="green-8" icon="done_all" label="Confirmar Ingreso" 
+              @click="updateStatus('CONFIRMED')" 
+              :loading="saving"
+            />
+          </template>
         </div>
       </div>
 
@@ -233,6 +240,7 @@ const {
   columns,
   updateStatus,
   promptReject,
+  promptCancel,
   deleteDraft,
   removeRow,
   saveDraftChanges,

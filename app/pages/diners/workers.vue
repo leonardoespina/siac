@@ -201,34 +201,36 @@ onMounted(() => {
                 </q-td>
               </template>
 
-              <!-- MODO GRID DINÁMICO PARA MÓVILES -->
+              <!-- MODO MÓVIL (GRID): Tarjeta Compacta -->
               <template v-slot:item="props">
                 <div class="q-pa-xs col-12 col-sm-6 col-md-4">
-                  <q-card bordered flat>
-                    <q-card-section class="q-pb-none">
-                      <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm">
-                        <div class="text-caption text-grey-7">{{ col.label }}</div>
-                        <div class="text-weight-bold text-right" style="max-width: 60%; word-break: break-word;">
-                          <template v-if="col.name === 'rationType'">
-                            <q-badge :color="col.value === 'NORMAL' ? 'primary' : 'warning'">
-                              {{ col.value === 'NORMAL' ? 'Normal' : 'Dieta Médica' }}
-                            </q-badge>
-                          </template>
-                          <template v-else>
-                            {{ col.value }}
-                          </template>
-                        </div>
+                  <q-card bordered flat class="bg-white">
+                    <q-card-section class="q-pb-xs">
+                      <div class="text-weight-bold text-subtitle1">{{ props.row.name }}</div>
+                      <div class="text-caption text-grey-8">
+                        <q-icon name="badge" class="q-mr-xs" /> {{ props.row.cedula }}
+                      </div>
+                      <div class="text-caption text-grey-8 q-mt-xs">
+                        <q-icon name="work" class="q-mr-xs" /> {{ props.row.position?.name || 'Sin Cargo' }}
                       </div>
                     </q-card-section>
                     
                     <q-separator />
-                    <q-card-actions align="right" class="bg-grey-1">
-                      <q-btn flat round color="primary" icon="edit" size="sm" @click="openEditDialog(props.row)">
-                        <q-tooltip>Editar Trabajador</q-tooltip>
-                      </q-btn>
-                      <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteDiner(props.row)">
-                        <q-tooltip>Eliminar Trabajador</q-tooltip>
-                      </q-btn>
+                    
+                    <q-card-actions align="between" class="bg-grey-1 q-px-md">
+                      <div>
+                        <q-badge :color="props.row.rationType === 'NORMAL' ? 'primary' : 'warning'">
+                          {{ props.row.rationType === 'NORMAL' ? 'Normal' : 'Dieta Médica' }}
+                        </q-badge>
+                      </div>
+                      <div>
+                        <q-btn flat round color="primary" icon="edit" size="sm" @click="openEditDialog(props.row)">
+                          <q-tooltip>Editar Trabajador</q-tooltip>
+                        </q-btn>
+                        <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteDiner(props.row)">
+                          <q-tooltip>Eliminar Trabajador</q-tooltip>
+                        </q-btn>
+                      </div>
                     </q-card-actions>
                   </q-card>
                 </div>

@@ -58,17 +58,29 @@
           <div class="text-h6">Vista Previa y Ajustes ({{ parsedRows.length }} filas)</div>
           <div class="text-subtitle2">Gran Total: <span class="text-weight-bold text-h5 text-warning q-ml-sm">${{ grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span></div>
         </div>
-        <q-btn 
-          color="warning" 
-          text-color="dark"
-          icon="cloud_upload" 
-          label="Guardar e Importar" 
-          size="lg"
-          :class="['q-ml-sm', { 'full-width q-ml-none q-mt-sm': $q.screen.lt.md }]"
-          :loading="saving"
-          :disable="!supplierId || !destinationId || !referenceNumber"
-          @click="saveImport"
-        />
+        <div class="q-gutter-sm">
+          <q-btn 
+            color="white" 
+            text-color="dark"
+            icon="cleaning_services" 
+            label="Limpiar Proceso" 
+            size="lg"
+            :class="[{ 'full-width q-ml-none q-mt-sm': $q.screen.lt.md }]"
+            :disable="saving"
+            @click="clearImport"
+          />
+          <q-btn 
+            color="warning" 
+            text-color="dark"
+            icon="cloud_upload" 
+            label="Guardar e Importar" 
+            size="lg"
+            :class="[{ 'full-width q-ml-none q-mt-sm': $q.screen.lt.md }]"
+            :loading="saving"
+            :disable="!supplierId || !destinationId || !referenceNumber"
+            @click="saveImport"
+          />
+        </div>
       </q-card-section>
       
       <q-table
@@ -178,6 +190,20 @@
             />
           </q-td>
         </template>
+
+        <!-- Edición en Vivo: Min -->
+        <template v-slot:body-cell-minimumStock="props">
+          <q-td :props="props">
+            <q-input v-model.number="props.row.minimumStock" type="number" dense outlined style="max-width: 70px; margin: 0 auto" />
+          </q-td>
+        </template>
+
+        <!-- Edición en Vivo: Max -->
+        <template v-slot:body-cell-maximumStock="props">
+          <q-td :props="props">
+            <q-input v-model.number="props.row.maximumStock" type="number" dense outlined style="max-width: 70px; margin: 0 auto" />
+          </q-td>
+        </template>
       </q-table>
     </q-card>
 
@@ -234,6 +260,7 @@ const {
   grandTotal,
   parseExcel, 
   saveImport,
+  clearImport,
   downloadTemplate,
   revalidateRow
 } = useExcelImport()
@@ -253,7 +280,9 @@ const columns = [
   { name: 'unitName', label: 'Unidad', field: 'unitName', align: 'center' },
   { name: 'quantity', label: 'Cant.', field: 'quantity', align: 'center' },
   { name: 'unitPrice', label: 'Precio', field: 'unitPrice', align: 'center' },
-  { name: 'expirationDate', label: 'Vencimiento', field: 'expirationDate', align: 'center', format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' }
+  { name: 'expirationDate', label: 'Vencimiento', field: 'expirationDate', align: 'center', format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+  { name: 'minimumStock', label: 'Min', field: 'minimumStock', align: 'center' },
+  { name: 'maximumStock', label: 'Max', field: 'maximumStock', align: 'center' }
 ]
 
 // === OCR ===

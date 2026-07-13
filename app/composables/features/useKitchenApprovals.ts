@@ -11,7 +11,8 @@ export function useKitchenApprovals() {
     loading.value = true
     try {
       const data = await $fetch('/api/consumptions?status=PENDING') as any[]
-      pendingConsumptions.value = data
+      // SOLO mostrar Apoyos Institucionales en la bandeja de aprobaciones global
+      pendingConsumptions.value = data.filter(tx => tx.type === 'SUPPORT')
     } catch (e) {
       $q.notify({ type: 'negative', message: 'Error al cargar consumos pendientes' })
     } finally {
