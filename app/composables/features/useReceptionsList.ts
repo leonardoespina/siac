@@ -55,8 +55,30 @@ export function useReceptionsList() {
     return labels[status] || status
   }
 
+  const { $socket } = useNuxtApp() as any
+
   onMounted(() => {
     fetchReceptions()
+
+    // Sincronización en tiempo real con WebSockets
+    $socket.on('transaction:sync', (payload: any) => {
+      const tx = payload.transaction
+      // Filtrar si es RECEPTION
+      if (tx.type !== 'RECEPTION') return
+      
+      const index = receptions.value.findIndex((t: any) => t.id === tx.id)
+      if (index !== -1) {
+        if (payload.action === 'update') {
+          // Usar splice para forzar la reactividad en la tabla de Quasar
+          receptions.value.splice(index, 1, tx as never)
+        } else if (payload.action === 'delete') {
+          receptions.value.splice(index, 1)
+        }
+      } else if (payload.action === 'create') {
+        // Añadir a la tabla si no estaba
+        receptions.value.unshift(tx as never)
+      }
+    })
   })
 
   return {

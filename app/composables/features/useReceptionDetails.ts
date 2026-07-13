@@ -137,21 +137,47 @@ export function useReceptionDetails() {
     })
   }
 
+  const promptCancel = () => {
+    $q.dialog({
+      title: 'Anular Recepción',
+      message: 'Indica el motivo de la anulación (Obligatorio para auditoría):',
+      prompt: { model: '', type: 'text', isValid: (val: string) => val.length > 5 },
+      cancel: true
+    }).onOk((notes) => {
+      updateStatus('CANCELED', notes)
+    })
+  }
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      DRAFT: 'grey-7', PENDING: 'orange-8', APPROVED: 'blue-8', REJECTED: 'red-8', CONFIRMED: 'green-8'
+      DRAFT: 'grey-7', PENDING: 'orange-8', APPROVED: 'blue-8', REJECTED: 'red-8', CONFIRMED: 'green-8', CANCELED: 'red-10'
     }
     return colors[status] || 'grey'
   }
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      DRAFT: 'Borrador', PENDING: 'Pendiente', APPROVED: 'Aprobado', REJECTED: 'Rechazado', CONFIRMED: 'Confirmado'
+      DRAFT: 'Borrador', PENDING: 'Pendiente', APPROVED: 'Aprobado', REJECTED: 'Rechazado', CONFIRMED: 'Confirmado', CANCELED: 'Anulado'
     }
     return labels[status] || status
   }
 
-  onMounted(() => fetchDetails())
+  const { $socket } = useNuxtApp() as any
+
+  onMounted(() => {
+    fetchDetails()
+
+    // Escuchar Sockets en tiempo real para actualizar el estado sin recargar la página
+    if ($socket) {
+      $socket.on('transaction:sync', (payload: any) => {
+        const tx = payload.transaction
+        if (tx && Number(tx.id) === Number(id)) {
+          // Reemplazar la data actual con la fresca del Socket
+          transaction.value = tx
+        }
+      })
+    }
+  })
 
   return {
     transaction,
@@ -163,6 +189,7 @@ export function useReceptionDetails() {
     columns,
     updateStatus,
     promptReject,
+    promptCancel,
     deleteDraft,
     removeRow,
     saveDraftChanges,

@@ -27,12 +27,46 @@ export function useTransferDetails() {
   const searchQuery = ref('')
   const transferItems = ref<any[]>([])
 
-  const canApprove = computed(() => auth.hasPermission('APPROVAL_TRANSFERS', 'canUpdate') || auth.hasPermission('GLOBAL_ACCESS', 'canRead'))
+  const canApprove = computed(() => {
+    if (!transfer.value) return false
+
+    // 1. Despachos desde CENTRAL: Solo aprueban usuarios con permisos Globales o de Aprobación
+    if (transfer.value.source?.type === 'CENTRAL') {
+      return auth.hasPermission('APPROVAL_TRANSFERS', 'canUpdate') || auth.hasPermission('GLOBAL_ACCESS', 'canRead')
+    }
+    
+    // 2. Despachos LOCALES (Comedor a Cocina): Autonomía Local
+    if (transfer.value.source?.type === 'LOCAL') {
+      // a. Si el usuario logueado creó este documento, puede aprobarlo (incluye a Gerentes actuando como operadores)
+      if (transfer.value.createdBy?.id === auth.user?.id || transfer.value.createdById === auth.user?.id) return true
+      
+      // b. Si el usuario pertenece a este almacén local origen, puede aprobarlo
+      if (transfer.value.sourceId === auth.user?.warehouseId) return true
+      
+      // c. Si es un Gerente que no creó el documento y no pertenece al almacén, NO puede meterse.
+      return false
+    }
+    
+    return false
+  })
   
   const canEdit = computed(() => {
     if (!transfer.value) return false
     if (transfer.value.status === 'DRAFT') return true
     if (transfer.value.status === 'PENDING' && canApprove.value) return true
+    return false
+  })
+
+  const canConfirmReception = computed(() => {
+    if (!transfer.value) return false
+    
+    // Si el destino es un comedor (LOCAL), no se confirma aquí, se confirma en el módulo de cocina
+    if (transfer.value.destination?.type === 'LOCAL') return false
+    
+    // Si el destino es CENTRAL (o cualquier otro), confirmamos que sea el destinatario o un gerente global
+    if (auth.hasPermission('GLOBAL_ACCESS', 'canRead')) return true
+    if (transfer.value.destinationId === auth.user?.warehouseId) return true
+    
     return false
   })
 
@@ -204,15 +238,26 @@ export function useTransferDetails() {
     return labels[status] || status
   }
 
+  const { $socket } = useNuxtApp() as any
+
   onMounted(async () => {
     if (warehousesStore.warehouses.length === 0) await warehousesStore.fetchAll()
     if (productsStore.products.length === 0) await productsStore.fetchAll()
     fetchDetails()
+
+    if ($socket) {
+      $socket.on('transaction:sync', (payload: any) => {
+        const tx = payload.transaction
+        if (tx && Number(tx.id) === Number(id)) {
+          transfer.value = tx
+        }
+      })
+    }
   })
 
   return { 
     transfer, loading, saving, showPrices, isEditing, searchQuery, transferItems, filteredProducts,
-    canApprove, canEdit, columns, getCentralStock,
+    canApprove, canEdit, canConfirmReception, columns, getCentralStock,
     updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addItem, removeItem, saveChanges,
     getStatusColor, getStatusLabel 
   }
