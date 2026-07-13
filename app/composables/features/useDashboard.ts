@@ -35,7 +35,7 @@ export function useDashboard() {
   })
 
   // Atajos (Ejemplo: Transferencias, Reportes)
-  const canViewReports = computed(() => auth.hasPermission('REPORTS', 'canRead'))
+  const canViewReports = computed(() => auth.hasPermission('REPORT_DASHBOARD', 'canRead'))
   const canManageProducts = computed(() => auth.hasPermission('PRODUCTS', 'canRead'))
   const canManageTransfers = computed(() => auth.hasPermission('TRANSFERS', 'canCreate'))
 

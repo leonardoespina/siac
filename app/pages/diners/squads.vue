@@ -112,6 +112,7 @@ onMounted(() => {
                   <q-card-section class="q-pa-sm">
                     <!-- Tabla de Alta Densidad para escalabilidad (+100 empleados) -->
                     <q-table
+                      :grid="$q.screen.lt.md"
                       :rows="squad.workers"
                       :columns="tableColumns"
                       row-key="id"
@@ -126,6 +127,21 @@ onMounted(() => {
                             {{ props.row.rationType === 'NORMAL' ? 'Normal' : 'Dieta Médica' }}
                           </q-badge>
                         </q-td>
+                      </template>
+                      
+                      <!-- MODO MÓVIL (GRID): Micro-tarjeta -->
+                      <template v-slot:item="props">
+                        <div class="q-pa-xs col-12 col-sm-6">
+                          <q-card bordered flat class="bg-grey-1 row items-center justify-between q-pa-sm">
+                            <div>
+                              <div class="text-weight-bold text-subtitle2" style="line-height: 1.1;">{{ props.row.name }}</div>
+                              <div class="text-caption text-grey-8">{{ props.row.cedula }}</div>
+                            </div>
+                            <q-badge :color="props.row.rationType === 'NORMAL' ? 'primary' : 'warning'">
+                              {{ props.row.rationType === 'NORMAL' ? 'Normal' : 'Dieta Médica' }}
+                            </q-badge>
+                          </q-card>
+                        </div>
                       </template>
                     </q-table>
                   </q-card-section>

@@ -24,7 +24,7 @@ export function useConsumptionDetails() {
 
   const canEdit = computed(() => {
     if (!transfer.value) return false
-    if (transfer.value.status === 'PENDING') return true
+    if (transfer.value.status === 'PENDING' || transfer.value.status === 'DRAFT') return true
     return false
   })
 
@@ -78,6 +78,24 @@ export function useConsumptionDetails() {
     } finally {
       loading.value = false
     }
+  }
+
+  const approveConsumption = async () => {
+    $q.dialog({ title: 'Aprobar Registro', message: '¿Estás seguro de aprobar este registro? Esto descontará el stock inmediatamente.', cancel: true, color: 'positive' }).onOk(async () => {
+      saving.value = true
+      try {
+        await $fetch(`/api/transfers/${id}/status`, {
+          method: 'PUT',
+          body: { status: 'CONFIRMED', notes: `Auto-aprobado por el usuario local` }
+        })
+        $q.notify({ type: 'positive', message: 'Registro aprobado y stock descontado' })
+        await fetchDetails()
+      } catch (e: any) {
+        $q.notify({ type: 'negative', message: e.data?.message || 'Error al aprobar el registro' })
+      } finally {
+        saving.value = false
+      }
+    })
   }
 
   const deleteConsumption = () => {
@@ -163,15 +181,26 @@ export function useConsumptionDetails() {
     return labels[status] || status
   }
 
+  const { $socket } = useNuxtApp() as any
+
   onMounted(async () => {
     if (productsStore.products.length === 0) await productsStore.fetchAll()
     await fetchDetails()
+
+    if ($socket) {
+      $socket.on('transaction:sync', (payload: any) => {
+        const tx = payload.transaction
+        if (tx && Number(tx.id) === Number(id)) {
+          transfer.value = tx
+        }
+      })
+    }
   })
 
   return { 
     transfer, loading, saving, isEditing, searchQuery, transferItems, filteredProducts,
     canEdit, columns, getLocalStock,
-    deleteConsumption, enableEdit, cancelEdit, addItem, removeItem, saveChanges,
+    deleteConsumption, enableEdit, cancelEdit, addItem, removeItem, saveChanges, approveConsumption,
     getStatusColor, getStatusLabel 
   }
 }

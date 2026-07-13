@@ -36,7 +36,7 @@
             <q-btn color="blue-8" icon="local_shipping" label="Aprobar y Enviar" @click="updateStatus('APPROVED')" :loading="saving" />
           </template>
           
-          <template v-if="transfer.status === 'APPROVED'">
+          <template v-if="transfer.status === 'APPROVED' && canConfirmReception">
             <q-btn color="green-8" icon="done_all" label="Confirmar Recepción" @click="updateStatus('CONFIRMED')" :loading="saving" />
           </template>
         </div>
@@ -149,56 +149,47 @@
             </q-td>
           </template>
 
-          <template v-slot:body-cell-actions="props">
-            <q-td :props="props" v-if="isEditing">
-              <q-btn flat round dense color="negative" icon="delete" @click="removeItem(transferItems.indexOf(props.row))" />
-            </q-td>
-          </template>
-
-          <!-- MODO GRID MÓVIL PERSONALIZADO -->
+          <!-- MODO MÓVIL (GRID): Tarjeta Detalles Transacción -->
           <template v-slot:item="props">
-            <div class="q-pa-xs col-12 col-sm-6 col-md-4">
-              <q-card bordered flat>
-                <q-card-section class="q-pb-none">
-                  <div v-for="col in props.cols.filter(c => c.name !== 'actions')" :key="col.name" class="row justify-between q-mb-sm items-center">
-                    <div class="text-caption text-grey-7">{{ col.label }}</div>
-                    <div class="text-weight-bold text-right" style="max-width: 60%">
-                      <template v-if="col.name === 'quantity'">
-                        <template v-if="!isEditing">{{ props.row.quantity }}</template>
-                        <q-input 
-                          v-else 
-                          v-model.number="props.row.quantity" 
-                          type="number" 
-                          dense 
-                          outlined 
-                          style="max-width: 90px; margin: 0 0 0 auto" 
-                          :min="1"
-                          :max="props.row.availableStock"
-                          :rules="[
-                            val => val > 0 || 'Inválido',
-                            val => val <= props.row.availableStock || `Max ${props.row.availableStock}`
-                          ]"
-                          hide-bottom-space
-                          @update:model-value="(val) => { 
-                            if (val < 1) props.row.quantity = 1; 
-                            if (val > props.row.availableStock) props.row.quantity = props.row.availableStock; 
-                          }"
-                        />
-                      </template>
-                      <template v-else-if="col.name === 'price'">
-                        <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
-                        <q-input v-else v-model.number="props.row.unitPrice" type="number" dense outlined prefix="$" style="max-width: 110px; margin: 0 0 0 auto" />
-                      </template>
-                      <template v-else>
-                        {{ col.value }}
-                      </template>
-                    </div>
+            <div class="q-pa-xs col-12 col-sm-6">
+              <q-card bordered flat class="bg-white">
+                <q-card-section class="q-pb-none row items-start justify-between">
+                  <div class="text-weight-bold" style="max-width: 80%; line-height: 1.1;">{{ props.row.productName }}</div>
+                  <q-btn v-if="isEditing" flat round dense color="negative" icon="delete" size="sm" @click="removeItem(transferItems.indexOf(props.row))" />
+                </q-card-section>
+                
+                <q-card-section class="q-pt-sm row items-center justify-between">
+                  <div class="text-caption text-grey-8">Stock: {{ props.row.availableStock }}</div>
+                  <div v-if="isEditing" style="min-width: 120px">
+                    <q-input 
+                      v-model.number="props.row.quantity" 
+                      type="number" 
+                      dense outlined 
+                      :min="1"
+                      :max="props.row.availableStock"
+                      :rules="[
+                        val => val > 0 || 'Inválido',
+                        val => val <= props.row.availableStock || 'Max excedido'
+                      ]"
+                      hide-bottom-space
+                      @update:model-value="(val) => { 
+                        if (val < 1) props.row.quantity = 1; 
+                        if (val > props.row.availableStock) props.row.quantity = props.row.availableStock; 
+                      }"
+                    />
+                  </div>
+                  <div v-else class="text-weight-bold text-subtitle1">
+                    {{ props.row.quantity }} {{ props.row.unit }}
                   </div>
                 </q-card-section>
-                <q-separator v-if="isEditing" />
-                <q-card-actions align="right" v-if="isEditing">
-                  <q-btn flat color="negative" icon="delete" @click="removeItem(transferItems.indexOf(props.row))" label="Eliminar" />
-                </q-card-actions>
+                
+                <q-card-section v-if="transfer.type === 'TRANSFER' && showPrices" class="q-pt-none row justify-between text-caption text-grey-8">
+                  <div>Precio Unitario</div>
+                  <div v-if="isEditing" style="max-width: 100px">
+                     <q-input v-model.number="props.row.unitPrice" type="number" dense outlined prefix="$" />
+                  </div>
+                  <div v-else>${{ props.row.unitPrice }}</div>
+                </q-card-section>
               </q-card>
             </div>
           </template>
@@ -221,7 +212,7 @@ import { useTransferDetails } from '~/composables/features/useTransferDetails'
 
 const {
   transfer, loading, saving, showPrices, isEditing, searchQuery, transferItems, filteredProducts,
-  canApprove, canEdit, columns, getCentralStock,
+  canApprove, canEdit, canConfirmReception, columns, getCentralStock,
   updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addItem, removeItem, saveChanges,
   getStatusColor, getStatusLabel 
 } = useTransferDetails()

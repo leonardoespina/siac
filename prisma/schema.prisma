@@ -273,6 +273,7 @@ enum TransactionStatus {
   APPROVED // Aprobado por Gerente (Avisa al almacenista que puede confirmar)
   REJECTED // Rechazado por Gerente
   CONFIRMED // Confirmado físicamente (ACTUALIZA EL STOCK REAL)
+  CANCELED // Anulado (No suma al inventario)
 }
 
 model Transaction {

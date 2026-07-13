@@ -73,6 +73,40 @@
               {{ props.row.quantity }}
             </q-td>
           </template>
+          
+          <!-- MODO MÓVIL (GRID): Tarjeta Reporte Consumo -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6">
+              <q-card bordered flat class="bg-white">
+                <q-card-section class="q-pb-none row justify-between items-start">
+                  <div class="text-weight-bold" style="max-width: 70%; line-height: 1.1;">
+                    {{ props.row.productName }}
+                  </div>
+                  <q-chip :color="props.row.type === 'CONSUMPTION' ? 'blue-1' : 'red-1'" :text-color="props.row.type === 'CONSUMPTION' ? 'blue-8' : 'red-8'" size="sm" class="q-ma-none">
+                    {{ props.row.type === 'CONSUMPTION' ? 'Consumo' : 'Merma' }}
+                  </q-chip>
+                </q-card-section>
+                
+                <q-card-section class="q-pt-sm q-pb-xs">
+                  <div class="text-caption text-grey-8">{{ props.row.category }}</div>
+                  <div class="text-caption text-grey-6">{{ new Date(props.row.date).toLocaleString() }} - {{ props.row.warehouse }}</div>
+                </q-card-section>
+                
+                <q-separator />
+                
+                <q-card-section class="bg-grey-1 row justify-between items-center q-py-sm">
+                  <div>
+                    <div class="text-caption text-grey-8">Costo: <span class="text-weight-bold">${{ Number(props.row.value || 0).toFixed(2) }}</span></div>
+                    <div class="text-caption text-grey-6" style="font-size: 10px;">Op: {{ props.row.operator }}</div>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-weight-bold text-h6">{{ props.row.quantity }}</span>
+                    <span class="text-caption text-grey-8 q-ml-xs">{{ props.row.unit }}</span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
         </q-table>
       </q-card>
     </div>

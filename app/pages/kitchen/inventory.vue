@@ -106,6 +106,32 @@
               <span>No se encontraron productos en tu inventario local.</span>
             </div>
           </template>
+
+          <!-- MODO MÓVIL (GRID): Tarjeta Compacta -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6 col-md-4">
+              <q-card bordered flat class="bg-white">
+                <q-card-section class="q-pb-none row justify-between items-start">
+                  <div class="text-weight-bold text-subtitle1" style="max-width: 70%; line-height: 1.2;">{{ props.row.name }}</div>
+                  <div class="text-caption text-grey-6">{{ props.row.code }}</div>
+                </q-card-section>
+                
+                <q-card-section class="q-pt-xs q-pb-sm">
+                  <div class="text-caption text-grey-8">Categoría: {{ props.row.category?.name || 'Sin Categoría' }}</div>
+                </q-card-section>
+                
+                <q-card-section class="bg-grey-1 row justify-between items-center q-py-sm" style="border-top: 1px solid #eee;">
+                  <div class="text-weight-medium">Stock Disponible</div>
+                  <div>
+                    <span :class="props.row.localStock > 0 ? 'text-positive' : 'text-negative'" class="text-weight-bold text-h6 q-mr-xs">
+                      {{ props.row.localStock > 0 ? props.row.localStock : 'AGOTADO' }}
+                    </span>
+                    <span class="text-caption text-grey-8" v-if="props.row.localStock > 0">{{ props.row.unit?.abbreviation || 'UN' }}</span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
         </q-table>
       </q-card>
       

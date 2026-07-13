@@ -7,6 +7,7 @@ const querySchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   categoryId: z.string().optional(),
+  unitId: z.string().optional(),
   warehouseId: z.string().optional()
 })
 
@@ -39,6 +40,7 @@ export default defineApiHandler(async (event) => {
 
     tx.details.forEach(det => {
       if (query.categoryId && det.product.categoryId !== parseInt(query.categoryId)) return
+      if (query.unitId && det.product.unitId !== parseInt(query.unitId)) return
 
       if (!productsMap.has(det.productId)) {
         productsMap.set(det.productId, {

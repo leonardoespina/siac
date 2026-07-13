@@ -56,7 +56,13 @@ export default defineNitroPlugin((nitroApp) => {
         // Obtener el tipo de transacción para saber a quién notificar y a dónde redirigir
         const tx = await prisma.transaction.findUnique({
           where: { id: payload.id },
-          select: { type: true, shiftId: true }
+          select: { 
+            type: true, 
+            shiftId: true,
+            sourceId: true,
+            destinationId: true,
+            source: { select: { type: true, name: true } }
+          }
         })
 
         let requiredModule = 'OPERATIONS'
@@ -97,6 +103,10 @@ export default defineNitroPlugin((nitroApp) => {
         } else if (tx?.type === 'SUPPORT' && !tx.shiftId) {
           notifTitle = '🚨 Apoyo Extra-Turno'
           notifMessage = `Apoyo institucional registrado fuera de horario (ID #${payload.id}).`
+        } else if (tx?.type === 'TRANSFER' && tx?.source?.type === 'LOCAL') {
+          // AUTONOMÍA LOCAL: Si es un despacho interno desde un almacén local, los gerentes solo se informan
+          notifTitle = 'ℹ️ Despacho Interno'
+          notifMessage = `El almacén ${tx?.source?.name || 'Local'} ha iniciado un despacho interno #${payload.id}.`
         }
 
         for (const manager of managers) {
@@ -261,5 +271,26 @@ export default defineNitroPlugin((nitroApp) => {
 
   eventBus.on('diner:deleted', (payload) => {
     if (io) io.emit('diner:sync', { action: 'delete', diner: { id: payload.id } })
+  })
+
+  // 6. Sincronización en tiempo real de Transacciones
+  eventBus.on('transaction:sync', (payload) => {
+    if (!io) return
+    const tx = payload.transaction
+    
+    // 1. Emitir a la sala global (Para que Admins y Gerentes vean el listado actualizado)
+    io.to('global_inventory').emit('transaction:sync', payload)
+    
+    // 2. Emitir inteligentemente solo a las cocinas o almacenes involucrados
+    if (tx.sourceId) io.to(`warehouse_${tx.sourceId}`).emit('transaction:sync', payload)
+    if (tx.destinationId) io.to(`warehouse_${tx.destinationId}`).emit('transaction:sync', payload)
+  })
+
+  // 7. Sincronización en tiempo real de Turnos de Cocina
+  eventBus.on('shift:sync', (payload) => {
+    if (!io) return
+    const shift = payload.shift
+    io.to('global_inventory').emit('shift:sync', payload)
+    if (shift.warehouseId) io.to(`warehouse_${shift.warehouseId}`).emit('shift:sync', payload)
   })
 })

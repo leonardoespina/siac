@@ -1,6 +1,5 @@
 import { ref, readonly } from 'vue'
 import { useQuasar } from 'quasar'
-import type { TransferTransaction } from './useTransferReport'
 import type { TDocumentDefinitions } from 'pdfmake/interfaces'
 
 import pdfMakeModule from 'pdfmake/build/pdfmake'
@@ -9,14 +8,12 @@ import pdfFontsModule from 'pdfmake/build/vfs_fonts'
 const pdfMake = pdfMakeModule.default || pdfMakeModule
 const pdfFonts = pdfFontsModule.default || pdfFontsModule
 
-// Inicializar fuentes globalmente
 pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
 
-export function useTransferPdfMake() {
+export function useConsumptionPdfMake() {
   const $q = useQuasar()
   const isGenerating = ref(false)
 
-  // Utilidad para convertir la imagen de public/ a base64 para que pdfmake la incruste
   const getBase64ImageFromUrl = async (url: string): Promise<string> => {
     const res = await fetch(url)
     const blob = await res.blob()
@@ -28,12 +25,11 @@ export function useTransferPdfMake() {
     })
   }
 
-  const downloadPdf = async (transaction: TransferTransaction, totalsByUnit: string[]) => {
+  const downloadPdf = async (transaction: any, totalsByUnit: string[]) => {
     isGenerating.value = true
     $q.loading.show({ message: 'Generando PDF Vectorial...' })
 
     try {
-      // Cargar Logo en Base64
       let logoBase64 = ''
       try {
         logoBase64 = await getBase64ImageFromUrl('/logo.png')
@@ -41,7 +37,11 @@ export function useTransferPdfMake() {
         console.warn('No se pudo cargar el logo.png', e)
       }
 
-      // Construcción del documento JSON
+      let title = 'ACTA DE REGISTRO'
+      if (transaction.type === 'LOSS') title = 'ACTA DE MERMA DE MERCANCÍA'
+      if (transaction.type === 'SUPPORT') title = 'ACTA DE APOYO INSTITUCIONAL'
+      if (transaction.type === 'CONSUMPTION') title = 'ACTA DE CONSUMO INTERNO'
+
       const docDefinition: TDocumentDefinitions = {
         pageSize: 'A4',
         pageMargins: [40, 40, 40, 40],
@@ -56,12 +56,12 @@ export function useTransferPdfMake() {
               {
                 width: '*',
                 stack: [
-                  { text: 'ACTA DE TRÁNSITO DE MERCANCÍA', style: 'header', alignment: 'center' },
+                  { text: title, style: 'header', alignment: 'center' },
                   { text: 'SISTEMA INTEGRAL DE ALMACENES DE COMEDORES (SIAC)', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
                 ]
               },
               {
-                width: 80, // Espaciador para centrar el título
+                width: 80,
                 text: ''
               }
             ],
@@ -73,39 +73,37 @@ export function useTransferPdfMake() {
             columns: [
               {
                 stack: [
-                  { text: [ { text: 'ID de Transacción: ', bold: true }, `#TRN-${transaction.id}` ] },
-                  { text: [ { text: 'Fecha de Salida: ', bold: true }, new Date(transaction.createdAt).toLocaleString() ] },
-                  { text: [ { text: 'Almacén Origen: ', bold: true }, transaction.source?.name || 'Central' ] }
+                  { text: [ { text: 'ID de Transacción: ', bold: true }, `#${transaction.id}` ] },
+                  { text: [ { text: 'Fecha de Registro: ', bold: true }, new Date(transaction.createdAt).toLocaleString() ] },
+                  { text: [ { text: 'Comedor / Almacén: ', bold: true }, transaction.source?.name || 'Local' ] }
                 ]
               },
               {
                 alignment: 'right',
                 stack: [
-                  { text: [ { text: 'Almacén Destino: ', bold: true }, transaction.destination?.name || 'Desconocido' ] },
-                  { text: [ { text: 'N° Factura / Guía: ', bold: true }, transaction.referenceNumber || 'N/A' ] },
-                  { text: [ { text: 'Operador Despachador: ', bold: true }, transaction.createdBy?.name || 'Desconocido' ] }
+                  transaction.type === 'SUPPORT' ? { text: [ { text: 'Institución Receptora: ', bold: true }, transaction.institution?.name || 'No especificada' ] } : { text: '' },
+                  { text: [ { text: 'Estado: ', bold: true }, transaction.status ] },
+                  { text: [ { text: 'Operador Responsable: ', bold: true }, transaction.createdBy?.name || 'Desconocido' ] }
                 ]
               }
             ],
             margin: [0, 0, 0, 20]
           },
 
-          { text: 'DETALLE DE MERCANCÍA DESPACHADA', bold: true, margin: [0, 0, 0, 5] },
+          { text: 'DETALLE DE MERCANCÍA', bold: true, margin: [0, 0, 0, 5] },
           
-          // DETALLE TABLA (Se auto-pagina y repite header)
+          // DETALLE TABLA
           {
             table: {
               headerRows: 1,
               widths: ['auto', '*', 'auto'],
               body: [
-                // Fila Header
                 [
                   { text: 'Cód', style: 'tableHeader' },
                   { text: 'Producto', style: 'tableHeader' },
                   { text: 'Cant. Despachada', style: 'tableHeader', alignment: 'center' }
                 ],
-                // Filas de Datos
-                ...transaction.details.map(det => {
+                ...transaction.details.map((det: any) => {
                    return [
                      det.product?.code,
                      det.product?.name,
@@ -120,20 +118,19 @@ export function useTransferPdfMake() {
           // RESUMEN CUANTITATIVO
           { text: 'RESUMEN CUANTITATIVO', bold: true, margin: [0, 0, 0, 5] },
           {
-            ul: totalsByUnit.map(total => `Total Despachado: ${total}`),
+            ul: totalsByUnit.map(total => `Total Registrado: ${total}`),
             margin: [0, 0, 0, 40]
           },
 
-          // FIRMAS (No se parten, se mantienen juntas con unbreakableRecord)
+          // FIRMAS
           { 
             unbreakable: true,
             stack: [
-              { text: 'Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Almacén de Origen y se encuentran en tránsito hacia el Destino.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 50] },
+              { text: 'Con las firmas expuestas a continuación, se da fe de la veracidad de la información reflejada en el presente documento.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 50] },
               {
                 columns: [
-                  { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Despachado Por', bold: true, margin: [0, 5, 0, 0] }, { text: transaction.createdBy?.name || 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },
-                  { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Transportado Por (Chofer)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },
-                  { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Recibido Por (Destino)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' }
+                  { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Despachado / Declarado Por', bold: true, margin: [0, 5, 0, 0] }, { text: transaction.createdBy?.name || 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },
+                  { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: transaction.type === 'SUPPORT' ? 'Recibido Por (Institución)' : 'Autorizado / Validado Por', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' }
                 ]
               }
             ]
@@ -148,11 +145,10 @@ export function useTransferPdfMake() {
           fontSize: 10,
           columnGap: 20
         },
-        // Marca de Agua Nativa de pdfMake
-        watermark: transaction.status === 'DRAFT' ? { text: 'DOCUMENTO NO VÁLIDO PARA TRÁNSITO', color: 'gray', opacity: 0.1, bold: true, italics: false } : undefined
+        watermark: transaction.status === 'DRAFT' ? { text: 'BORRADOR NO APROBADO', color: 'gray', opacity: 0.1, bold: true, italics: false } : undefined
       }
 
-      const filename = `Acta_Transito_TRN-${transaction.id}.pdf`
+      const filename = `Acta_${transaction.type}_${transaction.id}.pdf`
       pdfMake.createPdf(docDefinition).download(filename)
       $q.notify({ type: 'positive', message: 'PDF Vectorial descargado exitosamente.' })
 

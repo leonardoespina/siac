@@ -291,13 +291,17 @@ export function useKitchenOperation() {
         }
       })
       
-      // 2. Enviar a Aprobación (PENDING)
-      await $fetch(`/api/transfers/${tx.id}/status`, {
-        method: 'PUT',
-        body: { status: 'PENDING', notes: `Generado desde turno local` }
-      })
+      if (consumptionType.value === 'SUPPORT') {
+        // 2. Enviar a Aprobación (PENDING) si ES apoyo institucional
+        await $fetch(`/api/transfers/${tx.id}/status`, {
+          method: 'PUT',
+          body: { status: 'PENDING', notes: `Generado desde turno local - Requiere aprobación gerencial` }
+        })
+        $q.notify({ type: 'positive', message: 'Apoyo Institucional registrado y enviado para aprobación gerencial' })
+      } else {
+        $q.notify({ type: 'positive', message: 'Borrador creado. Por favor revísalo y apruébalo para descontar el stock.' })
+      }
 
-      $q.notify({ type: 'positive', message: 'Registrado y enviado para aprobación gerencial' })
       isConsumptionDialogVisible.value = false
       await fetchShiftConsumptions()
     } catch (e: any) {
@@ -305,6 +309,21 @@ export function useKitchenOperation() {
     } finally {
       saving.value = false
     }
+  }
+
+  const approveConsumption = async (id: number) => {
+    $q.dialog({ title: 'Aprobar Registro', message: '¿Estás seguro de aprobar este registro? Esto descontará el stock de tu inventario inmediatamente.', cancel: true, color: 'positive' }).onOk(async () => {
+      try {
+        await $fetch(`/api/transfers/${id}/status`, {
+          method: 'PUT',
+          body: { status: 'CONFIRMED', notes: `Auto-aprobado por el usuario local` }
+        })
+        $q.notify({ type: 'positive', message: 'Registro aprobado y stock descontado' })
+        await fetchShiftConsumptions()
+      } catch (e: any) {
+        $q.notify({ type: 'negative', message: e.data?.message || 'Error al aprobar el registro' })
+      }
+    })
   }
 
   const deleteConsumption = async (id: number) => {
@@ -319,6 +338,8 @@ export function useKitchenOperation() {
     })
   }
 
+  const { $socket } = useNuxtApp() as any
+
   onMounted(async () => {
     if (warehousesStore.warehouses.length === 0) await warehousesStore.fetchAll()
     await productsStore.fetchAll() // Siempre buscar inventario fresco al cargar la vista
@@ -326,6 +347,39 @@ export function useKitchenOperation() {
       await Promise.all([fetchIncomingTransfers(), fetchActiveShift()])
     }
     loading.value = false
+
+    // Escuchar Sockets en tiempo real
+    $socket.on('transaction:sync', (payload: any) => {
+      if (activeWarehouseId.value) {
+        // En una cocina solo nos importan las transferencias aprobadas hacia aquí o los consumos que ocurran en este turno
+        const tx = payload.transaction
+        
+        // 1. Si es una recepción aprobada hacia nosotros, refrescar la lista superior
+        if (tx.destinationId === activeWarehouseId.value && tx.type === 'TRANSFER' && tx.status === 'APPROVED') {
+          fetchIncomingTransfers()
+        }
+        
+        // 2. Si es un consumo local, actualizar la lista en vivo (Efecto Colaborativo de Tablets)
+        if ((tx.type === 'CONSUMPTION' || tx.type === 'LOSS' || tx.type === 'SUPPORT') && tx.sourceId === activeWarehouseId.value) {
+           const index = shiftConsumptions.value.findIndex((c: any) => c.id === tx.id)
+           if (index !== -1) {
+             if (payload.action === 'update') shiftConsumptions.value.splice(index, 1, tx as never)
+             else if (payload.action === 'delete') shiftConsumptions.value.splice(index, 1)
+           } else if (payload.action === 'create') {
+             shiftConsumptions.value.unshift(tx as never)
+           }
+        }
+      }
+    })
+
+    $socket.on('shift:sync', (payload: any) => {
+      // Si el turno es de este almacén, lo cargamos en pantalla sin refrescar
+      if (activeWarehouseId.value && payload.shift.warehouseId === activeWarehouseId.value) {
+        if (payload.action === 'create' || payload.action === 'update') {
+          fetchActiveShift()
+        }
+      }
+    })
   })
 
   watch(activeWarehouseId, async (newId) => {
@@ -351,7 +405,7 @@ export function useKitchenOperation() {
     shiftConsumptions, deleteConsumption, consumptionColumns,
     isConsumptionDialogVisible, consumptionType, consumptionItems, searchQuery, filteredProducts,
     selectedInstitutionId, institutions,
-    openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption,
+    openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption, approveConsumption,
     fetchIncomingTransfers, fetchActiveShift
   }
 }

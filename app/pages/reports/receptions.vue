@@ -7,14 +7,17 @@
 
     <q-card bordered flat class="q-mb-md">
       <q-card-section class="row q-col-gutter-md items-center">
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
           <q-input v-model="dateRange.from" type="date" label="Desde" dense outlined />
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
           <q-input v-model="dateRange.to" type="date" label="Hasta" dense outlined />
         </div>
         <div class="col-12 col-md-3">
           <q-select v-model="selectedCategory" :options="categoriesStore.categories" option-value="id" option-label="name" emit-value map-options label="Categoría (Opcional)" dense outlined clearable />
+        </div>
+        <div class="col-12 col-md-2">
+          <q-select v-model="selectedUnit" :options="unitsStore.units" option-value="id" option-label="abbreviation" emit-value map-options label="Unidad (Opcional)" dense outlined clearable />
         </div>
         <div class="col-12 col-md-3 row q-col-gutter-sm">
            <div class="col-6">
@@ -80,15 +83,19 @@ import { ref, computed, onMounted } from 'vue'
 import { useExcelMatrixReport } from '~/composables/features/useExcelMatrixReport'
 import { useReportsStore } from '~/stores/reports'
 import { useCategoriesStore } from '~/stores/categories'
+import { useUnitsStore } from '~/stores/units'
 
 const dateRange = ref({ from: '', to: '' })
 const selectedCategory = ref<number | null>(null)
+const selectedUnit = ref<number | null>(null)
 const { loading, fetchMatrix, exportExcel, clearMatrix } = useExcelMatrixReport()
 const reportsStore = useReportsStore()
 const categoriesStore = useCategoriesStore()
+const unitsStore = useUnitsStore()
 
 onMounted(() => {
   categoriesStore.fetchAll()
+  unitsStore.fetchAll()
 })
 
 const columnTotal = (dispatchId: number) => {
@@ -106,7 +113,8 @@ const generateReport = async () => {
   await fetchMatrix({ 
     startDate: dateRange.value.from, 
     endDate: dateRange.value.to,
-    categoryId: selectedCategory.value ? Number(selectedCategory.value) : undefined
+    categoryId: selectedCategory.value ? Number(selectedCategory.value) : undefined,
+    unitId: selectedUnit.value ? Number(selectedUnit.value) : undefined
   })
 }
 
@@ -114,6 +122,7 @@ const clearReport = () => {
   clearMatrix()
   dateRange.value = { from: '', to: '' }
   selectedCategory.value = null
+  selectedUnit.value = null
 }
 
 const download = () => {

@@ -64,9 +64,15 @@ export function useTransferReport() {
     window.close()
   }
 
-  const totalQuantity = computed(() => {
-    if (!transaction.value?.details) return 0
-    return transaction.value.details.reduce((acc, d) => acc + Number(d.quantity), 0)
+  const totalsByUnit = computed(() => {
+    if (!transaction.value?.details) return []
+    const map = new Map<string, number>()
+    transaction.value.details.forEach(d => {
+      const unit = d.product?.unit?.abbreviation || 'UNIDADES'
+      const qty = Number(d.quantity)
+      map.set(unit, (map.get(unit) || 0) + qty)
+    })
+    return Array.from(map.entries()).map(([unit, total]) => `${total} ${unit}`)
   })
 
   onMounted(() => {
@@ -76,7 +82,7 @@ export function useTransferReport() {
   return {
     transaction,
     loading,
-    totalQuantity,
+    totalsByUnit,
     closeTab
   }
 }

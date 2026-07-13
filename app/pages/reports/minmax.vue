@@ -47,6 +47,39 @@
               {{ props.row.totalItems }}
             </q-td>
           </template>
+
+          <!-- MODO MÓVIL (GRID): Tarjeta Mín/Máx -->
+          <template v-slot:item="props">
+            <div class="q-pa-xs col-12 col-sm-6">
+              <q-card bordered flat class="bg-white">
+                <q-card-section class="q-pb-sm bg-grey-1 row justify-between items-center">
+                  <div class="text-weight-bold text-subtitle1">{{ props.row.name }}</div>
+                  <div class="text-caption text-grey-8">Total: {{ props.row.totalItems }} prods</div>
+                </q-card-section>
+                
+                <q-card-section class="q-pt-sm row justify-around text-center">
+                  <div>
+                    <div class="text-caption text-grey-6 q-mb-xs">Alerta (Mín)</div>
+                    <q-badge :color="props.row.belowMin > 0 ? 'negative' : 'grey-4'" :text-color="props.row.belowMin > 0 ? 'white' : 'grey-8'" class="text-weight-bold">
+                      {{ props.row.belowMin }}
+                    </q-badge>
+                  </div>
+                  <div>
+                    <div class="text-caption text-grey-6 q-mb-xs">Sano (Rango)</div>
+                    <q-badge :color="props.row.inRange > 0 ? 'positive' : 'grey-4'" :text-color="props.row.inRange > 0 ? 'white' : 'grey-8'" class="text-weight-bold">
+                      {{ props.row.inRange }}
+                    </q-badge>
+                  </div>
+                  <div>
+                    <div class="text-caption text-grey-6 q-mb-xs">Exceso (Máx)</div>
+                    <q-badge :color="props.row.aboveMax > 0 ? 'blue-8' : 'grey-4'" :text-color="props.row.aboveMax > 0 ? 'white' : 'grey-8'" class="text-weight-bold">
+                      {{ props.row.aboveMax }}
+                    </q-badge>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
         </q-table>
       </q-card>
     </div>

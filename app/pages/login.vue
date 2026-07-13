@@ -2,9 +2,9 @@
   <q-page class="flex flex-center bg-grey-1 q-pa-md">
     <!-- Contenedor para el tamaño del login -->
     <div class="row full-width justify-center">
-      <div class="col-12 col-sm-8 col-md-5 col-lg-3">
+      <div class="col-11 col-sm-8 col-md-5 col-lg-3">
         <!-- Tarjeta principal -->
-        <q-card class="q-pa-xl shadow-2" style="border-radius: 12px">
+        <q-card class="q-pa-xl shadow-4" style="border-radius: 16px">
           <!-- Encabezado corporativo -->
           <q-card-section class="text-center q-pb-none">
             <div class="text-body2 text-weight-bold text-grey-8">
@@ -15,7 +15,7 @@
 
           <!-- Logo -->
           <q-card-section class="row justify-center q-py-lg">
-            <div class="col-8">
+            <div class="col-8 col-sm-6">
               <q-img src="/logo.png" fit="contain" />
             </div>
           </q-card-section>
@@ -32,18 +32,14 @@
 
           <q-card-section class="q-pt-none">
             <q-form @submit.prevent="submit" class="q-gutter-y-lg">
-              <!-- 
-                TRUCO QUASAR: Usamos 'borderless' para quitar todos los bordes,
-                y aplicamos 'bg-grey-2' y 'rounded-borders' directamente a la clase 
-                para tener la caja gris perfecta de tu maqueta.
-              -->
               <q-input
-                borderless
+                filled
                 v-model="cedula"
                 type="text"
                 label="Cédula"
-                class="bg-grey-2 rounded-borders q-px-md"
                 color="primary"
+                bg-color="blue-grey-1"
+                class="login-input"
                 lazy-rules
                 :rules="[(val) => !!val || 'La cédula es obligatoria']"
               >
@@ -53,12 +49,13 @@
               </q-input>
 
               <q-input
-                borderless
+                filled
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 label="Contraseña"
-                class="bg-grey-2 rounded-borders q-px-md"
                 color="primary"
+                bg-color="blue-grey-1"
+                class="login-input"
                 lazy-rules
                 :rules="[(val) => !!val || 'La contraseña es obligatoria']"
               >
@@ -75,12 +72,12 @@
                 </template>
               </q-input>
 
-              <div class="q-pt-md">
+              <div class="q-pt-sm">
                 <q-btn
                   label="INICIAR SESIÓN"
                   type="submit"
-                  color="light-green-7"
-                  class="full-width text-weight-medium rounded-borders"
+                  color="light-green-6"
+                  class="full-width text-weight-medium"
                   size="18px"
                   unelevated
                   :loading="loading"
@@ -93,6 +90,17 @@
     </div>
   </q-page>
 </template>
+
+<style scoped>
+/* Eliminar la línea inferior y el borde redondeado para igualar la imagen */
+:deep(.login-input .q-field__control::before) {
+  border-bottom: none !important;
+  border-radius: 4px !important;
+}
+:deep(.login-input .q-field__control) {
+  border-radius: 4px !important;
+}
+</style>
 
 <script setup lang="ts">
 import { useLoginForm } from "~/composables/features/useLoginForm";

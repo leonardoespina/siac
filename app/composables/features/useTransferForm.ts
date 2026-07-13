@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductsStore } from '~/stores/products'
+import { useAuthStore } from '~/stores/auth'
 
 export function useTransferForm() {
   const router = useRouter()
@@ -19,12 +20,23 @@ export function useTransferForm() {
   // Toggle visual (Pedido por el usuario)
   const showPrices = ref(false)
 
-  // Almacenes disponibles
-  const availableSources = computed(() => warehousesStore.activeWarehouses)
+  const auth = useAuthStore()
 
-  const availableDestinations = computed(() => 
-    warehousesStore.activeWarehouses.filter(w => w.id !== sourceId.value)
-  )
+  // Almacenes disponibles
+  const availableSources = computed(() => {
+    if (auth.hasPermission('GLOBAL_ACCESS', 'canRead') || !auth.user?.warehouseId) {
+      return warehousesStore.activeWarehouses
+    }
+    return warehousesStore.activeWarehouses.filter(w => w.type === 'LOCAL')
+  })
+
+  const availableDestinations = computed(() => {
+    let list = warehousesStore.activeWarehouses
+    if (!auth.hasPermission('GLOBAL_ACCESS', 'canRead') && auth.user?.warehouseId) {
+      list = list.filter(w => w.type === 'LOCAL')
+    }
+    return list.filter(w => w.id !== sourceId.value)
+  })
 
   // Limpiar carrito si cambian el origen
   watch(sourceId, () => {

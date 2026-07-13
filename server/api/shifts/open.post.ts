@@ -2,6 +2,7 @@ import { defineApiHandler } from '../../utils/handler'
 import { prisma } from '../../utils/prisma'
 import { requireUserContext, hasGlobalAccess } from '../../utils/auth'
 import { ValidationError } from '../../domain/errors'
+import { emitEvent } from '../../utils/eventBus'
 
 export default defineApiHandler(async (event) => {
   const user = await requireUserContext(event)
@@ -14,8 +15,6 @@ export default defineApiHandler(async (event) => {
   }
 
   // REGLA 5: Sin cerrar turno anterior no se abre el siguiente.
-  // Verificar si el almacén ya tiene un turno abierto (incluso si es de otro usuario,
-  // normalmente solo hay un turno activo por comedor)
   const existingShift = await prisma.shift.findFirst({
     where: {
       warehouseId: targetWarehouseId,
@@ -41,9 +40,12 @@ export default defineApiHandler(async (event) => {
       startTime: startTime
     },
     include: {
-      warehouse: true
+      warehouse: true,
+      user: { select: { id: true, name: true } }
     }
   })
+
+  emitEvent('shift:sync', { action: 'create', shift })
 
   return shift
 })

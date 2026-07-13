@@ -10,6 +10,8 @@ export interface ExcelRow {
   quantity: number
   unitPrice: number
   expirationDate?: string // ISO date
+  minimumStock?: number
+  maximumStock?: number
 }
 
 export async function importReceptionFromExcel(
@@ -73,15 +75,30 @@ export async function importReceptionFromExcel(
           const byName = await tx.product.findFirst({ where: { name: prodName } })
           if (byName) {
             product = byName
-          } else {
-            // No existe, lo creamos
-            product = await tx.product.create({
+          }
+        }
+
+        if (!product) {
+          // No existe, lo creamos
+          product = await tx.product.create({
+            data: {
+              code: prodCode,
+              name: prodName,
+              categoryId: categoryCache.get(catName)!,
+              unitId: unitCache.get(unitName)!,
+              isPerishable: !!row.expirationDate,
+              minimumStock: row.minimumStock || 0,
+              maximumStock: row.maximumStock || null
+            }
+          })
+        } else {
+          // El producto ya existía (Opción A: Sobreescribir si el Excel trae valores válidos)
+          if ((row.minimumStock && row.minimumStock > 0) || (row.maximumStock && row.maximumStock > 0)) {
+            product = await tx.product.update({
+              where: { id: product.id },
               data: {
-                code: prodCode,
-                name: prodName,
-                categoryId: categoryCache.get(catName)!,
-                unitId: unitCache.get(unitName)!,
-                isPerishable: !!row.expirationDate
+                minimumStock: row.minimumStock && row.minimumStock > 0 ? row.minimumStock : product.minimumStock,
+                maximumStock: row.maximumStock && row.maximumStock > 0 ? row.maximumStock : product.maximumStock
               }
             })
           }

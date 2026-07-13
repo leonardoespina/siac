@@ -2,7 +2,7 @@
   <q-page padding>
     <div class="row items-center justify-between q-mb-lg">
       <div class="text-h4 text-weight-bold text-primary">
-        <q-icon name="fact_check" class="q-mr-sm" /> Aprobaciones de Consumo
+        <q-icon name="fact_check" class="q-mr-sm" /> Aprobaciones de Apoyos
       </div>
     </div>
 
@@ -15,7 +15,7 @@
         <q-card-section class="text-center text-grey-6 q-pa-xl">
           <q-icon name="task_alt" size="64px" color="grey-4" class="q-mb-md block q-mx-auto" />
           <div class="text-h6">Todo al día</div>
-          <div>No hay consumos ni mermas pendientes de aprobación en este momento.</div>
+          <div>No hay apoyos institucionales pendientes de aprobación en este momento.</div>
         </q-card-section>
       </q-card>
 

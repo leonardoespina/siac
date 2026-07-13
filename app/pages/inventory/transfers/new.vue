@@ -56,6 +56,7 @@
             </q-input>
 
             <q-table
+              :grid="$q.screen.lt.md"
               :rows="filteredProducts"
               :columns="productColumns"
               row-key="id"
@@ -73,6 +74,27 @@
                 <q-td :props="props" class="text-right">
                   <q-btn flat round dense color="primary" icon="add" @click="addItem(props.row)" />
                 </q-td>
+              </template>
+              
+              <!-- MODO MÓVIL (GRID): Tarjeta Buscador -->
+              <template v-slot:item="props">
+                <div class="q-pa-xs col-12 col-sm-6">
+                  <q-card bordered flat class="bg-white">
+                    <q-card-section class="q-pb-none row items-start justify-between">
+                      <div class="text-weight-bold" style="max-width: 80%; line-height: 1.1;">{{ props.row.name }}</div>
+                      <q-btn flat round dense color="primary" icon="add" size="sm" @click="addItem(props.row)" />
+                    </q-card-section>
+                    <q-card-section class="q-pt-sm q-pb-sm row justify-between text-caption">
+                      <div class="text-grey-7">{{ props.row.code }}</div>
+                      <div class="text-weight-medium">
+                        Stock: 
+                        <q-badge :color="getStock(props.row.id, sourceId) > 0 ? 'green' : 'red'">
+                          {{ getStock(props.row.id, sourceId) }} {{ props.row.unit?.abbreviation }}
+                        </q-badge>
+                      </div>
+                    </q-card-section>
+                  </q-card>
+                </div>
               </template>
             </q-table>
           </q-card-section>

@@ -236,7 +236,7 @@ const submitPasswordChange = async () => {
               </q-item>
               <q-item clickable v-ripple to="/inventory/approvals" active-class="text-primary" v-if="auth.hasPermission('OPERATIONS', 'canUpdate')">
                 <q-item-section avatar><q-icon name="fact_check" size="sm" /></q-item-section>
-                <q-item-section>Aprobación de Consumos</q-item-section>
+                <q-item-section>Aprobación de Apoyos</q-item-section>
               </q-item>
             </q-list>
           </q-expansion-item>

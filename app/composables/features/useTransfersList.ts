@@ -43,7 +43,31 @@ export function useTransfersList() {
     return labels[status] || status
   }
 
-  onMounted(() => fetchTransfers())
+  const { $socket } = useNuxtApp() as any
+
+  onMounted(() => {
+    fetchTransfers()
+    
+    // Sincronización en tiempo real con WebSockets
+    $socket.on('transaction:sync', (payload: any) => {
+      const tx = payload.transaction
+      // Filtrar si es TRANSFER
+      if (tx.type !== 'TRANSFER') return
+      
+      const index = transfers.value.findIndex(t => t.id === tx.id)
+      if (index !== -1) {
+        if (payload.action === 'update') {
+          // Usar splice para forzar la reactividad en la tabla de Quasar
+          transfers.value.splice(index, 1, tx)
+        } else if (payload.action === 'delete') {
+          transfers.value.splice(index, 1)
+        }
+      } else if (payload.action === 'create') {
+        // Añadir a la tabla si no estaba
+        transfers.value.unshift(tx)
+      }
+    })
+  })
 
   return { transfers, loading, columns, fetchTransfers, getStatusColor, getStatusLabel }
 }

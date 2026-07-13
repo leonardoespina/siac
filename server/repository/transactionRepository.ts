@@ -31,7 +31,7 @@ export async function createConsumption(data: any, user: UserContext, type: 'CON
     }
   }
 
-  return prisma.transaction.create({
+  const newTx = await prisma.transaction.create({
     data: {
       type,
       status: 'DRAFT',
@@ -47,8 +47,19 @@ export async function createConsumption(data: any, user: UserContext, type: 'CON
         }))
       }
     },
-    include: { details: true }
+    include: { 
+      details: { include: { product: { include: { unit: true } } } },
+      destination: true,
+      source: true,
+      supplier: true,
+      institution: true,
+      createdBy: { select: { id: true, name: true } },
+      approvedBy: { select: { id: true, name: true } }
+    }
   })
+  
+  emitEvent('transaction:sync', { action: 'create', transaction: newTx })
+  return newTx
 }
 
 // ── LÓGICA GENERAL DE TRANSACCIONES ──────────────────────────────────────
@@ -120,16 +131,28 @@ export async function updateStatus(id: number, newStatus: TransactionStatus, use
   const tx = await getById(id)
 
   // 1. Validar máquina de estado
-  validateStateTransition(tx.status as TransactionStatus, newStatus)
+  validateStateTransition(tx.status as TransactionStatus, newStatus, tx.type as TransactionType)
 
   // 2. Validar reglas de aprobación si pasa a APPROVED o REJECTED
   if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
     validateApproval(tx.status as TransactionStatus, tx.createdById, user)
   }
 
-  // 3. Si pasa a CONFIRMED, afectar el stock matemáticamente
+  // 3. Lógica Física Inyectada (Descontar en APPROVED, Sumar en CONFIRMED)
+  if (newStatus === 'APPROVED') {
+    if (tx.type === 'TRANSFER' || tx.type === 'SUPPORT') {
+      await deductSourceStock(tx)
+    }
+  }
+
   if (newStatus === 'CONFIRMED') {
-    await applyStockChanges(tx)
+    if (tx.type === 'RECEPTION') {
+      await addDestinationStock(tx)
+    } else if (tx.type === 'TRANSFER' || tx.type === 'SUPPORT') {
+      await addDestinationStock(tx)
+    } else if (tx.type === 'CONSUMPTION' || tx.type === 'LOSS') {
+      await deductSourceStock(tx) 
+    }
   }
 
   // 4. Guardar en base de datos
@@ -141,10 +164,22 @@ export async function updateStatus(id: number, newStatus: TransactionStatus, use
     dataToUpdate.notes = tx.notes ? `${tx.notes}\n[${newStatus}]: ${notes}` : `[${newStatus}]: ${notes}`
   }
 
-  return prisma.transaction.update({
+  const updatedTx = await prisma.transaction.update({
     where: { id },
-    data: dataToUpdate
+    data: dataToUpdate,
+    include: {
+      details: { include: { product: { include: { unit: true } } } },
+      destination: true,
+      source: true,
+      supplier: true,
+      institution: true,
+      createdBy: { select: { id: true, name: true } },
+      approvedBy: { select: { id: true, name: true } }
+    }
   })
+  
+  emitEvent('transaction:sync', { action: 'update', transaction: updatedTx })
+  return updatedTx
 }
 
 export async function deleteDraft(id: number, user: UserContext) {
@@ -152,7 +187,9 @@ export async function deleteDraft(id: number, user: UserContext) {
   if (tx.status !== 'DRAFT' && tx.status !== 'PENDING') {
     throw new ValidationError('Solo se pueden eliminar transacciones en estado Borrador o Pendiente')
   }
-  return prisma.transaction.delete({ where: { id } })
+  const deletedTx = await prisma.transaction.delete({ where: { id } })
+  emitEvent('transaction:sync', { action: 'delete', transaction: tx })
+  return deletedTx
 }
 
 export async function updateDraftDetails(id: number, newDetails: any[], user: UserContext) {
@@ -188,7 +225,7 @@ export async function updateDraftDetails(id: number, newDetails: any[], user: Us
     }
     
     // 3. Devolver la transacción fresca
-    return txPrisma.transaction.findUnique({
+    const updatedTx = await txPrisma.transaction.findUnique({
       where: { id },
       include: {
         details: { include: { product: { include: { unit: true } } } },
@@ -200,153 +237,98 @@ export async function updateDraftDetails(id: number, newDetails: any[], user: Us
         approvedBy: { select: { id: true, name: true } }
       }
     })
+    
+    if (updatedTx) emitEvent('transaction:sync', { action: 'update', transaction: updatedTx })
+    return updatedTx
   })
 }
 
 import { emitEvent } from '../utils/eventBus'
 
 /**
- * Función interna que inyecta los cambios al inventario físico y emite alertas de stock.
+ * Función atómica para descontar stock del Almacén Origen.
+ * Valida estrictamente que haya mercancía suficiente antes de descontar.
  */
-async function applyStockChanges(tx: any) {
-  if (tx.type === 'RECEPTION' && tx.destinationId) {
-    for (const detail of tx.details) {
-      const updatedStock = await prisma.stock.upsert({
-        where: {
-          warehouseId_productId: {
-            warehouseId: tx.destinationId,
-            productId: detail.productId
-          }
-        },
-        update: {
-          quantity: { increment: detail.quantity }
-        },
-        create: {
-          warehouseId: tx.destinationId,
-          productId: detail.productId,
-          quantity: detail.quantity
-        }
-      })
-      
-      // Emitir el evento de actualización de inventario para sockets en tiempo real
-      emitEvent('inventory:updated', {
-        warehouseId: tx.destinationId,
-        productId: detail.productId,
-        quantity: Number(updatedStock.quantity)
-      })
-      
-      // [NUEVO] Capturar y guardar el precio de la factura como "Costo Ref" del Producto
-      if (Number(detail.unitPrice) > 0) {
-        await prisma.product.update({
-          where: { id: detail.productId },
-          data: { referencePrice: detail.unitPrice }
-        })
-      }
+async function deductSourceStock(tx: any) {
+  if (!tx.sourceId) return;
+
+  // FASE 1: VALIDACIÓN ATÓMICA
+  const currentStocks = await prisma.stock.findMany({
+    where: { warehouseId: tx.sourceId, productId: { in: tx.details.map((d: any) => d.productId) } }
+  })
+  const stockMap = new Map(currentStocks.map(s => [s.productId, s]))
+
+  for (const detail of tx.details) {
+    const current = stockMap.get(detail.productId)
+    if (!current || Number(current.quantity) < Number(detail.quantity)) {
+      throw new ValidationError(`Stock insuficiente para descontar. Tienes ${current ? current.quantity : 0} y la transacción exige ${detail.quantity}.`)
     }
   }
 
-  if (tx.type === 'TRANSFER' && tx.sourceId && tx.destinationId) {
-    for (const detail of tx.details) {
-      // 1. Restar del Almacén Origen (Central) - Usamos upsert para evitar crash si no existía el registro
-      const updatedSourceStock = await prisma.stock.upsert({
-        where: {
-          warehouseId_productId: {
-            warehouseId: tx.sourceId,
-            productId: detail.productId
-          }
-        },
-        update: {
-          quantity: { decrement: detail.quantity }
-        },
-        create: {
-          warehouseId: tx.sourceId,
-          productId: detail.productId,
-          quantity: -detail.quantity
-        }
-      })
-      
-      emitEvent('inventory:updated', {
-        warehouseId: tx.sourceId,
-        productId: detail.productId,
-        quantity: Number(updatedSourceStock.quantity)
-      })
-      
-      // Alerta de stock mínimo
-      const minStock = detail.product?.minimumStock ? Number(detail.product.minimumStock) : 0
-      if (Number(updatedSourceStock.quantity) <= minStock) {
-        emitEvent('stock:below-minimum', {
-          warehouseId: tx.sourceId,
-          productId: detail.productId,
-          currentQuantity: Number(updatedSourceStock.quantity),
-          minimumQuantity: minStock
-        })
+  // FASE 2: EJECUCIÓN SEGURA
+  for (const detail of tx.details) {
+    const current = stockMap.get(detail.productId)!
+    const updatedSourceStock = await prisma.stock.update({
+      where: { id: current.id },
+      data: {
+        quantity: { decrement: detail.quantity }
       }
-
-      // 2. Sumar al Almacén Destino (Local/Cocina)
-      const updatedDestStock = await prisma.stock.upsert({
-        where: {
-          warehouseId_productId: {
-            warehouseId: tx.destinationId,
-            productId: detail.productId
-          }
-        },
-        update: {
-          quantity: { increment: detail.quantity }
-        },
-        create: {
-          warehouseId: tx.destinationId,
-          productId: detail.productId,
-          quantity: detail.quantity
-        }
-      })
-      
-      emitEvent('inventory:updated', {
-        warehouseId: tx.destinationId,
-        productId: detail.productId,
-        quantity: Number(updatedDestStock.quantity)
-      })
-    }
-  }
-
-  if ((tx.type === 'CONSUMPTION' || tx.type === 'LOSS' || tx.type === 'SUPPORT') && tx.sourceId) {
-    // FASE 1: VALIDACIÓN ATÓMICA
-    const currentStocks = await prisma.stock.findMany({
-      where: { warehouseId: tx.sourceId, productId: { in: tx.details.map((d: any) => d.productId) } }
     })
-    const stockMap = new Map(currentStocks.map(s => [s.productId, s]))
 
-    for (const detail of tx.details) {
-      const current = stockMap.get(detail.productId)
-      if (!current || Number(current.quantity) < Number(detail.quantity)) {
-        throw new ValidationError(`Stock insuficiente para descontar ${detail.quantity} del producto ID ${detail.productId}`)
-      }
-    }
-
-    // FASE 2: EJECUCIÓN SEGURA
-    for (const detail of tx.details) {
-      const current = stockMap.get(detail.productId)!
-      const updatedSourceStock = await prisma.stock.update({
-        where: { id: current.id },
-        data: {
-          quantity: { decrement: detail.quantity }
-        }
-      })
-
-      // Alerta de stock mínimo
-      const minStock = detail.product?.minimumStock ? Number(detail.product.minimumStock) : 0
-      if (Number(updatedSourceStock.quantity) <= minStock) {
-        emitEvent('stock:below-minimum', {
-          warehouseId: tx.sourceId,
-          productId: detail.productId,
-          currentQuantity: Number(updatedSourceStock.quantity),
-          minimumQuantity: minStock
-        })
-      }
-      
-      emitEvent('inventory:updated', {
+    // Alerta de stock mínimo
+    const minStock = detail.product?.minimumStock ? Number(detail.product.minimumStock) : 0
+    if (Number(updatedSourceStock.quantity) <= minStock) {
+      emitEvent('stock:below-minimum', {
         warehouseId: tx.sourceId,
         productId: detail.productId,
-        quantity: Number(updatedSourceStock.quantity)
+        currentQuantity: Number(updatedSourceStock.quantity),
+        minimumQuantity: minStock
+      })
+    }
+    
+    emitEvent('inventory:updated', {
+      warehouseId: tx.sourceId,
+      productId: detail.productId,
+      quantity: Number(updatedSourceStock.quantity)
+    })
+  }
+}
+
+/**
+ * Función atómica para sumar stock al Almacén Destino.
+ */
+async function addDestinationStock(tx: any) {
+  if (!tx.destinationId) return;
+
+  for (const detail of tx.details) {
+    const updatedDestStock = await prisma.stock.upsert({
+      where: {
+        warehouseId_productId: {
+          warehouseId: tx.destinationId,
+          productId: detail.productId
+        }
+      },
+      update: {
+        quantity: { increment: detail.quantity }
+      },
+      create: {
+        warehouseId: tx.destinationId,
+        productId: detail.productId,
+        quantity: detail.quantity
+      }
+    })
+    
+    emitEvent('inventory:updated', {
+      warehouseId: tx.destinationId,
+      productId: detail.productId,
+      quantity: Number(updatedDestStock.quantity)
+    })
+    
+    // Si es Recepción, actualizamos costo de referencia
+    if (tx.type === 'RECEPTION' && Number(detail.unitPrice) > 0) {
+      await prisma.product.update({
+        where: { id: detail.productId },
+        data: { referencePrice: detail.unitPrice }
       })
     }
   }
