@@ -24,7 +24,6 @@ export function useTransferDetails() {
   
   // Opciones de Edición
   const isEditing = ref(false)
-  const searchQuery = ref('')
   const transferItems = ref<any[]>([])
 
   const canApprove = computed(() => {
@@ -80,14 +79,7 @@ export function useTransferDetails() {
     return stock ? Number(stock.quantity) : 0
   }
 
-  // Buscador de productos para el modo edición
-  const filteredProducts = computed(() => {
-    if (!searchQuery.value) return []
-    const lowerQuery = searchQuery.value.toLowerCase()
-    return productsStore.products.filter(p => 
-      p.active && (p.name.toLowerCase().includes(lowerQuery) || p.code.toLowerCase().includes(lowerQuery))
-    ).slice(0, 8)
-  })
+
 
   const columns = computed(() => {
     const cols = [
@@ -176,26 +168,21 @@ export function useTransferDetails() {
 
   const cancelEdit = () => {
     isEditing.value = false
-    searchQuery.value = ''
     fetchDetails() // Restore original values
   }
 
-  const addItem = (product: any) => {
-    const existing = transferItems.value.find(i => i.productId === product.id)
-    if (existing) {
-      $q.notify({ type: 'warning', message: 'El producto ya está en la lista' })
-      return
-    }
+  const addProductRow = () => {
     transferItems.value.push({
-      productId: product.id,
-      productName: product.name,
-      productCode: product.code,
-      unit: product.unit?.abbreviation || 'UN',
-      availableStock: getCentralStock(product.id),
+      isNew: true,
+      productId: null,
+      productName: '',
+      productCode: '',
+      unit: '',
+      availableStock: 0,
       quantity: 1,
-      unitPrice: 0
+      unitPrice: 0,
+      selectedProduct: null
     })
-    searchQuery.value = ''
   }
 
   const removeItem = (index: number) => {
@@ -203,10 +190,11 @@ export function useTransferDetails() {
   }
 
   const saveChanges = async () => {
-    if (transferItems.value.length === 0) return $q.notify({ type: 'negative', message: 'La transferencia no puede estar vacía' })
+    const validItems = transferItems.value.filter(i => i.productId !== null)
+    if (validItems.length === 0) return $q.notify({ type: 'negative', message: 'La transferencia no puede estar vacía' })
     
     // Validar Cantidades vs Stock
-    for (const item of transferItems.value) {
+    for (const item of validItems) {
       if (item.quantity <= 0) return $q.notify({ type: 'negative', message: `La cantidad de ${item.productName} debe ser mayor a 0` })
       if (item.quantity > item.availableStock) {
         return $q.notify({ type: 'negative', message: `Stock insuficiente. Solo hay ${item.availableStock} ${item.unit} de ${item.productName} en Central` })
@@ -217,7 +205,7 @@ export function useTransferDetails() {
     try {
       await $fetch(`/api/transfers/${id}`, {
         method: 'PUT',
-        body: { details: transferItems.value }
+        body: { details: validItems }
       })
       $q.notify({ type: 'positive', message: 'Cambios guardados exitosamente' })
       isEditing.value = false
@@ -256,9 +244,9 @@ export function useTransferDetails() {
   })
 
   return { 
-    transfer, loading, saving, showPrices, isEditing, searchQuery, transferItems, filteredProducts,
+    transfer, loading, saving, showPrices, isEditing, transferItems,
     canApprove, canEdit, canConfirmReception, columns, getCentralStock,
-    updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addItem, removeItem, saveChanges,
+    updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addProductRow, removeItem, saveChanges,
     getStatusColor, getStatusLabel 
   }
 }

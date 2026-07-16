@@ -30,16 +30,23 @@
           </template>
 
           <template v-if="transaction.status === 'PENDING' && canApprove">
-            <q-btn 
-              color="negative" icon="close" label="Rechazar" outline
-              @click="promptReject" 
-              :loading="saving"
-            />
-            <q-btn 
-              color="blue-8" icon="check" label="Aprobar" 
-              @click="updateStatus('APPROVED')" 
-              :loading="saving"
-            />
+            <template v-if="!isEditing">
+              <q-btn color="grey-8" outline icon="edit" label="Habilitar Edición" @click="isEditing = true" />
+              <q-btn 
+                color="negative" icon="close" label="Rechazar" outline
+                @click="promptReject" 
+                :loading="saving"
+              />
+              <q-btn 
+                color="blue-8" icon="check" label="Aprobar" 
+                @click="updateStatus('APPROVED')" 
+                :loading="saving"
+              />
+            </template>
+            <template v-else>
+              <q-btn color="grey-6" flat label="Cancelar" @click="isEditing = false" :disable="saving" />
+              <q-btn color="positive" icon="save" label="Guardar Ajustes" @click="saveDraftChanges" :loading="saving" />
+            </template>
           </template>
           <template v-if="transaction.status === 'APPROVED'">
             <q-btn 
@@ -122,9 +129,58 @@
           hide-pagination
           :pagination="{ rowsPerPage: 0 }"
         >
+          <template v-slot:body-cell-code="props">
+            <q-td :props="props">
+              <template v-if="props.row.isNew">
+                <q-input v-model="props.row.product.code" dense outlined placeholder="Ej. PROD-01" style="min-width: 100px" />
+              </template>
+              <template v-else>
+                {{ props.row.product?.code }}
+              </template>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-product="props">
+            <q-td :props="props">
+              <template v-if="props.row.isNew">
+                <q-input v-model="props.row.product.name" dense outlined placeholder="Ej. Tomates Frescos" style="min-width: 150px" />
+              </template>
+              <template v-else>
+                {{ props.row.product?.name }}
+              </template>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-unit="props">
+            <q-td :props="props">
+              <template v-if="props.row.isNew">
+                <q-select 
+                  v-model="props.row.product.unitText" 
+                  :options="unitsStore.activeUnits.map(u => u.abbreviation)" 
+                  use-input
+                  fill-input
+                  hide-selected
+                  new-value-mode="add-unique"
+                  dense 
+                  outlined 
+                  style="min-width: 80px"
+                  placeholder="Ej: UN"
+                />
+              </template>
+              <template v-else>
+                {{ props.row.product?.unit?.abbreviation || 'N/A' }}
+              </template>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-expectedQuantity="props">
             <q-td :props="props">
-              <span class="text-grey-7">{{ props.row.expectedQuantity || props.row.quantity }}</span>
+              <template v-if="!isEditing">
+                <span class="text-grey-7">{{ props.row.expectedQuantity || props.row.quantity }}</span>
+              </template>
+              <div v-else>
+                <q-input v-model.number="props.row.expectedQuantity" type="number" dense outlined style="max-width: 90px; margin: 0 auto" />
+              </div>
             </q-td>
           </template>
 
@@ -146,6 +202,22 @@
             <q-td :props="props">
               <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
               <q-input v-else v-model.number="props.row.unitPrice" type="number" dense outlined prefix="$" style="max-width: 110px; margin: 0 auto" />
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-projectedWac="props">
+            <q-td :props="props">
+              <span :class="Number(props.value) > Number(props.row.product?.referencePrice || 0) ? 'text-red-8 text-weight-bold' : (Number(props.value) < Number(props.row.product?.referencePrice || 0) ? 'text-green-8 text-weight-bold' : 'text-grey-8')">
+                <q-icon 
+                  v-if="Number(props.value).toFixed(2) !== Number(props.row.product?.referencePrice || 0).toFixed(2)" 
+                  :name="Number(props.value) > Number(props.row.product?.referencePrice || 0) ? 'arrow_upward' : 'arrow_downward'" 
+                  size="xs" 
+                />
+                ${{ (Number(props.value) || 0).toFixed(2) }}
+              </span>
+              <div class="text-caption text-grey-5" v-if="props.row.product">
+                Actual: ${{ Number(props.row.product.referencePrice || 0).toFixed(2) }}
+              </div>
             </q-td>
           </template>
 
@@ -173,15 +245,36 @@
                     <div class="text-caption text-grey-7">{{ col.label }}</div>
                     <div class="text-weight-bold text-right" style="max-width: 60%">
                       <template v-if="col.name === 'expectedQuantity'">
-                        {{ props.row.expectedQuantity || props.row.quantity }}
+                        <template v-if="!isEditing">
+                          {{ props.row.expectedQuantity || props.row.quantity }}
+                        </template>
+                        <div v-else>
+                          <q-input v-model.number="props.row.expectedQuantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" />
+                        </div>
+                      </template>
+                      <template v-else-if="col.name === 'code' && props.row.isNew">
+                        <q-input v-model="props.row.product.code" dense outlined placeholder="Ej. PROD-01" />
+                      </template>
+                      <template v-else-if="col.name === 'product' && props.row.isNew">
+                        <q-input v-model="props.row.product.name" dense outlined placeholder="Ej. Tomates Frescos" />
+                      </template>
+                      <template v-else-if="col.name === 'unit' && props.row.isNew">
+                        <q-select 
+                          v-model="props.row.product.unitText" 
+                          :options="unitsStore.activeUnits.map(u => u.abbreviation)" 
+                          use-input
+                          fill-input
+                          hide-selected
+                          new-value-mode="add-unique"
+                          dense 
+                          outlined 
+                          placeholder="Ej: UN"
+                        />
                       </template>
                       <template v-else-if="col.name === 'quantity'">
-                        <!-- MODO MÓVIL (GRID) - VISUALIZACIÓN: Se omite el texto descriptivo del faltante, solo color rojo. -->
                         <div v-if="!isEditing">
                           <span :class="Number(props.row.quantity) < Number(props.row.expectedQuantity) ? 'text-red-9 text-weight-bold' : ''">{{ props.row.quantity }}</span>
                         </div>
-                        
-                        <!-- MODO MÓVIL (GRID) - EDICIÓN: Input numérico simplificado sin requerir texto explicativo. -->
                         <div v-else>
                           <q-input v-model.number="props.row.quantity" type="number" dense outlined style="max-width: 90px; margin: 0 0 0 auto" />
                         </div>
@@ -189,6 +282,12 @@
                       <template v-else-if="col.name === 'price'">
                         <template v-if="!isEditing">${{ props.row.unitPrice }}</template>
                         <q-input v-else v-model.number="props.row.unitPrice" type="number" dense outlined prefix="$" style="max-width: 110px; margin: 0 0 0 auto" />
+                      </template>
+                      <template v-else-if="col.name === 'projectedWac'">
+                        <span :class="Number(col.value) > Number(props.row.product?.referencePrice || 0) ? 'text-red-8 text-weight-bold' : (Number(col.value) < Number(props.row.product?.referencePrice || 0) ? 'text-green-8 text-weight-bold' : 'text-grey-8')">
+                          <q-icon v-if="Number(col.value).toFixed(2) !== Number(props.row.product?.referencePrice || 0).toFixed(2)" :name="Number(col.value) > Number(props.row.product?.referencePrice || 0) ? 'arrow_upward' : 'arrow_downward'" size="xs" />
+                          ${{ (Number(col.value) || 0).toFixed(2) }}
+                        </span>
                       </template>
                       <template v-else-if="col.name === 'exp'">
                         <template v-if="!isEditing">{{ props.row.expirationDate ? new Date(props.row.expirationDate).toLocaleDateString() : 'N/A' }}</template>
@@ -208,6 +307,10 @@
             </div>
           </template>
         </q-table>
+        
+        <q-card-section v-if="isEditing" class="bg-grey-1 border-top text-center">
+          <q-btn outline color="primary" icon="add" label="Agregar Fila en Blanco" @click="addProductRow" />
+        </q-card-section>
       </q-card>
       
       <!-- HISTORIAL / NOTAS -->
@@ -243,13 +346,23 @@ const {
   promptCancel,
   deleteDraft,
   removeRow,
+  addProductRow,
   saveDraftChanges,
   getStatusColor,
   getStatusLabel,
   searchQuery
 } = useReceptionDetails()
 import { useRoute } from 'vue-router'
+import { useProductsStore } from '~/stores/products'
+import { useUnitsStore } from '~/stores/units'
+
 const route = useRoute()
+const productsStore = useProductsStore()
+const unitsStore = useUnitsStore()
+const productSearch = ref(null)
+
+if (productsStore.products.length === 0) productsStore.fetchAll()
+if (unitsStore.units.length === 0) unitsStore.fetchAll()
 
 // ── LÓGICA DE OCR ───────────────────────────────────────────────
 const isOcrOpen = ref(false)

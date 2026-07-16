@@ -33,16 +33,55 @@ export function useReceptionDetails() {
     const cols = [
       { name: 'code', label: 'Código', field: (row: any) => row.product?.code, align: 'left' as const },
       { name: 'product', label: 'Producto', field: (row: any) => row.product?.name, align: 'left' as const },
+      { name: 'unit', label: 'Unidad', field: (row: any) => row.product?.unit?.abbreviation || 'N/A', align: 'center' as const },
       { name: 'expectedQuantity', label: 'Facturado', field: 'expectedQuantity', align: 'center' as const },
       { name: 'quantity', label: 'Recibido', field: 'quantity', align: 'center' as const },
       { name: 'price', label: 'Precio', field: 'unitPrice', align: 'center' as const, format: (val: number) => `$${val}` },
-      { name: 'exp', label: 'Vencimiento', field: 'expirationDate', align: 'center' as const, format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' }
+      { 
+        name: 'projectedWac', 
+        label: 'Promedio Proyectado', 
+        field: (row: any) => {
+          if (row.product?.totalStock !== undefined) {
+             const prevStock = Number(row.product.totalStock) || 0
+             const currentAvg = Number(row.product.referencePrice) || 0
+             const incomingQty = Number(row.quantity) || 0
+             const incomingPrice = Number(row.unitPrice) || 0
+             
+             if (prevStock === 0 && incomingQty === 0) return currentAvg
+             if (prevStock === 0) return incomingPrice
+             
+             const divisor = prevStock + incomingQty
+             if (divisor === 0) return currentAvg // Evitar división por cero
+             
+             return ((prevStock * currentAvg) + (incomingQty * incomingPrice)) / divisor
+          }
+          return Number(row.product?.referencePrice) || 0
+        }, 
+        align: 'center' as const 
+      },
+      { name: 'exp', label: 'Vencimiento', field: 'expirationDate', align: 'center' as const, format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+      { name: 'total', label: 'Total', field: (row: any) => Number(row.quantity) * Number(row.unitPrice), align: 'center' as const, format: (val: number) => `$${val.toLocaleString('en-US', { minimumFractionDigits: 2 })}` }
     ]
     if (isEditing.value) {
       cols.push({ name: 'actions', label: '', field: 'actions', align: 'center' as const, format: () => '' })
     }
     return cols
   })
+
+  const addProductRow = () => {
+    transaction.value.details.push({
+      id: 0,
+      transactionId: transaction.value.id,
+      productId: null,
+      isNew: true, // Flag para la UI y Backend
+      product: { code: '', name: '', unitText: '' },
+      expectedQuantity: 0,
+      quantity: 1,
+      unitPrice: 0,
+      expirationDate: null
+    })
+    $q.notify({ type: 'positive', message: 'Fila en blanco añadida' })
+  }
 
   const fetchDetails = async () => {
     try {
@@ -105,6 +144,8 @@ export function useReceptionDetails() {
 
       const updatedDetails = transaction.value.details.map((d: any) => ({
         productId: d.productId,
+        isNew: d.isNew,
+        product: d.product,
         quantity: Number(d.quantity),
         expectedQuantity: Number(d.expectedQuantity || d.quantity),
         unitPrice: Number(d.unitPrice),
@@ -192,6 +233,7 @@ export function useReceptionDetails() {
     promptCancel,
     deleteDraft,
     removeRow,
+    addProductRow,
     saveDraftChanges,
     getStatusColor,
     getStatusLabel,

@@ -1,57 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
-import { useNotificationsStore, type Notification } from '~/stores/notifications'
+import { useNotificationsStore } from '~/stores/notifications'
 import { useInteractiveTour } from '~/composables/features/useInteractiveTour'
-import { useProductsStore } from '~/stores/products'
-import { useDinersStore } from '~/stores/diners'
-import { useQuasar } from 'quasar'
+import { useAppSockets } from '~/composables/layout/useAppSockets'
+import AppHeader from '~/components/layout/AppHeader.vue'
+import AppSidebar from '~/components/layout/AppSidebar.vue'
 
-// ── LAYOUT BASE DE QUASAR ───────────────────────────────────────────────────
 const leftDrawerOpen = ref(true)
 const auth = useAuthStore()
 const notifications = useNotificationsStore()
 const interactiveTour = useInteractiveTour()
-const productStore = useProductsStore()
-const router = useRouter()
-const $q = useQuasar()
-const { $socket } = useNuxtApp() as any
-
-const isPasswordDialogOpen = ref(false)
-const changingPassword = ref(false)
-const passwordForm = ref({ old: '', new: '', confirm: '' })
+const { initSockets } = useAppSockets()
 
 // Inicializar sockets y notificaciones si está logueado
 onMounted(() => {
   if (auth.isAuthenticated && auth.user) {
     notifications.fetchAll()
-    $socket.emit('join', { userId: auth.user.id, warehouseId: auth.user.warehouseId })
+    initSockets()
     interactiveTour.checkAndOpenTour()
-    
-    // Escuchar notificaciones en vivo
-    $socket.off('notification')
-    $socket.on('notification', (newNotif: Notification) => {
-      notifications.addRealtimeNotification(newNotif)
-      $q.notify({
-        type: newNotif.title.includes('Alerta') || newNotif.title.includes('Crítico') ? 'negative' : 'info',
-        message: newNotif.title,
-        caption: newNotif.message,
-        position: 'top-right',
-        timeout: 5000
-      })
-    })
-    
-    // Escuchar actualizaciones de inventario en vivo (Reactividad)
-    $socket.on('inventory:update_row', (payload: { warehouseId: number, productId: number, quantity: string|number }) => {
-      productStore.updateProductStock(payload.productId, payload.warehouseId, payload.quantity)
-    })
-
-    // Escuchar actualizaciones de comensales en vivo
-    $socket.on('diner:sync', (payload: { action: 'create' | 'update' | 'delete', diner: any }) => {
-      const dinersStore = useDinersStore()
-      dinersStore.syncDiner(payload.action, payload.diner)
-    })
   }
 })
 
@@ -59,375 +26,28 @@ onMounted(() => {
 watch(() => auth.isAuthenticated, (newVal) => {
   if (newVal && auth.user) {
     notifications.fetchAll()
-    $socket.emit('join', { userId: auth.user.id, warehouseId: auth.user.warehouseId })
+    initSockets()
     interactiveTour.checkAndOpenTour()
   }
 })
-
-const handleNotificationClick = async (n: Notification) => {
-  if (!n.isRead) {
-    await notifications.markAsRead(n.id)
-  }
-  if (n.link) {
-    router.push(n.link)
-  }
-}
-
-const submitPasswordChange = async () => {
-  changingPassword.value = true
-  try {
-    await auth.changePassword(passwordForm.value.old, passwordForm.value.new)
-    $q.notify({ type: 'positive', message: 'Contraseña actualizada. Úsala la próxima vez.' })
-    isPasswordDialogOpen.value = false
-    passwordForm.value = { old: '', new: '', confirm: '' }
-  } catch (error: any) {
-    $q.notify({ type: 'negative', message: error.data?.message || 'Error al cambiar clave' })
-  } finally {
-    changingPassword.value = false
-  }
-}
 </script>
 
 <template>
-  <!-- lHh Lpr lFf es el modelo de layout por defecto de Quasar -->
   <q-layout view="lHh Lpr lFf">
-    
-    <!-- HEADER -->
-    <q-header elevated class="bg-primary">
-      <q-toolbar>
-        <q-btn
-          flat dense round
-          icon="menu"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        />
-        <q-toolbar-title>SIAC</q-toolbar-title>
-
-        <!-- INFO DEL USUARIO LOGUEADO -->
-        <div v-if="auth.isAuthenticated" class="row items-center q-gutter-md">
-
-          <!-- BOTÓN DE AYUDA / TOUR -->
-          <q-btn flat round dense icon="help_outline" @click="interactiveTour.openTour()">
-            <q-tooltip>Ver Guía Rápida</q-tooltip>
-          </q-btn>
-          
-          <!-- CAMPANITA DE NOTIFICACIONES -->
-          <q-btn flat round dense icon="notifications">
-            <q-badge v-if="notifications.unreadCount > 0" color="red" floating rounded>
-              {{ notifications.unreadCount }}
-            </q-badge>
-            <q-menu fit>
-              <q-list style="min-width: 250px">
-                <q-item-label header>Notificaciones</q-item-label>
-                
-                <q-item v-if="notifications.notifications.length === 0">
-                  <q-item-section class="text-grey">Sin notificaciones nuevas</q-item-section>
-                </q-item>
-
-                <q-item 
-                  v-for="n in notifications.notifications" 
-                  :key="n.id" 
-                  clickable 
-                  v-ripple
-                  :class="n.isRead ? '' : 'bg-blue-1'"
-                  @click="handleNotificationClick(n)"
-                >
-                  <q-item-section>
-                    <q-item-label :class="n.isRead ? '' : 'text-weight-bold'">{{ n.title }}</q-item-label>
-                    <q-item-label caption lines="2">{{ n.message }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-
-          <!-- MENÚ DE USUARIO -->
-          <q-btn flat dense no-caps>
-            <div class="row items-center">
-              <div v-if="$q.screen.gt.xs" class="column text-right q-pr-sm">
-                <span class="text-weight-bold ellipsis" style="font-size: 14px; max-width: 150px;">{{ auth.user?.name }}</span>
-                <span class="text-caption ellipsis" style="line-height: 1; max-width: 150px;">{{ auth.user?.role?.name }}</span>
-              </div>
-              <q-avatar v-else size="sm" color="blue-9" text-color="white" class="q-mr-xs">
-                {{ auth.user?.name?.charAt(0)?.toUpperCase() || 'U' }}
-              </q-avatar>
-              <q-icon name="arrow_drop_down" />
-            </div>
-
-            <q-menu fit>
-              <q-list style="min-width: 150px">
-                <q-item clickable v-close-popup @click="isPasswordDialogOpen = true">
-                  <q-item-section avatar><q-icon name="key" size="sm" /></q-item-section>
-                  <q-item-section>Cambiar Clave</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable v-close-popup @click="auth.logout()">
-                  <q-item-section avatar><q-icon name="logout" color="negative" size="sm" /></q-item-section>
-                  <q-item-section class="text-negative">Cerrar Sesión</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-        </div>
-      </q-toolbar>
-    </q-header>
+    <!-- HEADER Y MODAL DE USUARIO -->
+    <AppHeader @toggleSidebar="leftDrawerOpen = !leftDrawerOpen" />
 
     <!-- SIDEBAR (MENÚ LATERAL) -->
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header>Navegación</q-item-label>
-        
-        <!-- Enlace al Dashboard -->
-        <q-item clickable to="/">
-          <q-item-section avatar>
-            <q-icon name="dashboard" />
-          </q-item-section>
-          <q-item-section>Dashboard</q-item-section>
-        </q-item>
-        
-        <q-item to="/inventory/receptions" clickable v-ripple v-if="auth.hasPermission('RECEPTIONS', 'canRead')">
-          <q-item-section avatar>
-            <q-icon name="inventory_2" />
-          </q-item-section>
-          <q-item-section>Recepciones</q-item-section>
-        </q-item>
-
-        <q-item to="/inventory/transfers" clickable v-ripple v-if="auth.hasPermission('TRANSFERS', 'canRead')">
-          <q-item-section avatar>
-            <q-icon name="local_shipping" />
-          </q-item-section>
-          <q-item-section>Transferencias (Cocinas)</q-item-section>
-        </q-item>
-
-        <q-separator class="q-my-md" />
-
-        <!-- Aquí iremos agregando los demás menús (Productos, etc) a medida -->
-        <!-- que desarrollemos los módulos contigo. -->
-
-          <!-- Menú Dinámico: Inventario -->
-          <q-expansion-item
-            icon="inventory_2"
-            label="Inventario"
-            v-if="auth.isAuthenticated && (auth.hasPermission('PRODUCTS', 'canRead') || auth.hasPermission('CATEGORIES', 'canRead') || auth.hasPermission('WAREHOUSES', 'canRead') || auth.hasPermission('UNITS', 'canRead') || auth.hasPermission('SUPPLIERS', 'canRead'))"
-          >
-            <q-list class="q-pl-lg">
-              <q-item clickable v-ripple to="/inventory/products" active-class="text-primary" v-if="auth.hasPermission('PRODUCTS', 'canRead')">
-                <q-item-section avatar><q-icon name="shopping_basket" size="sm" /></q-item-section>
-                <q-item-section>Productos</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/categories" active-class="text-primary" v-if="auth.hasPermission('CATEGORIES', 'canRead')">
-                <q-item-section avatar><q-icon name="category" size="sm" /></q-item-section>
-                <q-item-section>Categorías</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/units" active-class="text-primary" v-if="auth.hasPermission('UNITS', 'canRead')">
-                <q-item-section avatar><q-icon name="straighten" size="sm" /></q-item-section>
-                <q-item-section>Unidades</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/warehouses" active-class="text-primary" v-if="auth.hasPermission('WAREHOUSES', 'canRead')">
-                <q-item-section avatar><q-icon name="storefront" size="sm" /></q-item-section>
-                <q-item-section>Almacenes</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/suppliers" active-class="text-primary" v-if="auth.hasPermission('SUPPLIERS', 'canRead')">
-                <q-item-section avatar><q-icon name="business" size="sm" /></q-item-section>
-                <q-item-section>Proveedores</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/institutions" active-class="text-primary" v-if="auth.hasPermission('INSTITUTIONS', 'canRead')">
-                <q-item-section avatar><q-icon name="account_balance" size="sm" /></q-item-section>
-                <q-item-section>Instituciones (Apoyos)</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/inventory/approvals" active-class="text-primary" v-if="auth.hasPermission('OPERATIONS', 'canUpdate')">
-                <q-item-section avatar><q-icon name="fact_check" size="sm" /></q-item-section>
-                <q-item-section>Aprobación de Apoyos</q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
-
-          <!-- Menú Dinámico: Gestión de Comensales -->
-          <q-expansion-item
-            icon="groups"
-            label="Gestión de Comensales"
-            v-if="auth.isAuthenticated && (auth.hasPermission('DINERS', 'canRead') || auth.hasPermission('DISPATCH', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canRead') || auth.hasPermission('MY_SQUADS', 'canRead'))"
-          >
-            <q-list class="q-pl-lg">
-              <q-item clickable v-ripple to="/dispatch" active-class="text-primary" v-if="auth.hasPermission('DISPATCH', 'canRead')">
-                <q-item-section avatar><q-icon name="touch_app" size="sm" /></q-item-section>
-                <q-item-section>Punto de Despacho</q-item-section>
-              </q-item>
-
-              <q-item clickable v-ripple to="/diners/requests" active-class="text-primary" v-if="auth.hasPermission('DINERS_REQUESTS', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canCreate')">
-                <q-item-section avatar><q-icon name="restaurant_menu" size="sm" /></q-item-section>
-                <q-item-section>Solicitar Comidas</q-item-section>
-              </q-item>
-              
-              <q-item clickable v-ripple to="/diners/squads" active-class="text-primary" v-if="auth.hasPermission('MY_SQUADS', 'canRead')">
-                <q-item-section avatar><q-icon name="engineering" size="sm" /></q-item-section>
-                <q-item-section>Mis Cuadrillas</q-item-section>
-              </q-item>
-              
-              <q-item clickable v-ripple to="/diners/workers" active-class="text-primary" v-if="auth.hasPermission('DINERS', 'canRead')">
-                <q-item-section avatar><q-icon name="fingerprint" size="sm" /></q-item-section>
-                <q-item-section>Comensales Físicos</q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
-
-          <!-- Menú Dinámico: Operación Local -->
-          <q-expansion-item
-            icon="restaurant"
-            label="Cocina / Operación Local"
-            v-if="auth.isAuthenticated && auth.hasPermission('OPERATIONS', 'canRead')"
-          >
-            <q-list class="q-pl-lg">
-              <q-item clickable v-ripple to="/kitchen/operation" active-class="text-primary">
-                <q-item-section avatar><q-icon name="point_of_sale" size="sm" /></q-item-section>
-                <q-item-section>Panel de Operaciones</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/kitchen/inventory" active-class="text-primary">
-                <q-item-section avatar><q-icon name="inventory" size="sm" /></q-item-section>
-                <q-item-section>Mi Inventario Físico</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/kitchen/shifts" active-class="text-primary">
-                <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
-                <q-item-section>Mi Historial de Turnos</q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
-
-          <!-- Menú Dinámico: Reportes -->
-          <q-expansion-item
-            icon="analytics"
-            label="Reportes"
-            v-if="auth.isAuthenticated && (auth.hasPermission('REPORT_DASHBOARD', 'canRead') || auth.hasPermission('REPORT_VALUE', 'canRead') || auth.hasPermission('REPORT_ALERTS', 'canRead') || auth.hasPermission('REPORT_MINMAX', 'canRead') || auth.hasPermission('REPORT_CONSUMPTIONS', 'canRead') || auth.hasPermission('REPORT_INSTITUTIONS', 'canRead') || auth.hasPermission('REPORT_SHIFTS', 'canRead') || auth.hasPermission('REPORT_RECEPTIONS', 'canRead'))"
-          >
-            <q-list class="q-pl-lg">
-              <q-item clickable v-ripple to="/reports" active-class="text-primary" exact v-if="auth.hasPermission('REPORT_DASHBOARD', 'canRead')">
-                <q-item-section avatar><q-icon name="dashboard" size="sm" /></q-item-section>
-                <q-item-section>Dashboard de Reportes</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/value" active-class="text-primary" v-if="auth.hasPermission('REPORT_VALUE', 'canRead')">
-                <q-item-section avatar><q-icon name="request_quote" size="sm" /></q-item-section>
-                <q-item-section>Valor del Inventario</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/alerts" active-class="text-primary" v-if="auth.hasPermission('REPORT_ALERTS', 'canRead')">
-                <q-item-section avatar><q-icon name="warning" size="sm" /></q-item-section>
-                <q-item-section>Alertas de Stop</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/minmax" active-class="text-primary" v-if="auth.hasPermission('REPORT_MINMAX', 'canRead')">
-                <q-item-section avatar><q-icon name="bar_chart" size="sm" /></q-item-section>
-                <q-item-section>Mínimos y Máximos</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/consumptions" active-class="text-primary" v-if="auth.hasPermission('REPORT_CONSUMPTIONS', 'canRead')">
-                <q-item-section avatar><q-icon name="restaurant" size="sm" /></q-item-section>
-                <q-item-section>Consumos y Mermas</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/institutions" active-class="text-primary" v-if="auth.hasPermission('REPORT_INSTITUTIONS', 'canRead')">
-                <q-item-section avatar><q-icon name="volunteer_activism" size="sm" /></q-item-section>
-                <q-item-section>Apoyos Institucionales</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/shifts" active-class="text-primary" v-if="auth.hasPermission('REPORT_SHIFTS', 'canRead')">
-                <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
-                <q-item-section>Historial de Turnos</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/reports/receptions" active-class="text-primary" v-if="auth.hasPermission('REPORT_RECEPTIONS', 'canRead')">
-                <q-item-section avatar><q-icon name="table_chart" size="sm" /></q-item-section>
-                <q-item-section>Matriz de Recepciones</q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
-
-          <!-- Menú Dinámico: Seguridad y Estructura Organizacional -->
-          <q-expansion-item
-            icon="security"
-            label="Seguridad"
-            v-if="auth.isAuthenticated && (auth.hasPermission('SECURITY', 'canRead') || auth.hasPermission('BIOMETRIC', 'canRead') || auth.hasPermission('DINING_ROOMS', 'canRead') || auth.hasPermission('SQUADS', 'canRead') || auth.hasPermission('DEPENDENCIES', 'canRead') || auth.hasPermission('POSITIONS', 'canRead') || auth.hasPermission('AUDIT', 'canRead'))"
-          >
-            <q-list class="q-pl-lg">
-              <!-- Catálogos Organizacionales -->
-              <q-item clickable v-ripple to="/diners/dining-rooms" active-class="text-primary" v-if="auth.hasPermission('DINING_ROOMS', 'canRead')">
-                <q-item-section avatar><q-icon name="restaurant" size="sm" /></q-item-section>
-                <q-item-section>Gestión de Comedores</q-item-section>
-              </q-item>
-
-              <q-item clickable v-ripple to="/diners/squad-catalog" active-class="text-primary" v-if="auth.hasPermission('SQUADS', 'canCreate') || auth.hasPermission('SQUADS', 'canRead')">
-                <q-item-section avatar><q-icon name="list_alt" size="sm" /></q-item-section>
-                <q-item-section>Catálogo de Cuadrillas</q-item-section>
-              </q-item>
-
-              <q-item clickable v-ripple to="/diners/positions" active-class="text-primary" v-if="auth.hasPermission('POSITIONS', 'canRead')">
-                <q-item-section avatar><q-icon name="badge" size="sm" /></q-item-section>
-                <q-item-section>Catálogo de Cargos</q-item-section>
-              </q-item>
-
-              <q-item clickable v-ripple to="/diners/dependencies" active-class="text-primary" v-if="auth.hasPermission('DEPENDENCIES', 'canRead')">
-                <q-item-section avatar><q-icon name="account_tree" size="sm" /></q-item-section>
-                <q-item-section>Árbol Organizacional</q-item-section>
-              </q-item>
-
-              <q-separator class="q-my-sm" />
-
-              <!-- Módulos Core de Seguridad -->
-              <q-item clickable v-ripple to="/security/biometric" active-class="text-primary" v-if="auth.hasPermission('BIOMETRIC', 'canRead')">
-                <q-item-section avatar><q-icon name="fingerprint" size="sm" /></q-item-section>
-                <q-item-section>Gestión Biométrica</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/security/users" active-class="text-primary" v-if="auth.hasPermission('SECURITY', 'canRead')">
-                <q-item-section avatar><q-icon name="manage_accounts" size="sm" /></q-item-section>
-                <q-item-section>Usuarios</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/security/roles" active-class="text-primary" v-if="auth.hasPermission('SECURITY', 'canRead')">
-                <q-item-section avatar><q-icon name="admin_panel_settings" size="sm" /></q-item-section>
-                <q-item-section>Roles y Permisos</q-item-section>
-              </q-item>
-              <q-item clickable v-ripple to="/security/audit" active-class="text-primary" v-if="auth.hasPermission('AUDIT', 'canRead')">
-                <q-item-section avatar><q-icon name="history" size="sm" /></q-item-section>
-                <q-item-section>Auditoría</q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
-
-      </q-list>
+      <AppSidebar />
     </q-drawer>
 
-    <!-- CONTENEDOR DE LA PÁGINA (aquí entra pages/index.vue, etc) -->
+    <!-- CONTENEDOR DE LA PÁGINA -->
     <q-page-container>
       <NuxtPage />
     </q-page-container>
 
-    <!-- MODAL CAMBIAR CONTRASEÑA -->
-    <SharedFormDialog
-      v-model="isPasswordDialogOpen"
-      title="Cambiar Contraseña"
-      :loading="changingPassword"
-      save-label="Actualizar"
-      @save="submitPasswordChange"
-    >
-      <q-input
-        v-model="passwordForm.old"
-        label="Contraseña Actual *"
-        type="password"
-        outlined dense autofocus
-        :rules="[val => !!val || 'Requerida']"
-      />
-      <q-input
-        v-model="passwordForm.new"
-        label="Nueva Contraseña *"
-        type="password"
-        outlined dense class="q-mt-md"
-        :rules="[val => val.length >= 6 || 'Mínimo 6 caracteres']"
-      />
-      <q-input
-        v-model="passwordForm.confirm"
-        label="Confirmar Nueva Contraseña *"
-        type="password"
-        outlined dense class="q-mt-md"
-        :rules="[
-          val => !!val || 'Requerida',
-          val => val === passwordForm.new || 'Las contraseñas no coinciden'
-        ]"
-      />
-    </SharedFormDialog>
-
     <!-- GUÍA INTERACTIVA (ONBOARDING) -->
     <SharedInteractiveTour />
-
   </q-layout>
 </template>

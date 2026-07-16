@@ -70,9 +70,27 @@
                   </q-badge>
                 </q-td>
               </template>
+              <template v-slot:body-cell-qty="props">
+                <q-td :props="props" class="text-right">
+                  <q-input 
+                    v-model.number="inputQuantities[props.row.id]"
+                    type="number" 
+                    dense 
+                    outlined 
+                    style="width: 70px; display: inline-block"
+                    :min="1"
+                    :max="getStock(props.row.id, sourceId)"
+                    hide-bottom-space
+                    @update:model-value="(val) => { 
+                      if (!val || val < 1) inputQuantities[props.row.id] = 1; 
+                      if (val > getStock(props.row.id, sourceId)) inputQuantities[props.row.id] = getStock(props.row.id, sourceId); 
+                    }"
+                  />
+                </q-td>
+              </template>
               <template v-slot:body-cell-actions="props">
                 <q-td :props="props" class="text-right">
-                  <q-btn flat round dense color="primary" icon="add" @click="addItem(props.row)" />
+                  <q-btn flat round dense color="primary" icon="add" @click="addItem(props.row, inputQuantities[props.row.id] || 1)" />
                 </q-td>
               </template>
               
@@ -81,8 +99,24 @@
                 <div class="q-pa-xs col-12 col-sm-6">
                   <q-card bordered flat class="bg-white">
                     <q-card-section class="q-pb-none row items-start justify-between">
-                      <div class="text-weight-bold" style="max-width: 80%; line-height: 1.1;">{{ props.row.name }}</div>
-                      <q-btn flat round dense color="primary" icon="add" size="sm" @click="addItem(props.row)" />
+                      <div class="text-weight-bold" style="max-width: 65%; line-height: 1.1;">{{ props.row.name }}</div>
+                      <div class="row items-center q-gutter-x-xs">
+                        <q-input 
+                          v-model.number="inputQuantities[props.row.id]"
+                          type="number" 
+                          dense 
+                          outlined 
+                          style="width: 60px"
+                          :min="1"
+                          :max="getStock(props.row.id, sourceId)"
+                          hide-bottom-space
+                          @update:model-value="(val) => { 
+                            if (!val || val < 1) inputQuantities[props.row.id] = 1; 
+                            if (val > getStock(props.row.id, sourceId)) inputQuantities[props.row.id] = getStock(props.row.id, sourceId); 
+                          }"
+                        />
+                        <q-btn flat round dense color="primary" icon="add" size="sm" @click="addItem(props.row, inputQuantities[props.row.id] || 1)" />
+                      </div>
                     </q-card-section>
                     <q-card-section class="q-pt-sm q-pb-sm row justify-between text-caption">
                       <div class="text-grey-7">{{ props.row.code }}</div>
@@ -194,7 +228,7 @@ onMounted(async () => {
 })
 
 const {
-  saving, sourceId, destinationId, searchQuery, transferItems, showPrices,
+  saving, sourceId, destinationId, searchQuery, transferItems, inputQuantities, showPrices,
   availableSources, availableDestinations, filteredProducts,
   getStock, addItem, removeItem, saveDraft
 } = useTransferForm()
@@ -203,6 +237,7 @@ const productColumns = [
   { name: 'name', label: 'Producto', field: 'name', align: 'left' as const },
   { name: 'code', label: 'Código', field: 'code', align: 'left' as const },
   { name: 'stock', label: 'Stock Origen', field: 'stock', align: 'center' as const },
+  { name: 'qty', label: 'Cant.', field: 'qty', align: 'right' as const },
   { name: 'actions', label: '', field: 'actions', align: 'right' as const }
 ]
 

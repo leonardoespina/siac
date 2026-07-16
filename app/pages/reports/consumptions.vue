@@ -52,6 +52,48 @@
         </div>
       </div>
 
+      <!-- SECCIÓN COMBINADA DE DESGLOSE FINANCIERO -->
+      <div class="row q-col-gutter-md q-mb-lg" v-if="consumptionSummaryByWarehouse.length > 0 || lossSummaryByWarehouse.length > 0">
+        
+        <!-- DESGLOSE CONSUMOS -->
+        <div class="col-12 col-md-6" v-if="consumptionSummaryByWarehouse.length > 0">
+          <div class="text-subtitle1 text-weight-bold q-mb-sm text-grey-8">
+             Desglose Financiero por Comedor
+          </div>
+          <div class="row q-col-gutter-sm">
+            <div v-for="local in consumptionSummaryByWarehouse" :key="local.id" class="col-12 col-sm-6">
+              <q-card bordered flat class="bg-white q-pa-md text-center">
+                <div class="text-weight-bold text-grey-9 text-uppercase" style="font-size: 13px;">{{ local.name }}</div>
+                <q-separator class="q-my-sm" />
+                <div class="text-caption text-grey-6">{{ local.items }} artículos consumidos</div>
+                <div class="text-h5 text-weight-bold text-green-7 q-mt-xs">
+                   ${{ Number(local.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+                </div>
+              </q-card>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESGLOSE MERMAS -->
+        <div class="col-12 col-md-6" v-if="lossSummaryByWarehouse.length > 0">
+          <div class="text-subtitle1 text-weight-bold q-mb-sm text-grey-8">
+             Desglose Financiero de Mermas por Local
+          </div>
+          <div class="row q-col-gutter-sm">
+            <div v-for="local in lossSummaryByWarehouse" :key="local.id" class="col-12 col-sm-6">
+              <q-card bordered flat class="bg-white q-pa-md text-center">
+                <div class="text-weight-bold text-grey-9 text-uppercase" style="font-size: 13px;">{{ local.name }}</div>
+                <q-separator class="q-my-sm" />
+                <div class="text-caption text-grey-6">{{ local.items }} artículos mermados</div>
+                <div class="text-h5 text-weight-bold text-red-7 q-mt-xs">
+                   ${{ Number(local.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+                </div>
+              </q-card>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <q-card bordered flat>
         <q-table :grid="$q.screen.lt.md"
           :rows="consumptionDetails"
@@ -122,7 +164,7 @@ import { date } from 'quasar'
 
 const auth = useAuthStore()
 const warehousesStore = useWarehousesStore()
-const { loading, totalConsumptionItems, totalLossItems, totalConsumptionValue, totalLossValue, consumptionDetails, fetchConsumptionsReport } = useReports()
+const { loading, totalConsumptionItems, totalLossItems, totalConsumptionValue, totalLossValue, consumptionDetails, consumptionSummaryByWarehouse, lossSummaryByWarehouse, fetchConsumptionsReport } = useReports()
 
 const today = new Date()
 const startDate = ref(date.formatDate(today, 'YYYY-MM-DD'))

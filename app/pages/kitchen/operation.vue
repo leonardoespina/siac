@@ -252,13 +252,29 @@
                     </template>
                   </q-input>
                   <q-list bordered separator v-if="filteredProducts.length > 0" class="q-mt-sm">
-                    <q-item v-for="product in filteredProducts" :key="product.id" clickable @click="addConsumptionItem(product)">
+                    <q-item v-for="product in filteredProducts" :key="product.id">
                       <q-item-section>
                         <q-item-label class="text-weight-bold">{{ product.name }}</q-item-label>
                         <q-item-label caption>Cód: {{ product.code }} | Disp: <span class="text-positive text-weight-bold">{{ product.localStock }} {{ product.unit?.abbreviation }}</span></q-item-label>
                       </q-item-section>
                       <q-item-section side>
-                        <q-btn flat round dense color="primary" icon="add_circle" />
+                        <div class="row items-center q-gutter-x-sm">
+                          <q-input 
+                            v-model.number="inputQuantities[product.id]"
+                            type="number" 
+                            dense 
+                            outlined 
+                            style="width: 70px"
+                            :min="1"
+                            :max="product.localStock"
+                            hide-bottom-space
+                            @update:model-value="(val) => { 
+                              if (!val || val < 1) inputQuantities[product.id] = 1; 
+                              if (val > product.localStock) inputQuantities[product.id] = product.localStock; 
+                            }"
+                          />
+                          <q-btn flat round dense color="primary" icon="add_circle" @click="addConsumptionItem(product, inputQuantities[product.id] || 1)" />
+                        </div>
                       </q-item-section>
                     </q-item>
                   </q-list>
@@ -409,7 +425,7 @@ const {
   openCloseShiftDialog, submitCloseShift,
   isShiftDialogOpen, isCloseShiftDialogOpen, shiftForm, closeShiftForm,
   shiftConsumptions, deleteConsumption, consumptionColumns,
-  isConsumptionDialogVisible, consumptionType, consumptionItems, searchQuery, filteredProducts,
+  isConsumptionDialogVisible, consumptionType, consumptionItems, searchQuery, inputQuantities, filteredProducts,
   selectedInstitutionId, institutions,
   openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption, approveConsumption,
   isGlobalUser, activeWarehouseId, warehouses

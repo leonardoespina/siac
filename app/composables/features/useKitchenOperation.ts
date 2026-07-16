@@ -26,6 +26,7 @@ export function useKitchenOperation() {
   const consumptionType = ref<'CONSUMPTION' | 'LOSS' | 'SUPPORT'>('CONSUMPTION')
   const consumptionItems = ref<any[]>([])
   const searchQuery = ref('')
+  const inputQuantities = ref<Record<number, number>>({})
   const selectedInstitutionId = ref<number | null>(null)
   const institutions = ref<any[]>([])
   
@@ -241,7 +242,7 @@ export function useKitchenOperation() {
     return physicalStock - pendingStock
   }
 
-  const addConsumptionItem = (product: any) => {
+  const addConsumptionItem = (product: any, requestedQty: number = 1) => {
     const stock = getLocalStock(product.id)
     if (stock <= 0) {
       $q.notify({ type: 'warning', message: 'No hay stock local de este producto.' })
@@ -258,9 +259,10 @@ export function useKitchenOperation() {
       productCode: product.code,
       unit: product.unit?.abbreviation || 'UN',
       availableStock: stock,
-      quantity: 1
+      quantity: requestedQty
     })
     searchQuery.value = ''
+    inputQuantities.value[product.id] = 1 // reset
   }
 
   const removeConsumptionItem = (index: number) => {
@@ -403,7 +405,7 @@ export function useKitchenOperation() {
     openCloseShiftDialog, submitCloseShift,
     isShiftDialogOpen, isCloseShiftDialogOpen, shiftForm, closeShiftForm,
     shiftConsumptions, deleteConsumption, consumptionColumns,
-    isConsumptionDialogVisible, consumptionType, consumptionItems, searchQuery, filteredProducts,
+    isConsumptionDialogVisible, consumptionType, consumptionItems, searchQuery, inputQuantities, filteredProducts,
     selectedInstitutionId, institutions,
     openConsumptionDialog, addConsumptionItem, removeConsumptionItem, submitConsumption, approveConsumption,
     fetchIncomingTransfers, fetchActiveShift

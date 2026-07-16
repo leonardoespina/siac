@@ -52,17 +52,17 @@
               <td class="text-left">{{ row.name }}</td>
               <td class="text-left">{{ row.unit }}</td>
               <td class="text-center" v-for="d in reportsStore.matrixData.dispatches" :key="d.id">
-                {{ row.quantities[d.id] || '-' }}
+                {{ formatQuantity(row.quantities[d.id]) }}
               </td>
-              <td class="text-center text-weight-bold bg-grey-3 text-black">{{ row.total }}</td>
+              <td class="text-center text-weight-bold bg-grey-3 text-black">{{ formatTotal(row.total) }}</td>
             </tr>
             <!-- Fila de Total General -->
             <tr class="bg-blue-grey-1 text-weight-bold" v-if="reportsStore.matrixData.rows.length > 0">
               <td colspan="2" class="text-right">TOTAL GENERAL</td>
               <td class="text-center" v-for="d in reportsStore.matrixData.dispatches" :key="'tot-'+d.id">
-                {{ columnTotal(d.id) }}
+                {{ formatTotal(columnTotal(d.id)) }}
               </td>
-              <td class="text-center text-black">{{ grandTotal }}</td>
+              <td class="text-center text-black">{{ formatTotal(grandTotal) }}</td>
             </tr>
           </tbody>
           <tbody v-else>
@@ -92,6 +92,16 @@ const { loading, fetchMatrix, exportExcel, clearMatrix } = useExcelMatrixReport(
 const reportsStore = useReportsStore()
 const categoriesStore = useCategoriesStore()
 const unitsStore = useUnitsStore()
+
+const formatQuantity = (val: number | undefined | null) => {
+  if (!val) return '-'
+  return Number(val.toFixed(2))
+}
+
+const formatTotal = (val: number | undefined | null) => {
+  if (val === undefined || val === null || isNaN(val)) return 0
+  return Number(val.toFixed(2))
+}
 
 onMounted(() => {
   categoriesStore.fetchAll()

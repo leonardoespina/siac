@@ -17,31 +17,13 @@ export class ReportsRepository {
       }
     })
 
-    // [NUEVO] Opción B: Buscar el último precio registrado en cualquier transacción para cada producto
-    const lastPrices = await prisma.transactionDetail.groupBy({
-      by: ['productId'],
-      _max: { id: true },
-      where: { unitPrice: { gt: 0 } }
-    })
-
-    const detailIds = lastPrices.map(p => p._max.id).filter(id => id !== null) as number[]
-    const priceDetails = await prisma.transactionDetail.findMany({
-      where: { id: { in: detailIds } },
-      select: { productId: true, unitPrice: true }
-    })
-
-    const priceMap = new Map<number, number>()
-    for (const pd of priceDetails) {
-      priceMap.set(pd.productId, Number(pd.unitPrice))
-    }
-
     const valueByWarehouse = new Map<number, any>()
     let totalGlobalValue = 0
 
     for (const stock of stocks) {
       const qty = Number(stock.quantity)
-      // Usamos el precio dinámico de la última transacción, si no hay, cae en 0
-      const price = priceMap.get(stock.productId) || 0
+      // Usamos el Costo Promedio Ponderado ya calculado en el maestro del producto
+      const price = Number(stock.product.referencePrice || 0)
       const value = qty * price
 
       totalGlobalValue += value
@@ -241,19 +223,55 @@ export class ReportsRepository {
     let totalConsumptionValue = 0
     let totalLossValue = 0
     const items = []
+    
+    const summaryMap = new Map<number, { id: number, name: string, items: number, value: number }>()
+    const lossSummaryMap = new Map<number, { id: number, name: string, items: number, value: number }>()
+    const summaryByMonth = new Map<string, { monthString: string, id: string, items: number, value: number }>()
+
+    const getMonthName = (dateStr: string) => {
+      const date = new Date(dateStr)
+      return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    }
 
     for (const tx of transactions) {
       for (const d of tx.details) {
         const qty = Number(d.quantity)
-        const value = qty * Number(d.product.referencePrice || 0)
+        const value = qty * Number(d.unitPrice || 0)
 
         if (tx.type === 'CONSUMPTION') {
           totalConsumptionItems += qty
           totalConsumptionValue += value
+          
+          const dateObj = new Date(tx.createdAt)
+          const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`
+          if (!summaryByMonth.has(monthKey)) {
+             summaryByMonth.set(monthKey, { monthString: getMonthName(tx.createdAt.toISOString()), id: monthKey, items: 0, value: 0 })
+          }
+          const monthSum = summaryByMonth.get(monthKey)!
+          monthSum.items += qty
+          monthSum.value += value
+          
+          if (tx.sourceId) {
+             if (!summaryMap.has(tx.sourceId)) {
+                summaryMap.set(tx.sourceId, { id: tx.sourceId, name: tx.source?.name || 'Local', items: 0, value: 0 })
+             }
+             const whSummary = summaryMap.get(tx.sourceId)!
+             whSummary.items += qty
+             whSummary.value += value
+          }
         }
         if (tx.type === 'LOSS') {
           totalLossItems += qty
           totalLossValue += value
+
+          if (tx.sourceId) {
+             if (!lossSummaryMap.has(tx.sourceId)) {
+                lossSummaryMap.set(tx.sourceId, { id: tx.sourceId, name: tx.source?.name || 'Local', items: 0, value: 0 })
+             }
+             const whSummary = lossSummaryMap.get(tx.sourceId)!
+             whSummary.items += qty
+             whSummary.value += value
+          }
         }
 
         items.push({
@@ -265,7 +283,16 @@ export class ReportsRepository {
       }
     }
 
-    return { totalConsumptionItems, totalLossItems, totalConsumptionValue, totalLossValue, details: items }
+    return { 
+      totalConsumptionItems, 
+      totalLossItems, 
+      totalConsumptionValue, 
+      totalLossValue, 
+      details: items,
+      summaryByWarehouse: Array.from(summaryMap.values()).sort((a, b) => b.value - a.value),
+      lossSummaryByWarehouse: Array.from(lossSummaryMap.values()).sort((a, b) => b.value - a.value),
+      consumptionSummaryByMonth: Array.from(summaryByMonth.values()).sort((a, b) => a.id.localeCompare(b.id))
+    }
   }
 
   /**
@@ -289,27 +316,57 @@ export class ReportsRepository {
       orderBy: { createdAt: 'desc' }
     })
 
-    const summaryByType = new Map<string, { type: string, count: number, totalItems: number }>()
+    const summaryByType = new Map<string, { type: string, count: number, totalItems: number, totalValue: number }>()
+    const summaryByWarehouse = new Map<number, { id: number, name: string, items: number, value: number }>()
     const items = []
+
+    let totalSupportItems = 0
+    let totalSupportValue = 0
 
     for (const tx of transactions) {
       const instType = tx.institution?.type || 'No Definido'
-      if (!summaryByType.has(instType)) summaryByType.set(instType, { type: instType, count: 0, totalItems: 0 })
+      if (!summaryByType.has(instType)) summaryByType.set(instType, { type: instType, count: 0, totalItems: 0, totalValue: 0 })
       
       const summary = summaryByType.get(instType)!
       summary.count++
 
       let txItems = 0
-      for (const d of tx.details) txItems += Number(d.quantity)
+      let txValue = 0
+      for (const d of tx.details) {
+         const qty = Number(d.quantity)
+         const value = qty * Number(d.unitPrice || 0)
+         txItems += qty
+         txValue += value
+      }
+      
       summary.totalItems += txItems
+      summary.totalValue += txValue
+      
+      totalSupportItems += txItems
+      totalSupportValue += txValue
+
+      if (tx.sourceId) {
+        if (!summaryByWarehouse.has(tx.sourceId)) {
+          summaryByWarehouse.set(tx.sourceId, { id: tx.sourceId, name: tx.source?.name || 'Local', items: 0, value: 0 })
+        }
+        const whSummary = summaryByWarehouse.get(tx.sourceId)!
+        whSummary.items += txItems
+        whSummary.value += txValue
+      }
 
       items.push({
         id: tx.id, date: tx.createdAt, warehouse: tx.source?.name,
-        institutionName: tx.institution?.name, institutionType: instType, itemsCount: txItems,
-        details: tx.details.map(d => ({ productName: d.product.name, quantity: Number(d.quantity), unit: d.product.unit.abbreviation }))
+        institutionName: tx.institution?.name, institutionType: instType, itemsCount: txItems, value: txValue,
+        details: tx.details.map(d => ({ productName: d.product.name, quantity: Number(d.quantity), unit: d.product.unit.abbreviation, value: Number(d.quantity) * Number(d.unitPrice || 0) }))
       })
     }
 
-    return { summary: Array.from(summaryByType.values()), details: items }
+    return { 
+      totalSupportItems, 
+      totalSupportValue, 
+      summary: Array.from(summaryByType.values()).sort((a, b) => b.totalValue - a.totalValue), 
+      summaryByWarehouse: Array.from(summaryByWarehouse.values()).sort((a, b) => b.value - a.value),
+      details: items 
+    }
   }
 }

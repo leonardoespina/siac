@@ -31,6 +31,14 @@ export async function createConsumption(data: any, user: UserContext, type: 'CON
     }
   }
 
+  // 1. Obtener los precios promedio vigentes para congelarlos
+  const productIds = data.details.map((d: any) => d.productId)
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, referencePrice: true }
+  })
+  const priceMap = new Map(products.map(p => [p.id, Number(p.referencePrice)]))
+
   const newTx = await prisma.transaction.create({
     data: {
       type,
@@ -43,7 +51,7 @@ export async function createConsumption(data: any, user: UserContext, type: 'CON
         create: data.details.map((d: any) => ({
           productId: d.productId,
           quantity: d.quantity,
-          unitPrice: d.unitPrice || 0
+          unitPrice: Number(d.unitPrice) > 0 ? Number(d.unitPrice) : (priceMap.get(d.productId) || 0)
         }))
       }
     },
@@ -210,17 +218,66 @@ export async function updateDraftDetails(id: number, newDetails: any[], user: Us
     })
     
     // 2. Insertar los nuevos detalles actualizados
+    const detailsToInsert = []
     if (newDetails && newDetails.length > 0) {
-      await txPrisma.transactionDetail.createMany({
-        data: newDetails.map(d => ({
+      for (const d of newDetails) {
+        let productId = d.productId
+        
+        // OPCIÓN A: Crear producto al vuelo si es nuevo
+        if (d.isNew && d.product) {
+          const productCode = d.product.code || `TMP-${Date.now()}`
+          
+          // Verificar si el usuario tecleó un código que ya existe
+          const existingProduct = await txPrisma.product.findUnique({ where: { code: productCode } })
+          
+          if (existingProduct) {
+            // REQUERIMIENTO DEL USUARIO: Lanzar error en español y bloquear si repite código
+            throw new ValidationError(`El código "${productCode}" ya pertenece a otro producto (${existingProduct.name}). Por favor, ingresa un código único para el nuevo producto.`)
+          } else {
+            // El producto no existe, lo creamos desde cero
+            let category = await txPrisma.category.findFirst()
+            if (!category) category = await txPrisma.category.create({ data: { name: 'Por Clasificar' } })
+            
+            let unitId = null
+            if (d.product.unitText && d.product.unitText.trim().length > 0) {
+              const abbr = d.product.unitText.trim().toUpperCase()
+              let unit = await txPrisma.unit.findFirst({ where: { abbreviation: abbr } })
+              if (!unit) {
+                unit = await txPrisma.unit.create({ data: { name: abbr, abbreviation: abbr } })
+              }
+              unitId = unit.id
+            } else {
+              let defaultUnit = await txPrisma.unit.findFirst()
+              if (!defaultUnit) defaultUnit = await txPrisma.unit.create({ data: { name: 'Unidad', abbreviation: 'UN' } })
+              unitId = defaultUnit.id
+            }
+            
+            const newProd = await txPrisma.product.create({
+              data: {
+                code: productCode,
+                name: d.product.name || 'Producto Nuevo',
+                categoryId: category.id,
+                unitId: unitId,
+                referencePrice: d.unitPrice || 0
+              }
+            })
+            productId = newProd.id
+          }
+        }
+        
+        detailsToInsert.push({
           transactionId: id,
-          productId: d.productId,
+          productId: productId,
           quantity: d.quantity,
-          expectedQuantity: d.expectedQuantity,
+          expectedQuantity: d.expectedQuantity || d.quantity,
           discrepancyReason: null,
           unitPrice: d.unitPrice,
           expirationDate: d.expirationDate ? new Date(d.expirationDate) : null
-        }))
+        })
+      }
+      
+      await txPrisma.transactionDetail.createMany({
+        data: detailsToInsert
       })
     }
     
@@ -324,11 +381,46 @@ async function addDestinationStock(tx: any) {
       quantity: Number(updatedDestStock.quantity)
     })
     
-    // Si es Recepción, actualizamos costo de referencia
+    // Si es Recepción, actualizamos costo de referencia usando COSTO PROMEDIO PONDERADO
     if (tx.type === 'RECEPTION' && Number(detail.unitPrice) > 0) {
-      await prisma.product.update({
-        where: { id: detail.productId },
-        data: { referencePrice: detail.unitPrice }
+      // Usamos una Transacción Interactiva para evitar Race Conditions (Concurrency)
+      await prisma.$transaction(async (txPrisma) => {
+        // A. Obtener costo promedio actual
+        const product = await txPrisma.product.findUnique({
+          where: { id: detail.productId },
+          select: { referencePrice: true }
+        })
+        const currentAverage = product ? Number(product.referencePrice) : 0
+        
+        // B. Obtener Stock Total actual de toda la empresa
+        const allStocks = await txPrisma.stock.findMany({
+          where: { productId: detail.productId }
+        })
+        const currentTotalStock = allStocks.reduce((sum, s) => sum + Number(s.quantity), 0)
+        
+        // El stock previo es el total menos la cantidad que acabamos de sumar arriba
+        const previousStock = Math.max(0, currentTotalStock - Number(detail.quantity))
+        
+        const incomingQty = Number(detail.quantity)
+        const incomingPrice = Number(detail.unitPrice)
+        
+        // C. Fórmula Matemática
+        let newAverageCost = incomingPrice
+        if (previousStock > 0) {
+          newAverageCost = ((previousStock * currentAverage) + (incomingQty * incomingPrice)) / (previousStock + incomingQty)
+        }
+        
+        // Seguro financiero de precisión y NaN
+        if (!isFinite(newAverageCost) || isNaN(newAverageCost)) {
+          newAverageCost = incomingPrice
+        }
+        newAverageCost = Math.round(newAverageCost * 100) / 100
+        
+        // D. Actualizar Catálogo Maestro
+        await txPrisma.product.update({
+          where: { id: detail.productId },
+          data: { referencePrice: newAverageCost }
+        })
       })
     }
   }

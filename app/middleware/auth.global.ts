@@ -38,6 +38,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       '/reports/alerts': 'REPORT_ALERTS',
       '/reports/minmax': 'REPORT_MINMAX',
       '/reports/consumptions': 'REPORT_CONSUMPTIONS',
+      '/reports/evolution': 'REPORT_CONSUMPTIONS',
       '/reports/institutions': 'REPORT_INSTITUTIONS',
       '/reports/receptions': 'REPORT_RECEPTIONS',
       '/reports': 'REPORT_DASHBOARD',

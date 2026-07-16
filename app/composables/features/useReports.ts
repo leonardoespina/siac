@@ -16,9 +16,15 @@ export function useReports() {
   const totalConsumptionValue = ref(0)
   const totalLossValue = ref(0)
   const consumptionDetails = ref<any[]>([])
+  const consumptionSummaryByWarehouse = ref<any[]>([])
+  const lossSummaryByWarehouse = ref<any[]>([])
+  const consumptionSummaryByMonth = ref<any[]>([])
   
   const institutionsSummary = ref<any[]>([])
   const institutionsDetails = ref<any[]>([])
+  const supportSummaryByWarehouse = ref<any[]>([])
+  const totalSupportItems = ref(0)
+  const totalSupportValue = ref(0)
 
   // Funciones de fetch
   const fetchValueReport = async () => {
@@ -70,6 +76,9 @@ export function useReports() {
       totalConsumptionValue.value = data.totalConsumptionValue || 0
       totalLossValue.value = data.totalLossValue || 0
       consumptionDetails.value = data.details || []
+      consumptionSummaryByWarehouse.value = data.summaryByWarehouse || []
+      lossSummaryByWarehouse.value = data.lossSummaryByWarehouse || []
+      consumptionSummaryByMonth.value = data.consumptionSummaryByMonth || []
     } catch (e) {
       console.error(e)
     } finally {
@@ -77,16 +86,20 @@ export function useReports() {
     }
   }
 
-  const fetchInstitutionsReport = async (startDate: string, endDate: string) => {
+  const fetchInstitutionsReport = async (startDate: string, endDate: string, warehouseId?: number | null) => {
     loading.value = true
     try {
       const query = new URLSearchParams()
       if (startDate) query.append('startDate', startDate)
       if (endDate) query.append('endDate', endDate)
+      if (warehouseId) query.append('warehouseId', warehouseId.toString())
       
       const data: any = await $fetch(`/api/reports/institutions?${query.toString()}`)
-      institutionsSummary.value = data.summary
-      institutionsDetails.value = data.details
+      institutionsSummary.value = data.summary || []
+      institutionsDetails.value = data.details || []
+      supportSummaryByWarehouse.value = data.summaryByWarehouse || []
+      totalSupportItems.value = data.totalSupportItems || 0
+      totalSupportValue.value = data.totalSupportValue || 0
     } catch (e) {
       console.error(e)
     } finally {
@@ -112,10 +125,16 @@ export function useReports() {
     totalConsumptionValue,
     totalLossValue,
     consumptionDetails,
+    consumptionSummaryByWarehouse,
+    lossSummaryByWarehouse,
+    consumptionSummaryByMonth,
     fetchConsumptionsReport,
     
     institutionsSummary,
     institutionsDetails,
+    supportSummaryByWarehouse,
+    totalSupportItems,
+    totalSupportValue,
     fetchInstitutionsReport
   }
 }

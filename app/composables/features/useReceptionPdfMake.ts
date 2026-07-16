@@ -28,7 +28,7 @@ export function useReceptionPdfMake() {
     })
   }
 
-  const downloadPdf = async (transaction: ReceptionTransaction, hasDiscrepancies: boolean, totalExpected: number, totalReceived: number) => {
+  const downloadPdf = async (transaction: ReceptionTransaction, hasDiscrepancies: boolean, totalExpected: number, totalReceived: number, totalsByUnit: any[]) => {
     isGenerating.value = true
     $q.loading.show({ message: 'Generando PDF Vectorial...' })
 
@@ -153,27 +153,42 @@ export function useReceptionPdfMake() {
           },
           
           // RESUMEN CUANTITATIVO
-          { text: 'RESUMEN CUANTITATIVO', bold: true, margin: [0, 0, 0, 5] },
-          {
-            ul: [
-              `Total Productos Esperados: ${totalExpected} Unidades`,
-              `Total Físico Ingresado: ${totalReceived} Unidades`,
-              `Total Unidades Mermadas: ${totalExpected - totalReceived} Unidades`
-            ],
-            margin: [0, 0, 0, 40]
-          },
+          { text: 'RESUMEN CUANTITATIVO (DESGLOSE POR UNIDAD)', bold: true, margin: [0, 0, 0, 10] },
+          ...totalsByUnit.map(t => ({
+            stack: [
+              { text: t.unit === 'UN' ? 'UNIDADES' : t.unit, bold: true, fontSize: 11, margin: [0, 0, 0, 2] },
+              {
+                ul: [
+                  `Esperados: ${t.expected}`,
+                  `Ingresados: ${t.received}`,
+                  { text: `Mermas / Faltantes: ${t.difference}`, color: t.difference > 0 ? 'red' : 'gray', bold: t.difference > 0 }
+                ],
+                margin: [10, 0, 0, 10]
+              }
+            ]
+          })),
+          { text: '', margin: [0, 0, 0, 20] },
 
           // FIRMAS (No se parten, se mantienen juntas con unbreakableRecord)
           { 
             unbreakable: true,
             stack: [
-              { text: 'Con las firmas expuestas a continuación, se da fe de que el conteo físico detallado en este documento es exacto y se acepta la entrada oficial de los materiales al inventario del almacén.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 50] },
+              { text: 'Con las firmas expuestas a continuación, se da fe de que el conteo físico detallado en este documento es exacto y se acepta la entrada oficial de los materiales al inventario del almacén.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 40] },
               {
                 columns: [
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Entregado Por', bold: true, margin: [0, 5, 0, 0] }, { text: 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Recibido Por', bold: true, margin: [0, 5, 0, 0] }, { text: transaction.createdBy?.name || 'Firma y Sello', fontSize: 10 } ], alignment: 'center' },
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Aprobado Por', bold: true, margin: [0, 5, 0, 0] }, { text: transaction.approvedBy?.name || 'Firma y Sello', fontSize: 10 } ], alignment: 'center' }
                 ]
+              },
+              {
+                columns: [
+                  { width: '16.6%', text: '' },
+                  { width: '33.3%', stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Revisado Por (PCP)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' },
+                  { width: '33.3%', stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Revisado Por (GNB)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' },
+                  { width: '16.6%', text: '' }
+                ],
+                margin: [0, 40, 0, 0]
               }
             ]
           }

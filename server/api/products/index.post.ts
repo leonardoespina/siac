@@ -1,6 +1,6 @@
 import { defineApiHandler } from '../../utils/handler'
 import * as repo from '../../repository/productRepository'
-import { requireAdmin } from '../../utils/auth'
+import { requirePermission } from '../../utils/auth'
 import { validateProduct } from '../../domain/product'
 import { ValidationError, ConflictError } from '../../domain/errors'
 import { logAudit } from '../../utils/audit'
@@ -9,10 +9,10 @@ import { prisma } from '../../utils/prisma'
 /**
  * Endpoint POST /api/products
  * Crea un producto en el catálogo maestro.
- * Valida reglas de stock mínimo y colisiones de SKU/Código. Solo Administradores.
+ * Valida reglas de stock mínimo y colisiones de SKU/Código.
  */
 export default defineApiHandler(async (event) => {
-  const admin = await requireAdmin(event)
+  const userId = await requirePermission(event, 'PRODUCTS', 'create')
   const body = await readBody(event)
   
   const errors = validateProduct(body)
@@ -22,7 +22,7 @@ export default defineApiHandler(async (event) => {
   if (existing) throw new ConflictError('Producto', `Ya existe un producto con el código ${body.code}`)
 
   const product = await repo.create(body)
-  await logAudit(admin.id, 'CREATE', 'PRODUCT', product.id, `Producto creado: ${product.name} (${product.code})`)
+  await logAudit(userId, 'CREATE', 'PRODUCT', product.id, `Producto creado: ${product.name} (${product.code})`)
   
   setResponseStatus(event, 201)
   return product

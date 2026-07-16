@@ -118,7 +118,7 @@ export function useTransferPdfMake() {
           },
           
           // RESUMEN CUANTITATIVO
-          { text: 'RESUMEN CUANTITATIVO', bold: true, margin: [0, 0, 0, 5] },
+          { text: 'RESUMEN CUANTITATIVO (DESGLOSE POR UNIDAD)', bold: true, margin: [0, 0, 0, 5] },
           {
             ul: totalsByUnit.map(total => `Total Despachado: ${total}`),
             margin: [0, 0, 0, 40]
@@ -128,13 +128,22 @@ export function useTransferPdfMake() {
           { 
             unbreakable: true,
             stack: [
-              { text: 'Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Almacén de Origen y se encuentran en tránsito hacia el Destino.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 50] },
+              { text: 'Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Almacén de Origen y se encuentran en tránsito hacia el Destino.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 40] },
               {
                 columns: [
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Despachado Por', bold: true, margin: [0, 5, 0, 0] }, { text: transaction.createdBy?.name || 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Transportado Por (Chofer)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Recibido Por (Destino)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' }
                 ]
+              },
+              {
+                columns: [
+                  { width: '16.6%', text: '' },
+                  { width: '33.3%', stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Revisado Por (PCP)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' },
+                  { width: '33.3%', stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Revisado Por (GNB)', bold: true, margin: [0, 5, 0, 0] }, { text: 'Firma y Sello', fontSize: 10 } ], alignment: 'center' },
+                  { width: '16.6%', text: '' }
+                ],
+                margin: [0, 40, 0, 0]
               }
             ]
           }

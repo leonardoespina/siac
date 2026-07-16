@@ -82,6 +82,31 @@ export function useReceptionReport() {
     return transaction.value.details.reduce((acc, d) => acc + Number(d.quantity), 0)
   })
 
+  const totalsByUnit = computed(() => {
+    if (!transaction.value?.details) return []
+    const totals: Record<string, { expected: number; received: number; difference: number }> = {}
+
+    for (const d of transaction.value.details) {
+      const unit = d.product?.unit?.abbreviation || 'UN'
+      if (!totals[unit]) {
+        totals[unit] = { expected: 0, received: 0, difference: 0 }
+      }
+      const expected = Number(d.expectedQuantity || d.quantity)
+      const received = Number(d.quantity)
+      
+      totals[unit].expected += expected
+      totals[unit].received += received
+      // Calculamos mermas como Esperado - Recibido
+      totals[unit].difference += (expected - received)
+    }
+
+    // Convertimos el objeto en array
+    return Object.entries(totals).map(([unit, data]) => ({
+      unit,
+      ...data
+    }))
+  })
+
   onMounted(() => {
     fetchDetails()
   })
@@ -92,6 +117,7 @@ export function useReceptionReport() {
     hasDiscrepancies,
     totalExpected,
     totalReceived,
+    totalsByUnit,
     closeTab
   }
 }

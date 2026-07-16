@@ -64,7 +64,7 @@
       <!-- RESUMEN CUANTITATIVO -->
       <div class="row q-mb-xl">
         <div class="col-12 col-sm-6">
-          <div class="text-subtitle2 text-weight-bold q-mb-xs">RESUMEN CUANTITATIVO</div>
+          <div class="text-subtitle2 text-weight-bold q-mb-xs">RESUMEN CUANTITATIVO (DESGLOSE POR UNIDAD)</div>
           <div class="q-pl-md">
             <div v-for="total in totalsByUnit" :key="total"><span class="text-weight-bold">Total Despachado:</span> {{ total }}</div>
           </div>
@@ -77,7 +77,8 @@
           Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Almacén de Origen y se encuentran en tránsito hacia el Destino.
         </div>
         
-        <div class="row justify-between text-center q-mt-xl q-pt-xl">
+        <div class="row justify-between text-center q-mt-xl q-pt-xl q-col-gutter-y-xl">
+          <!-- Primera Fila (3 Firmas) -->
           <div class="col-4 q-px-sm">
             <q-separator color="black" class="q-mb-sm" />
             <div class="text-weight-bold">Despachado Por</div>
@@ -91,6 +92,18 @@
           <div class="col-4 q-px-sm">
             <q-separator color="black" class="q-mb-sm" />
             <div class="text-weight-bold">Recibido Por (Destino)</div>
+            <div class="text-caption">Firma y Sello</div>
+          </div>
+
+          <!-- Segunda Fila (2 Firmas Centradas) -->
+          <div class="col-4 offset-2 q-px-sm">
+            <q-separator color="black" class="q-mb-sm" />
+            <div class="text-weight-bold">Revisado Por (PCP)</div>
+            <div class="text-caption">Firma y Sello</div>
+          </div>
+          <div class="col-4 q-px-sm">
+            <q-separator color="black" class="q-mb-sm" />
+            <div class="text-weight-bold">Revisado Por (GNB)</div>
             <div class="text-caption">Firma y Sello</div>
           </div>
         </div>

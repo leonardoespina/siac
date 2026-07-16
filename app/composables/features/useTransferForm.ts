@@ -16,6 +16,7 @@ export function useTransferForm() {
   const destinationId = ref<number | null>(null)
   const searchQuery = ref('')
   const transferItems = ref<any[]>([])
+  const inputQuantities = ref<Record<number, number>>({})
   
   // Toggle visual (Pedido por el usuario)
   const showPrices = ref(false)
@@ -65,7 +66,7 @@ export function useTransferForm() {
     return stock ? Number(stock.quantity) : 0
   }
 
-  const addItem = (product: any) => {
+  const addItem = (product: any, requestedQty: number = 1) => {
     const existing = transferItems.value.find(i => i.productId === product.id)
     if (existing) {
       $q.notify({ type: 'warning', message: 'El producto ya está en la lista' })
@@ -83,11 +84,12 @@ export function useTransferForm() {
       productCode: product.code,
       unit: product.unit?.abbreviation || 'UN',
       availableStock: getStock(product.id, sourceId.value),
-      quantity: 1,
+      quantity: requestedQty,
       unitPrice: Number(product.referencePrice) || 0 // Hereda automáticamente el costo referencial
     })
     
     searchQuery.value = ''
+    inputQuantities.value[product.id] = 1 // Resetear el input después de añadir
   }
 
   const removeItem = (index: number) => {
@@ -132,6 +134,7 @@ export function useTransferForm() {
     destinationId,
     searchQuery,
     transferItems,
+    inputQuantities,
     showPrices,
     availableSources,
     availableDestinations,

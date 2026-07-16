@@ -73,28 +73,10 @@
         </div>
       </div>
 
-      <!-- BUSCADOR (SOLO EN MODO EDICIÓN) -->
+      <!-- BUSCADOR MODO EDICIÓN (REMOVIDO, AHORA ES INLINE) -->
       <q-card bordered flat class="q-mb-md" v-if="isEditing">
         <q-card-section class="bg-orange-1 text-orange-10 row items-center">
-          <q-icon name="info" size="sm" class="q-mr-sm" /> Estás editando esta transferencia. Recuerda guardar los cambios.
-        </q-card-section>
-        <q-card-section>
-          <q-input v-model="searchQuery" outlined dense placeholder="Buscar producto para agregar..." clearable>
-            <template v-slot:append><q-icon name="search" /></template>
-          </q-input>
-          <q-list bordered separator v-if="filteredProducts.length > 0" class="q-mt-sm">
-            <q-item v-for="product in filteredProducts" :key="product.id" clickable @click="addItem(product)">
-              <q-item-section>
-                <q-item-label>{{ product.name }}</q-item-label>
-                <q-item-label caption>Cód: {{ product.code }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-badge :color="getCentralStock(product.id) > 0 ? 'green' : 'red'">
-                  Stock: {{ getCentralStock(product.id) }} {{ product.unit?.abbreviation }}
-                </q-badge>
-              </q-item-section>
-            </q-item>
-          </q-list>
+          <q-icon name="info" size="sm" class="q-mr-sm" /> Estás editando esta transferencia. Las filas vacías serán ignoradas al guardar.
         </q-card-section>
       </q-card>
 
@@ -109,6 +91,42 @@
           hide-pagination
           :pagination="{ rowsPerPage: 0 }"
         >
+          <!-- Modo Edición: Código -->
+          <template v-slot:body-cell-code="props">
+            <q-td :props="props">
+              {{ props.row.productCode }}
+            </q-td>
+          </template>
+
+          <!-- Modo Edición: Producto (Buscador Inline) -->
+          <template v-slot:body-cell-product="props">
+            <q-td :props="props">
+              <template v-if="props.row.isNew && !props.row.productId">
+                <q-select
+                  v-model="props.row.selectedProduct"
+                  :options="activeProducts"
+                  option-label="name"
+                  use-input
+                  fill-input
+                  hide-selected
+                  input-debounce="0"
+                  @filter="filterProducts"
+                  @update:model-value="(val) => onProductSelect(props.row, val)"
+                  dense outlined
+                  label="Seleccionar Producto"
+                  style="min-width: 250px"
+                >
+                  <template v-slot:no-option>
+                    <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+                  </template>
+                </q-select>
+              </template>
+              <template v-else>
+                {{ props.row.productName }}
+              </template>
+            </q-td>
+          </template>
+
           <!-- Modo Edición: Cantidad -->
           <template v-slot:body-cell-quantity="props">
             <q-td :props="props">
@@ -125,15 +143,26 @@
                     val => val <= props.row.availableStock || `Max ${props.row.availableStock}`
                   ]"
                   hide-bottom-space
+                  :hint="props.row.productId ? `Stock: ${props.row.availableStock} ${props.row.unit}` : ''"
                   @update:model-value="(val) => { 
                     if (val < 1) props.row.quantity = 1; 
                     if (val > props.row.availableStock) props.row.quantity = props.row.availableStock; 
                   }"
+                  :disable="props.row.isNew && !props.row.productId"
                 />
               </template>
               <template v-else>
                 {{ props.row.quantity }}
               </template>
+            </q-td>
+          </template>
+
+          <!-- Acciones (Borrar Fila) -->
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="text-right">
+              <q-btn flat round dense color="negative" icon="delete" @click="removeItem(transferItems.indexOf(props.row))">
+                <q-tooltip>Eliminar fila</q-tooltip>
+              </q-btn>
             </q-td>
           </template>
 
@@ -154,17 +183,37 @@
             <div class="q-pa-xs col-12 col-sm-6">
               <q-card bordered flat class="bg-white">
                 <q-card-section class="q-pb-none row items-start justify-between">
-                  <div class="text-weight-bold" style="max-width: 80%; line-height: 1.1;">{{ props.row.productName }}</div>
+                  <div class="text-weight-bold" style="max-width: 80%; line-height: 1.1;">
+                    <template v-if="props.row.isNew && !props.row.productId">
+                      <q-select
+                        v-model="props.row.selectedProduct"
+                        :options="activeProducts"
+                        option-label="name"
+                        use-input
+                        fill-input
+                        hide-selected
+                        input-debounce="0"
+                        @filter="filterProducts"
+                        @update:model-value="(val) => onProductSelect(props.row, val)"
+                        dense outlined
+                        label="Seleccionar Producto"
+                      />
+                    </template>
+                    <template v-else>
+                      {{ props.row.productName }}
+                    </template>
+                  </div>
                   <q-btn v-if="isEditing" flat round dense color="negative" icon="delete" size="sm" @click="removeItem(transferItems.indexOf(props.row))" />
                 </q-card-section>
                 
                 <q-card-section class="q-pt-sm row items-center justify-between">
-                  <div class="text-caption text-grey-8">Stock: {{ props.row.availableStock }}</div>
-                  <div v-if="isEditing" style="min-width: 120px">
+                  <div v-if="isEditing" style="width: 100%" class="row justify-between items-end">
+                    <div class="text-caption text-grey-8 self-center" v-if="props.row.productId">Stock: {{ props.row.availableStock }} {{ props.row.unit }}</div>
                     <q-input 
                       v-model.number="props.row.quantity" 
                       type="number" 
                       dense outlined 
+                      style="width: 100px; margin-left: auto;"
                       :min="1"
                       :max="props.row.availableStock"
                       :rules="[
@@ -176,6 +225,7 @@
                         if (val < 1) props.row.quantity = 1; 
                         if (val > props.row.availableStock) props.row.quantity = props.row.availableStock; 
                       }"
+                      :disable="props.row.isNew && !props.row.productId"
                     />
                   </div>
                   <div v-else class="text-weight-bold text-subtitle1">
@@ -195,6 +245,12 @@
           </template>
         </q-table>
         
+        <q-card-section v-if="isEditing" class="q-pa-md">
+          <div class="row">
+            <q-btn flat color="primary" icon="add" label="Agregar Fila en Blanco" @click="addProductRow" />
+          </div>
+        </q-card-section>
+        
         <!-- BARRA DE GUARDADO -->
         <q-separator v-if="isEditing" />
         <q-card-actions align="right" class="q-pa-md" v-if="isEditing">
@@ -211,11 +267,59 @@
 import { useTransferDetails } from '~/composables/features/useTransferDetails'
 
 const {
-  transfer, loading, saving, showPrices, isEditing, searchQuery, transferItems, filteredProducts,
+  transfer, loading, saving, showPrices, isEditing, transferItems,
   canApprove, canEdit, canConfirmReception, columns, getCentralStock,
-  updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addItem, removeItem, saveChanges,
+  updateStatus, promptReject, deleteDraft, enableEdit, cancelEdit, addProductRow, removeItem, saveChanges,
   getStatusColor, getStatusLabel 
 } = useTransferDetails()
+
+import { ref } from 'vue'
+import { useProductsStore } from '~/stores/products'
+import { useQuasar } from 'quasar'
+
+const $q = useQuasar()
+const productsStore = useProductsStore()
+const activeProducts = ref<any[]>([])
+
+const getAvailableProducts = () => {
+  // Obtenemos los IDs de los productos ya seleccionados
+  const selectedIds = transferItems.value.map(item => item.productId).filter(id => id !== null)
+  // Devolvemos solo los productos que NO estén en la lista
+  return productsStore.products.filter(p => p.active && !selectedIds.includes(p.id))
+}
+
+const filterProducts = (val: string, update: any) => {
+  const available = getAvailableProducts()
+  if (val === '') {
+    update(() => {
+      activeProducts.value = available
+    })
+    return
+  }
+  update(() => {
+    const needle = val.toLowerCase()
+    activeProducts.value = available.filter(p => (p.name.toLowerCase().includes(needle) || p.code.toLowerCase().includes(needle)))
+  })
+}
+
+const onProductSelect = (row: any, product: any) => {
+  if (product) {
+    // Validar por si acaso se cuela una selección
+    const exists = transferItems.value.find(item => item.productId === product.id && item !== row)
+    if (exists) {
+      $q.notify({ type: 'warning', message: 'Este producto ya está en la transferencia. Ajusta su cantidad en lugar de agregarlo de nuevo.' })
+      row.selectedProduct = null
+      return
+    }
+
+    row.productId = product.id
+    row.productName = product.name
+    row.productCode = product.code
+    row.unit = product.unit?.abbreviation || 'UN'
+    row.availableStock = getCentralStock(product.id)
+    row.unitPrice = Number(product.referencePrice) || 0
+  }
+}
 
 const openReport = (id: number) => {
   window.open(`/inventory/transfers/report-${id}`, '_blank')

@@ -51,6 +51,13 @@ const reports = [
     route: '/reports/consumptions'
   },
   {
+    title: 'Evolución de Gasto',
+    description: 'Gráfico histórico del gasto en consumos agrupado por mes.',
+    icon: 'insert_chart',
+    color: 'blue-8',
+    route: '/reports/evolution'
+  },
+  {
     title: 'Apoyos Institucionales',
     description: 'Desglose de donaciones agrupadas por Tipo de Institución.',
     icon: 'volunteer_activism',

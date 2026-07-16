@@ -86,11 +86,15 @@
       <!-- RESUMEN CUANTITATIVO -->
       <div class="row q-mb-xl">
         <div class="col-12 col-sm-6">
-          <div class="text-subtitle2 text-weight-bold q-mb-xs">RESUMEN CUANTITATIVO</div>
-          <div class="q-pl-md">
-            <div><span class="text-weight-bold">Total Productos Esperados:</span> {{ totalExpected }} Unidades</div>
-            <div><span class="text-weight-bold">Total Físico Ingresado:</span> {{ totalReceived }} Unidades</div>
-            <div><span class="text-weight-bold">Total Unidades Mermadas:</span> {{ totalExpected - totalReceived }} Unidades</div>
+          <div class="text-subtitle2 text-weight-bold q-mb-md">RESUMEN CUANTITATIVO (DESGLOSE POR UNIDAD)</div>
+          <div v-for="total in totalsByUnit" :key="total.unit" class="q-pl-md q-mb-sm">
+            <div class="text-weight-bold">{{ total.unit === 'UN' ? 'UNIDADES' : total.unit }}</div>
+            <div class="q-pl-md text-body2">
+              <div><span class="text-weight-bold">Esperados:</span> {{ total.expected }}</div>
+              <div><span class="text-weight-bold">Ingresados:</span> {{ total.received }}</div>
+              <div v-if="total.difference > 0" class="text-red text-weight-bold">Mermas / Faltantes: {{ total.difference }}</div>
+              <div v-else class="text-grey-7">Mermas / Faltantes: 0</div>
+            </div>
           </div>
         </div>
       </div>
@@ -101,21 +105,34 @@
           Con las firmas expuestas a continuación, se da fe de que el conteo físico detallado en este documento es exacto y se acepta la entrada oficial de los materiales al inventario del almacén.
         </div>
         
-        <div class="row justify-between text-center q-mt-xl q-pt-xl">
-          <div class="col-3">
-            <q-separator color="black" class="q-mb-sm" />
+        <div class="row justify-between text-center q-mt-xl q-pt-xl q-col-gutter-y-xl">
+          <!-- Primera Fila (3 Firmas) -->
+          <div class="col-4">
+            <q-separator color="black" class="q-mb-sm q-mx-md" />
             <div class="text-weight-bold">Entregado Por</div>
             <div class="text-caption">Nombre, Cédula y Firma</div>
           </div>
-          <div class="col-3">
-            <q-separator color="black" class="q-mb-sm" />
+          <div class="col-4">
+            <q-separator color="black" class="q-mb-sm q-mx-md" />
             <div class="text-weight-bold">Recibido Por</div>
             <div class="text-caption">{{ transaction.createdBy?.name || 'Firma y Sello' }}</div>
           </div>
-          <div class="col-3">
-            <q-separator color="black" class="q-mb-sm" />
+          <div class="col-4">
+            <q-separator color="black" class="q-mb-sm q-mx-md" />
             <div class="text-weight-bold">Aprobado Por</div>
             <div class="text-caption">{{ transaction.approvedBy?.name || 'Firma y Sello' }}</div>
+          </div>
+
+          <!-- Segunda Fila (2 Firmas Centradas) -->
+          <div class="col-4 offset-2">
+            <q-separator color="black" class="q-mb-sm q-mx-md" />
+            <div class="text-weight-bold">Revisado Por (PCP)</div>
+            <div class="text-caption">Firma y Sello</div>
+          </div>
+          <div class="col-4">
+            <q-separator color="black" class="q-mb-sm q-mx-md" />
+            <div class="text-weight-bold">Revisado Por (GNB)</div>
+            <div class="text-caption">Firma y Sello</div>
           </div>
         </div>
       </div>
@@ -137,6 +154,7 @@ const {
   hasDiscrepancies,
   totalExpected,
   totalReceived,
+  totalsByUnit,
   closeTab
 } = useReceptionReport()
 
@@ -148,7 +166,8 @@ const printReport = async () => {
     transaction.value, 
     hasDiscrepancies.value, 
     totalExpected.value, 
-    totalReceived.value
+    totalReceived.value,
+    totalsByUnit.value
   )
 }
 </script>

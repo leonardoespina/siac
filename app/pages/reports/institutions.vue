@@ -8,13 +8,23 @@
     <!-- Filtros -->
     <q-card bordered flat class="q-mb-md bg-grey-1">
       <q-card-section class="row q-col-gutter-md items-center">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <q-input v-model="startDate" type="date" label="Desde" outlined dense />
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <q-input v-model="endDate" type="date" label="Hasta" outlined dense />
         </div>
-        <div class="col-12 col-md-4 text-right">
+        <div v-if="!auth.user?.warehouseId" class="col-12 col-md-3">
+          <q-select
+            v-model="filterWarehouse"
+            :options="warehousesStore.warehouses.filter(w => w.type === 'LOCAL')"
+            option-value="id"
+            option-label="name"
+            label="Comedor (Opcional)"
+            outlined dense clearable emit-value map-options
+          />
+        </div>
+        <div class="col-12 col-md-3 text-right">
           <q-btn color="primary" icon="search" label="Filtrar" @click="handleFilter" :loading="loading" class="full-width" />
         </div>
       </q-card-section>
@@ -25,20 +35,35 @@
     </div>
 
     <div v-else>
-      <div class="text-h6 q-mb-md text-grey-8">Resumen por Tipo de Institución</div>
-      <div class="row q-col-gutter-md q-mb-lg">
-        <div class="col-12 col-md-3" v-for="sum in institutionsSummary" :key="sum.type">
-          <q-card bordered flat class="text-center q-pa-md">
-            <q-icon :name="getIconForType(sum.type)" :color="getColorForType(sum.type)" size="48px" class="q-mb-sm" />
-            <div class="text-subtitle1 text-weight-bold" :class="`text-${getColorForType(sum.type)}`">{{ sum.type }}</div>
-            <div class="text-body2 text-grey-7">{{ sum.count }} donaciones realizadas</div>
-            <div class="text-h6 q-mt-sm">{{ sum.totalItems.toLocaleString() }} productos</div>
+      <div class="row q-col-gutter-md q-mb-md">
+        <div class="col-12">
+          <q-card bordered flat class="bg-purple-8 text-white text-center q-pa-sm">
+            <div class="text-subtitle2 text-uppercase">Total Donado (Apoyos)</div>
+            <div class="text-h4 text-weight-bold">{{ totalSupportItems.toLocaleString() }} unds</div>
+            <div class="text-subtitle1 text-weight-bold q-mt-xs text-purple-2">${{ Number(totalSupportValue || 0).toFixed(2) }}</div>
           </q-card>
         </div>
-        
-        <div v-if="institutionsSummary.length === 0" class="col-12 text-center text-grey q-pa-lg">
-          No hay apoyos registrados en este rango de fechas.
+      </div>
+
+      <!-- DESGLOSE POR COMEDOR -->
+      <div v-if="supportSummaryByWarehouse.length > 0" class="q-mb-lg">
+        <div class="text-subtitle1 text-weight-bold q-mb-sm text-grey-8">Desglose Financiero por Comedor</div>
+        <div class="row q-col-gutter-sm">
+          <div class="col-12 col-sm-6 col-md-3" v-for="local in supportSummaryByWarehouse" :key="local.id">
+            <q-card bordered flat class="bg-white q-pa-md text-center">
+              <div class="text-weight-bold text-grey-9 text-uppercase" style="font-size: 13px;">{{ local.name }}</div>
+              <q-separator class="q-my-sm" />
+              <div class="text-caption text-grey-6">{{ local.items }} artículos donados</div>
+              <div class="text-h5 text-weight-bold text-purple-7 q-mt-xs">
+                 ${{ Number(local.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+              </div>
+            </q-card>
+          </div>
         </div>
+      </div>
+
+      <div v-if="supportSummaryByWarehouse.length === 0" class="text-center text-grey q-pa-lg">
+        No hay apoyos registrados en este rango de fechas.
       </div>
 
       <div class="text-h6 q-mb-md text-grey-8" v-if="institutionsDetails.length > 0">Detalle de Donaciones</div>
@@ -69,6 +94,9 @@
               <q-td key="itemsCount" :props="props">
                 {{ props.row.itemsCount }}
               </q-td>
+              <q-td key="value" :props="props" class="text-right text-weight-bold">
+                ${{ Number(props.row.value || 0).toFixed(2) }}
+              </q-td>
               <q-td key="details" :props="props">
                 <q-btn flat round color="primary" :icon="props.expand ? 'visibility_off' : 'visibility'" @click="props.expand = !props.expand">
                   <q-tooltip>Ver Productos</q-tooltip>
@@ -81,7 +109,7 @@
                 <div class="text-weight-bold q-mb-sm">Productos Entregados:</div>
                 <div class="row q-gutter-sm">
                   <q-chip v-for="(item, idx) in props.row.details" :key="idx" color="white" text-color="black">
-                    {{ item.quantity }} {{ item.unit }} - {{ item.productName }}
+                    {{ item.quantity }} {{ item.unit }} - {{ item.productName }} <span class="text-grey-7 q-ml-sm">(${{ Number(item.value || 0).toFixed(2) }})</span>
                   </q-chip>
                 </div>
               </q-td>
@@ -117,6 +145,10 @@
                     <div class="text-caption text-grey-7">Cant. Productos</div>
                     <div class="text-weight-bold">{{ props.row.itemsCount }}</div>
                   </div>
+                  <div class="row justify-between q-mb-sm bg-grey-1 q-pa-xs">
+                    <div class="text-caption text-grey-7">Costo ($)</div>
+                    <div class="text-weight-bold text-green-7">${{ Number(props.row.value || 0).toFixed(2) }}</div>
+                  </div>
                 </q-card-section>
                 <q-separator />
                 <q-card-actions align="between">
@@ -148,10 +180,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useWarehousesStore } from '~/stores/warehouses'
 import { useReports } from '~/composables/features/useReports'
+import { useAuthStore } from '~/stores/auth'
 import { date } from 'quasar'
 
-const { loading, institutionsSummary, institutionsDetails, fetchInstitutionsReport } = useReports()
+const auth = useAuthStore()
+const warehousesStore = useWarehousesStore()
+const { loading, institutionsSummary, institutionsDetails, supportSummaryByWarehouse, totalSupportItems, totalSupportValue, fetchInstitutionsReport } = useReports()
 
 const today = new Date()
 // Por defecto mostrar el último mes
@@ -160,6 +196,7 @@ lastMonth.setMonth(lastMonth.getMonth() - 1)
 
 const startDate = ref(date.formatDate(lastMonth, 'YYYY-MM-DD'))
 const endDate = ref(date.formatDate(today, 'YYYY-MM-DD'))
+const filterWarehouse = ref<number | null>(null)
 
 const columns = [
   { name: 'date', label: 'Fecha', field: 'date', align: 'left' as const, format: (val: string) => new Date(val).toLocaleDateString(), sortable: true },
@@ -167,6 +204,7 @@ const columns = [
   { name: 'institutionName', label: 'Institución', field: 'institutionName', align: 'left' as const, sortable: true },
   { name: 'institutionType', label: 'Tipo', field: 'institutionType', align: 'center' as const, sortable: true },
   { name: 'itemsCount', label: 'Cant. Productos', field: 'itemsCount', align: 'center' as const, sortable: true },
+  { name: 'value', label: 'Costo ($)', field: 'value', align: 'right' as const, sortable: true },
   { name: 'details', label: 'Ver Detalle', field: 'id', align: 'center' as const }
 ]
 
@@ -193,10 +231,11 @@ const getColorForType = (type: string) => {
 const handleFilter = () => {
   const startISO = startDate.value ? new Date(startDate.value + 'T00:00:00').toISOString() : ''
   const endISO = endDate.value ? new Date(endDate.value + 'T23:59:59').toISOString() : ''
-  fetchInstitutionsReport(startISO, endISO)
+  fetchInstitutionsReport(startISO, endISO, filterWarehouse.value)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (warehousesStore.warehouses.length === 0) await warehousesStore.fetchAll()
   handleFilter()
 })
 </script>

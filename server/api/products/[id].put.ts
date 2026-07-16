@@ -9,10 +9,10 @@ import { prisma } from '../../utils/prisma'
 /**
  * Endpoint PUT /api/products/:id
  * Actualiza completamente los datos de un producto.
- * Valida disponibilidad del código y guarda auditoría. Solo Administradores.
+ * Valida disponibilidad del código y guarda auditoría.
  */
 export default defineApiHandler(async (event) => {
-  const admin = await requireAdmin(event)
+  const userId = await requirePermission(event, 'PRODUCTS', 'update')
   const id = parseInt(event.context.params?.id || '0')
   if (!id) throw new ValidationError('ID inválido')
 
@@ -40,6 +40,6 @@ export default defineApiHandler(async (event) => {
     active: body.active !== false
   })
 
-  await logAudit(admin.id, 'UPDATE', 'PRODUCT', updated.id, `Producto actualizado: ${updated.name}`)
+  await logAudit(userId, 'UPDATE', 'PRODUCT', updated.id, `Producto actualizado: ${updated.name}`)
   return updated
 })
