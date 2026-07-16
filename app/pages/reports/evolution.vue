@@ -92,6 +92,12 @@ const auth = useAuthStore()
 const warehousesStore = useWarehousesStore()
 const { loading, consumptionSummaryByMonth, fetchConsumptionsReport } = useReports()
 
+import { useRouter } from 'vue-router'
+const router = useRouter()
+if (!auth.hasPermission('REPORT_EVOLUTION', 'canRead')) {
+  router.push('/reports')
+}
+
 const maxMonthValue = computed(() => {
   if (!consumptionSummaryByMonth.value || consumptionSummaryByMonth.value.length === 0) return 0
   return Math.max(...consumptionSummaryByMonth.value.map(m => m.value))
