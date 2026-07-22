@@ -36,31 +36,37 @@ export function useWorkersTable(formDataDependencyId: any) {
 
   // Extraemos las cuadrillas globales para el Select
   const squadOptions = computed(() => {
-    return squadsStore.squads.map(squad => ({
-      label: squad.name,
-      value: squad.id
-    }))
+    return squadsStore.squads
+      .filter(squad => squad.active !== false)
+      .map(squad => ({
+        label: squad.name,
+        value: squad.id
+      }))
   })
 
   // Opciones de Cargos
   const positionOptions = computed(() => {
-    return positionsStore.positions.map(pos => ({
-      label: pos.name,
-      value: pos.id
-    }))
+    return positionsStore.positions
+      .filter(pos => pos.active !== false)
+      .map(pos => ({
+        label: pos.name,
+        value: pos.id
+      }))
   })
 
   // Opciones de Comedores
   const diningRoomOptions = computed(() => {
-    return diningRoomsStore.diningRooms.map(dr => ({
-      label: dr.name,
-      value: dr.id
-    }))
+    return diningRoomsStore.diningRooms
+      .filter(dr => dr.active !== false)
+      .map(dr => ({
+        label: dr.name,
+        value: dr.id
+      }))
   })
 
   // Opciones de Dependencias y Subdependencias (Solo para Admin Global)
   const dependencyOptions = computed(() => {
-    return depStore.dependencies
+    return depStore.dependencies.filter(d => d.active !== false)
   })
 
   // Esquema dinámico para el Smart Filter
@@ -92,7 +98,7 @@ export function useWorkersTable(formDataDependencyId: any) {
   const filterSubdependencyOptions = computed(() => {
     if (!filterDependencyId.value) return []
     const dep = depStore.dependencies.find(d => d.id === filterDependencyId.value)
-    return dep?.subdependencies || []
+    return (dep?.subdependencies || []).filter((sub: any) => sub.active !== false)
   })
 
   const subdependencyOptions = computed(() => {
@@ -113,7 +119,7 @@ export function useWorkersTable(formDataDependencyId: any) {
     
     if (!depId) return []
     const dep = depStore.dependencies.find(d => d.id === depId)
-    return dep?.subdependencies || []
+    return (dep?.subdependencies || []).filter((sub: any) => sub.active !== false)
   })
 
   // Computado para mostrar el nombre de la subdependencia del usuario logueado
