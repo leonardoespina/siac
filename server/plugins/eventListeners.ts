@@ -21,7 +21,8 @@ export default defineNitroPlugin((nitroApp) => {
               some: {
                 OR: [
                   { module: { code: 'RECEPTIONS' }, canCreate: true },
-                  { module: { code: 'OPERATIONS' }, canRead: true }
+                  { module: { code: 'TRANSFERS' }, canUpdate: true },
+                  { module: { code: 'GLOBAL_ACCESS' }, canRead: true }
                 ]
               }
             }
@@ -158,7 +159,8 @@ export default defineNitroPlugin((nitroApp) => {
                      some: {
                        OR: [
                          { module: { code: 'RECEPTIONS' }, canCreate: true },
-                         { module: { code: 'OPERATIONS' }, canRead: true }
+                         { module: { code: 'TRANSFERS' }, canUpdate: true },
+                         { module: { code: 'GLOBAL_ACCESS' }, canRead: true }
                        ]
                      }
                    }
@@ -213,7 +215,7 @@ export default defineNitroPlugin((nitroApp) => {
               role: {
                 permissions: {
                   some: {
-                    module: { code: { in: ['OPERATIONS', 'PRODUCTS'] } },
+                    module: { code: { in: ['RECEPTIONS', 'TRANSFERS', 'WAREHOUSES'] } },
                     canRead: true
                   }
                 }
