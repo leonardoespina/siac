@@ -66,6 +66,9 @@
               <q-item-label caption>Aprobado el: {{ new Date(tx.updatedAt).toLocaleString() }}</q-item-label>
             </q-item-section>
             <q-item-section side>
+              <q-btn flat round color="primary" icon="visibility" @click="viewTransferActa(tx.id)" class="q-mr-sm">
+                <q-tooltip>Ver Guía / Acta de Tránsito</q-tooltip>
+              </q-btn>
               <q-btn color="green-8" icon="done_all" label="Recibir Mercancía" @click="confirmReception(tx.id)" :loading="saving" />
             </q-item-section>
           </q-item>
@@ -441,6 +444,10 @@ const router = useRouter()
 const openReport = (id: number) => {
   const url = router.resolve(`/kitchen/consumptions/report-${id}`).href
   window.open(url, '_blank')
+}
+
+const viewTransferActa = (id: number) => {
+  window.open(`/inventory/transfers/report-${id}`, '_blank')
 }
 
 // ── LÓGICA DE OCR ───────────────────────────────────────────────
