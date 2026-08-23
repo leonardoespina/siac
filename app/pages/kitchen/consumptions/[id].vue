@@ -95,6 +95,8 @@
                   v-model.number="props.row.quantity" 
                   type="number" 
                   dense outlined 
+                  step="0.01"
+                  :min="0.01"
                   style="max-width: 120px; margin: 0 auto;"
                   :error="props.row.quantity > props.row.availableStock"
                   :error-message="`Max local: ${props.row.availableStock}`"
@@ -130,6 +132,8 @@
                       v-model.number="props.row.quantity" 
                       type="number" 
                       dense outlined 
+                      step="0.01"
+                      :min="0.01"
                       :error="props.row.quantity > props.row.availableStock"
                       :error-message="`Max: ${props.row.availableStock}`"
                       bottom-slots

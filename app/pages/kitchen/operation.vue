@@ -265,11 +265,12 @@
                             dense 
                             outlined 
                             style="width: 70px"
-                            :min="1"
+                            :min="0.01"
+                            step="0.01"
                             :max="product.localStock"
                             hide-bottom-space
                             @update:model-value="(val) => { 
-                              if (!val || val < 1) inputQuantities[product.id] = 1; 
+                              if (!val || val <= 0) inputQuantities[product.id] = 0.01; 
                               if (val > product.localStock) inputQuantities[product.id] = product.localStock; 
                             }"
                           />
@@ -299,6 +300,8 @@
                         <q-input 
                           v-model.number="props.row.quantity" 
                           type="number" dense outlined 
+                          step="0.01"
+                          :min="0.01"
                           style="max-width: 120px; margin: 0 auto;"
                           :error="props.row.quantity > props.row.availableStock"
                           :error-message="`Max: ${props.row.availableStock}`"
@@ -328,6 +331,8 @@
                             <q-input 
                               v-model.number="props.row.quantity" 
                               type="number" dense outlined bg-color="white"
+                              step="0.01"
+                              :min="0.01"
                               label="Cantidad a despachar"
                               :error="props.row.quantity > props.row.availableStock"
                               :error-message="`Supera stock local (${props.row.availableStock})`"
