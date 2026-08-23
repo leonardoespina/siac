@@ -65,6 +65,12 @@ export function useKitchenInventory() {
     return { totalItems, inStock, outOfStock }
   })
 
+  const assignedWarehouseName = computed(() => {
+    if (!activeWarehouseId.value) return 'Sin comedor asignado'
+    const wh = warehousesStore.warehouses.find(w => w.id === activeWarehouseId.value)
+    return wh?.name || 'Comedor'
+  })
+
   onMounted(async () => {
     if (warehousesStore.warehouses.length === 0) await warehousesStore.fetchAll()
     if (productsStore.products.length === 0) {
@@ -79,6 +85,7 @@ export function useKitchenInventory() {
     activeWarehouseId,
     warehouses: computed(() => warehousesStore.activeWarehouses),
     hasAssignedWarehouse,
+    assignedWarehouseName,
     searchQuery,
     hideOutOfStock,
     inventoryList,

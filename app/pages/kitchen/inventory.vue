@@ -59,10 +59,20 @@
               </template>
             </q-input>
           </div>
-          <div class="col-12 col-md-4">
+          <div class="col-12 col-sm-6 col-md-3">
             <q-toggle v-model="hideOutOfStock" color="primary" label="Ocultar productos agotados" />
           </div>
-          <div class="col-12 col-md-4 text-right">
+          <div class="col-12 col-sm-6 col-md-3 text-center">
+            <q-btn 
+              color="secondary" 
+              icon="print" 
+              label="Imprimir Reporte" 
+              @click="openPrintReport" 
+              :disable="!hasAssignedWarehouse" 
+              class="full-width"
+            />
+          </div>
+          <div class="col-12 col-md-2 text-right">
             <div class="text-caption text-grey">
               Mostrando {{ stats.inStock }} con stock / {{ stats.totalItems }} en catálogo
             </div>
@@ -147,6 +157,11 @@ const {
   loading, hasAssignedWarehouse, searchQuery, hideOutOfStock, inventoryList, stats,
   isGlobalUser, activeWarehouseId, warehouses
 } = useKitchenInventory()
+
+const openPrintReport = () => {
+  if (!activeWarehouseId.value) return
+  window.open(`/kitchen/inventory-report?warehouseId=${activeWarehouseId.value}`, '_blank')
+}
 
 const columns = [
   { name: 'code', label: 'Código', field: 'code', align: 'left', sortable: true },
