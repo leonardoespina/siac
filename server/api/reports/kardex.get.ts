@@ -53,7 +53,27 @@ export default defineApiHandler(async (event) => {
       typeLabel = 'Salida (Transferencia)'
       sourceLabel = tx.source?.name || 'Almacén Central'
       destLabel = tx.destination?.name || 'Cocina Local'
-      isEntry = false // Para el Almacén Central, una transferencia es una salida
+      isEntry = false
+    } else if (tx.type === 'CONSUMPTION') {
+      typeLabel = 'Salida (Consumo)'
+      sourceLabel = tx.source?.name || 'Cocina Local'
+      destLabel = 'Consumo Diario'
+      isEntry = false
+    } else if (tx.type === 'LOSS') {
+      typeLabel = 'Salida (Merma)'
+      sourceLabel = tx.source?.name || 'Almacén/Cocina'
+      destLabel = 'Baja por Merma'
+      isEntry = false
+    } else if (tx.type === 'SUPPORT') {
+      typeLabel = 'Salida (Apoyo)'
+      sourceLabel = tx.source?.name || 'Almacén/Cocina'
+      destLabel = tx.institution?.name || 'Apoyo Institucional'
+      isEntry = false
+    } else if (tx.type === 'ADJUSTMENT') {
+      typeLabel = 'Ajuste de Inventario'
+      sourceLabel = tx.source?.name || 'Almacén/Cocina'
+      destLabel = 'Ajuste Manual'
+      isEntry = qty >= 0
     }
 
     return {
