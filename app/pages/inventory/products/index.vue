@@ -11,6 +11,16 @@
       @update:filter="filter = $event"
       @add="openCreate"
     >
+      <template v-slot:extra-actions>
+        <q-btn 
+          color="green-9" 
+          icon="download" 
+          label="Exportar a Excel" 
+          unelevated
+          class="q-mr-md"
+          @click="exportCatalog"
+        />
+      </template>
       <template v-slot:body-cell-category="props">
         <q-td :props="props">
           <q-badge color="indigo" :label="props.row.category?.name" />
@@ -149,6 +159,7 @@ import { useCategoriesStore } from '~/stores/categories'
 import { useUnitsStore } from '~/stores/units'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductForm } from '~/composables/features/useProductForm'
+import { useExcelProductExport } from '~/composables/features/useExcelProductExport'
 
 const store = useProductsStore()
 const categoriesStore = useCategoriesStore()
@@ -156,10 +167,24 @@ const unitsStore = useUnitsStore()
 const warehousesStore = useWarehousesStore()
 
 const { isDialogOpen, isEditing, form, openCreate, openEdit, submit, remove } = useProductForm()
+const { exportProducts } = useExcelProductExport()
 
 const filter = ref('')
 const isKardexOpen = ref(false)
 const selectedProduct = ref<any>(null)
+
+const exportCatalog = () => {
+  let list = store.products
+  if (filter.value) {
+    const q = filter.value.toLowerCase()
+    list = list.filter(p => 
+      p.name.toLowerCase().includes(q) || 
+      p.code.toLowerCase().includes(q) ||
+      (p.category?.name && p.category.name.toLowerCase().includes(q))
+    )
+  }
+  exportProducts(list)
+}
 
 // Funciones para calcular Stock
 const getCentralStock = (product: any) => {
