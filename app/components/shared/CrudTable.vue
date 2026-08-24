@@ -14,6 +14,7 @@
   >
     <!-- Personalización de la barra superior -->
     <template v-slot:top-right>
+      <slot name="extra-actions" />
       <q-input 
         borderless 
         dense 
