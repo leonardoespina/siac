@@ -146,7 +146,7 @@ export async function updateStatus(id: number, newStatus: TransactionStatus, use
     validateApproval(tx.status as TransactionStatus, tx.createdById, user)
   }
 
-  // 3. Lógica Física Inyectada (Descontar en APPROVED, Sumar en CONFIRMED)
+  // 3. Lógica Física Inyectada (Descontar en APPROVED/CONFIRMED, Sumar en CONFIRMED)
   if (newStatus === 'APPROVED') {
     if (tx.type === 'TRANSFER' || tx.type === 'SUPPORT') {
       await deductSourceStock(tx)
@@ -156,10 +156,12 @@ export async function updateStatus(id: number, newStatus: TransactionStatus, use
   if (newStatus === 'CONFIRMED') {
     if (tx.type === 'RECEPTION') {
       await addDestinationStock(tx)
-    } else if (tx.type === 'TRANSFER' || tx.type === 'SUPPORT') {
+    } else if (tx.type === 'TRANSFER') {
       await addDestinationStock(tx)
     } else if (tx.type === 'CONSUMPTION' || tx.type === 'LOSS') {
-      await deductSourceStock(tx) 
+      await deductSourceStock(tx)
+    } else if (tx.type === 'SUPPORT' && tx.status !== 'APPROVED') {
+      await deductSourceStock(tx)
     }
   }
 
