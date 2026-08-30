@@ -23,7 +23,29 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('No tienes permiso para cerrar este turno')
   }
 
-  // REGLA A: Bloqueo de Cierre si hay consumos pendientes
+  // REGLA 1: Bloqueo de Cierre si hay recepciones/transferencias entrantes pendientes en puerta
+  const pendingIncoming = await prisma.transaction.count({
+    where: {
+      destinationId: shift.warehouseId,
+      type: 'TRANSFER',
+      status: 'APPROVED'
+    }
+  })
+
+  if (pendingIncoming > 0) {
+    throw new ValidationError(`No puedes cerrar el turno. Tienes ${pendingIncoming} recepción(es) de mercancía pendiente(s) por recibir en puerta ('Recibir Mercancía'). Por favor confirma la recepción antes de cerrar.`)
+  }
+
+  // REGLA 2: Bloqueo de Cierre si hay borradores sin finalizar en el turno
+  const draftTransactions = await prisma.transaction.count({
+    where: { shiftId: id, status: 'DRAFT' }
+  })
+
+  if (draftTransactions > 0) {
+    throw new ValidationError(`Tienes ${draftTransactions} borrador(es) de consumo sin guardar o enviar. Por favor completa o elimina los borradores antes de cerrar el turno.`)
+  }
+
+  // REGLA 3: Bloqueo de Cierre si hay consumos o mermas pendientes de aprobación
   const pendingTransactions = await prisma.transaction.count({
     where: { shiftId: id, status: 'PENDING' }
   })

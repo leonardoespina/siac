@@ -146,7 +146,18 @@ export function useKitchenOperation() {
     }
   }
 
-  const openCloseShiftDialog = () => {
+  const openCloseShiftDialog = async () => {
+    await fetchIncomingTransfers()
+    if (incomingTransfers.value.length > 0) {
+      $q.dialog({
+        title: '⛔ Recepciones Pendientes en Puerta',
+        message: `Tienes ${incomingTransfers.value.length} recepción(es) de mercancía pendiente(s) por recibir en tu comedor. Debes presionar "Recibir Mercancía" antes de poder cerrar el turno de trabajo.`,
+        color: 'warning',
+        ok: { label: 'Entendido', color: 'primary' }
+      })
+      return
+    }
+
     closeShiftForm.value = { customEndTime: '', useCustomTime: false }
     isCloseShiftDialogOpen.value = true
   }
@@ -168,7 +179,8 @@ export function useKitchenOperation() {
       isCloseShiftDialogOpen.value = false
       $q.notify({ type: 'positive', message: 'Turno cerrado exitosamente' })
     } catch (e: any) {
-      $q.notify({ type: 'negative', message: e.data?.message || 'Error al cerrar turno' })
+      $q.notify({ type: 'negative', message: e.data?.message || 'Error al cerrar turno', timeout: 5000 })
+      await fetchIncomingTransfers()
     } finally {
       saving.value = false
     }
