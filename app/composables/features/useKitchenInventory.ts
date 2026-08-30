@@ -2,6 +2,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductsStore } from '~/stores/products'
+import { roundQty } from '~/composables/shared/useNumberFormatter'
 
 export function useKitchenInventory() {
   const auth = useAuthStore()
@@ -24,7 +25,7 @@ export function useKitchenInventory() {
     const product = productsStore.products.find(p => p.id === productId)
     if (!product || !product.stocks || !activeWarehouseId.value) return null
     const stock = product.stocks.find((s: any) => s.warehouseId === activeWarehouseId.value)
-    return stock ? Number(stock.quantity) : null
+    return stock ? roundQty(stock.quantity) : null
   }
 
   // Lista calculada de productos con el stock inyectado

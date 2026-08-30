@@ -148,6 +148,10 @@ const auth = useAuthStore()
           <q-item-section avatar><q-icon name="restaurant" size="xs" /></q-item-section>
           <q-item-section>Consumos y Mermas</q-item-section>
         </q-item>
+        <q-item clickable v-ripple to="/reports/kitchen-services" active-class="text-primary" v-if="auth.hasPermission('REPORT_CONSUMPTIONS', 'canRead')">
+          <q-item-section avatar><q-icon name="room_service" size="xs" /></q-item-section>
+          <q-item-section>Consumo por Servicios</q-item-section>
+        </q-item>
         <q-item clickable v-ripple to="/reports/evolution" active-class="text-primary" v-if="auth.hasPermission('REPORT_EVOLUTION', 'canRead')">
           <q-item-section avatar><q-icon name="insert_chart" size="xs" /></q-item-section>
           <q-item-section>Evolución de Gasto</q-item-section>

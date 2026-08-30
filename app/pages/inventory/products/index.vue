@@ -48,7 +48,7 @@
       <template v-slot:body-cell-centralStock="props">
         <q-td :props="props" class="text-center">
           <q-badge :color="getCentralStock(props.row) < props.row.minimumStock ? 'negative' : 'positive'" class="text-weight-bold" style="font-size: 14px">
-            {{ getCentralStock(props.row) }}
+            {{ formatQuantity(getCentralStock(props.row)) }}
             <q-icon name="warning" v-if="getCentralStock(props.row) < props.row.minimumStock" class="q-ml-xs" />
           </q-badge>
         </q-td>
@@ -56,7 +56,7 @@
 
       <template v-slot:body-cell-localStock="props">
         <q-td :props="props" class="text-center text-weight-bold text-grey-8">
-          {{ getLocalStock(props.row) }}
+          {{ formatQuantity(getLocalStock(props.row)) }}
         </q-td>
       </template>
 
@@ -167,6 +167,8 @@ const unitsStore = useUnitsStore()
 const warehousesStore = useWarehousesStore()
 
 const { isDialogOpen, isEditing, form, openCreate, openEdit, submit, remove } = useProductForm()
+import { formatQuantity, formatCurrency, roundQty } from '~/composables/shared/useNumberFormatter'
+
 const { exportProducts } = useExcelProductExport()
 
 const filter = ref('')
@@ -191,7 +193,7 @@ const getCentralStock = (product: any) => {
   const central = warehousesStore.warehouses.find(w => w.type === 'CENTRAL')
   if (!central || !product.stocks) return 0
   const stock = product.stocks.find((s: any) => s.warehouseId === central.id)
-  return stock ? Number(stock.quantity) : 0
+  return stock ? roundQty(stock.quantity) : 0
 }
 
 const getLocalStock = (product: any) => {
@@ -203,7 +205,7 @@ const getLocalStock = (product: any) => {
     const stock = product.stocks.find((s: any) => s.warehouseId === local.id)
     if (stock) total += Number(stock.quantity)
   }
-  return total
+  return roundQty(total)
 }
 
 const openKardex = (product: any) => {
@@ -216,11 +218,11 @@ const columns = [
   { name: 'code', label: 'Código', field: 'code', align: 'left' as const, sortable: true },
   { name: 'name', label: 'Nombre', field: 'name', align: 'left' as const, sortable: true },
   { name: 'category', label: 'Categoría', align: 'center' as const },
-  { name: 'centralStock', label: 'Stock Central', align: 'center' as const, sortable: true, field: (row:any) => getCentralStock(row) },
-  { name: 'localStock', label: 'Stock Locales (Cocinas)', align: 'center' as const },
+  { name: 'centralStock', label: 'Stock Central', align: 'center' as const, sortable: true, field: (row:any) => getCentralStock(row), format: (val: any) => formatQuantity(val) },
+  { name: 'localStock', label: 'Stock Locales (Cocinas)', align: 'center' as const, field: (row:any) => getLocalStock(row), format: (val: any) => formatQuantity(val) },
   { name: 'unit', label: 'Und', align: 'center' as const },
-  { name: 'minimumStock', label: 'Min', field: 'minimumStock', align: 'center' as const },
-  { name: 'referencePrice', label: 'Costo Ref.', field: 'referencePrice', align: 'center' as const, format: (val: any) => `$${Number(val).toFixed(2)}` },
+  { name: 'minimumStock', label: 'Min', field: 'minimumStock', align: 'center' as const, format: (val: any) => formatQuantity(val) },
+  { name: 'referencePrice', label: 'Costo Ref.', field: 'referencePrice', align: 'center' as const, format: (val: any) => formatCurrency(val) },
   { name: 'perishable', label: 'Perecedero', align: 'center' as const },
   { name: 'status', label: 'Estado', field: 'active', align: 'center' as const, sortable: true },
   { name: 'actions', label: 'Acciones', align: 'right' as const }

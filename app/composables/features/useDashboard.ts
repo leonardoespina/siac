@@ -30,8 +30,10 @@ export function useDashboard() {
   })
 
   const canManageDiners = computed(() => {
-    // Módulo de Comensales: Si puede leer el directorio de comensales o gestionar peticiones
-    return auth.hasPermission('DINERS', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canRead')
+    // Módulo de Comensales: Si puede leer el directorio de comensales, peticiones o sus cuadrillas
+    return auth.hasPermission('DINERS', 'canRead') || 
+           auth.hasPermission('DINERS_REQUESTS', 'canRead') || 
+           auth.hasPermission('MY_SQUADS', 'canRead')
   })
 
   // Atajos (Ejemplo: Transferencias, Reportes)

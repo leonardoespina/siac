@@ -291,7 +291,7 @@
                     :rows="consumptionItems"
                     :columns="[
                       { name: 'product', label: 'Producto', field: 'productName', align: 'left' },
-                      { name: 'stock', label: 'Stock Local Actual', field: 'availableStock', align: 'center' },
+                      { name: 'stock', label: 'Stock Local Actual', field: 'availableStock', align: 'center', format: (val: any) => formatQuantity(val) },
                       { name: 'quantity', label: 'Cantidad a Despachar', field: 'quantity', align: 'center' },
                       { name: 'actions', label: '', field: 'actions', align: 'right' }
                     ]"
@@ -307,7 +307,7 @@
                           :min="0.01"
                           style="max-width: 120px; margin: 0 auto;"
                           :error="props.row.quantity > props.row.availableStock"
-                          :error-message="`Max: ${props.row.availableStock}`"
+                          :error-message="`Max: ${formatQuantity(props.row.availableStock)}`"
                           bottom-slots
                         />
                       </q-td>
@@ -325,7 +325,7 @@
                           <q-card-section class="row items-center justify-between">
                             <div>
                               <div class="text-weight-bold">{{ props.row.productName }}</div>
-                              <div class="text-caption text-grey-8">Stock Disponible: <span class="text-positive text-weight-bold">{{ props.row.availableStock }}</span></div>
+                              <div class="text-caption text-grey-8">Stock Disponible: <span class="text-positive text-weight-bold">{{ formatQuantity(props.row.availableStock) }}</span></div>
                             </div>
                             <q-btn flat round dense color="negative" icon="delete" @click="removeConsumptionItem(consumptionItems.indexOf(props.row))" />
                           </q-card-section>
@@ -338,7 +338,7 @@
                               :min="0.01"
                               label="Cantidad a despachar"
                               :error="props.row.quantity > props.row.availableStock"
-                              :error-message="`Supera stock local (${props.row.availableStock})`"
+                              :error-message="`Supera stock local (${formatQuantity(props.row.availableStock)})`"
                               bottom-slots
                             />
                           </q-card-section>
@@ -425,6 +425,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useKitchenOperation } from '~/composables/features/useKitchenOperation'
+import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 
 const {
   loading, saving, hasAssignedWarehouse, assignedWarehouseName,

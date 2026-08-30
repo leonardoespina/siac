@@ -3,6 +3,7 @@ import { useQuasar } from 'quasar'
 import { useAuthStore } from '~/stores/auth'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductsStore } from '~/stores/products'
+import { roundQty } from '~/composables/shared/useNumberFormatter'
 
 export function useKitchenOperation() {
   const $q = useQuasar()
@@ -245,13 +246,13 @@ export function useKitchenOperation() {
       if (tx.status === 'PENDING' && tx.details) {
         for (const detail of tx.details) {
           if (detail.productId === productId) {
-            pendingStock += detail.quantity
+            pendingStock += Number(detail.quantity) || 0
           }
         }
       }
     }
 
-    return physicalStock - pendingStock
+    return roundQty(physicalStock - pendingStock)
   }
 
   const addConsumptionItem = (product: any, requestedQty: number = 1) => {

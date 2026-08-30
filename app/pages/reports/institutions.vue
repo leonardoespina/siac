@@ -147,7 +147,7 @@
                   </div>
                   <div class="row justify-between q-mb-sm bg-grey-1 q-pa-xs">
                     <div class="text-caption text-grey-7">Costo ($)</div>
-                    <div class="text-weight-bold text-green-7">${{ Number(props.row.value || 0).toFixed(2) }}</div>
+                    <div class="text-weight-bold text-green-7">{{ formatCurrency(props.row.value) }}</div>
                   </div>
                 </q-card-section>
                 <q-separator />
@@ -163,7 +163,7 @@
                       <div class="text-caption text-weight-bold q-mb-xs">Productos Entregados:</div>
                       <div class="row q-gutter-sm">
                         <q-chip v-for="(item, idx) in props.row.details" :key="idx" color="white" text-color="black" size="sm">
-                          {{ item.quantity }} {{ item.unit }} - {{ item.productName }}
+                          {{ formatQuantity(item.quantity) }} {{ item.unit }} - {{ item.productName }}
                         </q-chip>
                       </div>
                     </q-card-section>
@@ -183,6 +183,7 @@ import { ref, onMounted } from 'vue'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useReports } from '~/composables/features/useReports'
 import { useAuthStore } from '~/stores/auth'
+import { formatQuantity, formatCurrency } from '~/composables/shared/useNumberFormatter'
 import { date } from 'quasar'
 
 const auth = useAuthStore()
@@ -204,7 +205,7 @@ const columns = [
   { name: 'institutionName', label: 'Institución', field: 'institutionName', align: 'left' as const, sortable: true },
   { name: 'institutionType', label: 'Tipo', field: 'institutionType', align: 'center' as const, sortable: true },
   { name: 'itemsCount', label: 'Cant. Productos', field: 'itemsCount', align: 'center' as const, sortable: true },
-  { name: 'value', label: 'Costo ($)', field: 'value', align: 'right' as const, sortable: true },
+  { name: 'value', label: 'Costo ($)', field: 'value', align: 'right' as const, sortable: true, format: (val: number) => formatCurrency(val) },
   { name: 'details', label: 'Ver Detalle', field: 'id', align: 'center' as const }
 ]
 

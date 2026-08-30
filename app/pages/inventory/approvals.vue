@@ -70,7 +70,7 @@
                     <td class="text-left">{{ det.product.code }}</td>
                     <td class="text-left">{{ det.product.name }}</td>
                     <td class="text-right text-weight-bold text-negative">
-                      - {{ det.quantity }} {{ det.product.unit.abbreviation }}
+                      - {{ formatQuantity(det.quantity) }} {{ det.product.unit.abbreviation }}
                     </td>
                   </tr>
                 </tbody>
@@ -85,6 +85,7 @@
 
 <script setup lang="ts">
 import { useKitchenApprovals } from '~/composables/features/useKitchenApprovals'
+import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 
 const { loading, processing, pendingConsumptions, approve, reject } = useKitchenApprovals()
 </script>

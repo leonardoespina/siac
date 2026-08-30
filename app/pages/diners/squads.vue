@@ -2,7 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useSquadsStore } from '~/stores/squads'
 import { useDinersStore } from '~/stores/diners'
+import { useAuthStore } from '~/stores/auth'
 
+const auth = useAuthStore()
 const squadsStore = useSquadsStore()
 const dinersStore = useDinersStore()
 
@@ -68,7 +70,7 @@ onMounted(() => {
           <q-card-section class="row items-center q-pb-none">
             <div class="text-h6">Personal Asignado por Cuadrilla</div>
             <q-space />
-            <q-btn color="primary" to="/diners/workers" label="Asignar Personal" icon="person_add" />
+            <q-btn v-if="auth.hasPermission('DINERS', 'canCreate') || auth.hasPermission('DINERS', 'canUpdate')" color="primary" to="/diners/workers" label="Asignar Personal" icon="person_add" />
           </q-card-section>
           
           <q-card-section>

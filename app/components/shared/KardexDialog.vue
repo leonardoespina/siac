@@ -6,7 +6,7 @@
         <q-toolbar-title>Kardex: {{ product?.name }} ({{ product?.code }})</q-toolbar-title>
         <q-space />
         <q-chip color="white" text-color="primary" class="text-weight-bold">
-          Stock Central: {{ centralStock }} {{ product?.unit?.abbreviation }}
+          Stock Central: {{ formatQuantity(centralStock) }} {{ product?.unit?.abbreviation }}
         </q-chip>
       </q-toolbar>
 
@@ -26,7 +26,7 @@
         >
           <template v-slot:body-cell-quantity="props">
             <q-td :props="props" :class="props.row.quantity > 0 ? 'text-positive text-weight-bold' : 'text-negative text-weight-bold'">
-              {{ props.row.quantity > 0 ? '+' : '' }}{{ props.row.quantity }}
+              {{ props.row.quantity > 0 ? '+' : '' }}{{ formatQuantity(props.row.quantity) }}
             </q-td>
           </template>
           
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -69,7 +70,7 @@ const columns = [
   { name: 'source', label: 'Origen', field: 'source', align: 'left' as const },
   { name: 'destination', label: 'Destino', field: 'destination', align: 'left' as const },
   { name: 'user', label: 'Aprobado Por', field: 'user', align: 'left' as const },
-  { name: 'quantity', label: 'Cantidad', field: 'quantity', align: 'center' as const, sortable: true }
+  { name: 'quantity', label: 'Cantidad', field: 'quantity', align: 'center' as const, sortable: true, format: (val: any) => formatQuantity(val) }
 ]
 
 watch(() => props.modelValue, async (newVal) => {

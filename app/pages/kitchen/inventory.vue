@@ -98,7 +98,7 @@
                 class="text-weight-bold"
                 style="font-size: 14px; padding: 4px 8px;"
               >
-                {{ props.row.localStock > 0 ? props.row.localStock : 'AGOTADO' }}
+                {{ props.row.localStock > 0 ? formatQuantity(props.row.localStock) : 'AGOTADO' }}
               </q-badge>
             </q-td>
           </template>
@@ -134,7 +134,7 @@
                   <div class="text-weight-medium">Stock Disponible</div>
                   <div>
                     <span :class="props.row.localStock > 0 ? 'text-positive' : 'text-negative'" class="text-weight-bold text-h6 q-mr-xs">
-                      {{ props.row.localStock > 0 ? props.row.localStock : 'AGOTADO' }}
+                      {{ props.row.localStock > 0 ? formatQuantity(props.row.localStock) : 'AGOTADO' }}
                     </span>
                     <span class="text-caption text-grey-8" v-if="props.row.localStock > 0">{{ props.row.unit?.abbreviation || 'UN' }}</span>
                   </div>
@@ -152,6 +152,7 @@
 
 <script setup lang="ts">
 import { useKitchenInventory } from '~/composables/features/useKitchenInventory'
+import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 
 const {
   loading, hasAssignedWarehouse, searchQuery, hideOutOfStock, inventoryList, stats,

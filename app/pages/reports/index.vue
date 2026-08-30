@@ -51,6 +51,13 @@ const reports = [
     route: '/reports/consumptions'
   },
   {
+    title: 'Consumo por Servicios',
+    description: 'Valorización de consumos por Desayuno, Almuerzo, Cena y Sobrecena por cocina.',
+    icon: 'room_service',
+    color: 'deep-purple-8',
+    route: '/reports/kitchen-services'
+  },
+  {
     title: 'Evolución de Gasto',
     description: 'Gráfico histórico del gasto en consumos agrupado por mes.',
     icon: 'insert_chart',

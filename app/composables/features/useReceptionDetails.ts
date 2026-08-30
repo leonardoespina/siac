@@ -29,14 +29,16 @@ export function useReceptionDetails() {
     }, 0)
   })
 
+import { formatQuantity, formatCurrency } from '~/composables/shared/useNumberFormatter'
+
   const columns = computed(() => {
     const cols = [
       { name: 'code', label: 'Código', field: (row: any) => row.product?.code, align: 'left' as const },
       { name: 'product', label: 'Producto', field: (row: any) => row.product?.name, align: 'left' as const },
       { name: 'unit', label: 'Unidad', field: (row: any) => row.product?.unit?.abbreviation || 'N/A', align: 'center' as const },
-      { name: 'expectedQuantity', label: 'Facturado', field: 'expectedQuantity', align: 'center' as const },
-      { name: 'quantity', label: 'Recibido', field: 'quantity', align: 'center' as const },
-      { name: 'price', label: 'Precio', field: 'unitPrice', align: 'center' as const, format: (val: number) => `$${val}` },
+      { name: 'expectedQuantity', label: 'Facturado', field: 'expectedQuantity', align: 'center' as const, format: (val: any) => formatQuantity(val) },
+      { name: 'quantity', label: 'Recibido', field: 'quantity', align: 'center' as const, format: (val: any) => formatQuantity(val) },
+      { name: 'price', label: 'Precio', field: 'unitPrice', align: 'center' as const, format: (val: number) => formatCurrency(val) },
       { 
         name: 'projectedWac', 
         label: 'Promedio Proyectado', 
@@ -57,10 +59,11 @@ export function useReceptionDetails() {
           }
           return Number(row.product?.referencePrice) || 0
         }, 
-        align: 'center' as const 
+        align: 'center' as const,
+        format: (val: any) => formatCurrency(val)
       },
       { name: 'exp', label: 'Vencimiento', field: 'expirationDate', align: 'center' as const, format: (val: string) => val ? new Date(val).toLocaleDateString() : 'N/A' },
-      { name: 'total', label: 'Total', field: (row: any) => Number(row.quantity) * Number(row.unitPrice), align: 'center' as const, format: (val: number) => `$${val.toLocaleString('en-US', { minimumFractionDigits: 2 })}` }
+      { name: 'total', label: 'Total', field: (row: any) => Number(row.quantity) * Number(row.unitPrice), align: 'center' as const, format: (val: number) => formatCurrency(val) }
     ]
     if (isEditing.value) {
       cols.push({ name: 'actions', label: '', field: 'actions', align: 'center' as const, format: () => '' })

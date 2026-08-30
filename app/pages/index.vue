@@ -273,7 +273,7 @@ const {
           <!-- Atajos de Comensales -->
           <div class="col-12 col-md-6">
             <div class="row q-col-gutter-md">
-              <div class="col-12">
+              <div class="col-12" v-if="auth.hasPermission('DINERS', 'canRead')">
                 <q-card flat bordered class="cursor-pointer bg-primary text-white hover-up" @click="goTo('/diners/workers')">
                   <q-card-section class="row items-center">
                     <q-icon name="fingerprint" size="xl" class="q-mr-md opacity-80" />
@@ -287,7 +287,7 @@ const {
                 </q-card>
               </div>
 
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-6" v-if="auth.hasPermission('MY_SQUADS', 'canRead')">
                 <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/diners/squads')">
                   <q-card-section class="row items-center">
                     <q-avatar color="blue-1" text-color="blue-7" icon="engineering" class="q-mr-md" />
@@ -299,7 +299,7 @@ const {
                 </q-card>
               </div>
 
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-6" v-if="auth.hasPermission('DINERS_REQUESTS', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canCreate')">
                 <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/diners/requests')">
                   <q-card-section class="row items-center">
                     <q-avatar color="green-1" text-color="green-7" icon="restaurant_menu" class="q-mr-md" />

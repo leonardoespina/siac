@@ -1,4 +1,5 @@
 import { useWarehousesStore } from '~/stores/warehouses'
+import { roundQty } from '~/composables/shared/useNumberFormatter'
 import * as XLSX from 'xlsx'
 
 export function useExcelProductExport() {
@@ -9,7 +10,7 @@ export function useExcelProductExport() {
     const central = warehousesStore.warehouses.find(w => w.type === 'CENTRAL')
     if (!central || !product.stocks) return 0
     const stock = product.stocks.find((s: any) => s.warehouseId === central.id)
-    return stock ? Number(stock.quantity) : 0
+    return stock ? roundQty(stock.quantity) : 0
   }
 
   // Calcular Stock Locales (Cocinas) de forma idéntica a la vista
@@ -22,7 +23,7 @@ export function useExcelProductExport() {
       const stock = product.stocks.find((s: any) => s.warehouseId === local.id)
       if (stock) total += Number(stock.quantity)
     }
-    return total
+    return roundQty(total)
   }
 
   const exportProducts = (products: any[]) => {
@@ -51,8 +52,8 @@ export function useExcelProductExport() {
         getCentralStock(p),
         getLocalStock(p),
         p.unit?.abbreviation || 'UN',
-        Number(p.minimumStock || 0),
-        Number(p.referencePrice || 0),
+        roundQty(p.minimumStock || 0),
+        roundQty(p.referencePrice || 0),
         p.isPerishable ? 'Sí' : 'No',
         p.active ? 'Activo' : 'Inactivo'
       ])

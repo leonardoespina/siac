@@ -4,6 +4,8 @@ import { useQuasar } from 'quasar'
 import { useAuthStore } from '~/stores/auth'
 import { useProductsStore } from '~/stores/products'
 
+import { formatQuantity, roundQty } from '~/composables/shared/useNumberFormatter'
+
 export function useConsumptionDetails() {
   const route = useRoute()
   const router = useRouter()
@@ -34,7 +36,7 @@ export function useConsumptionDetails() {
     const product = productsStore.products.find(p => p.id === productId)
     if (!product || !product.stocks) return 0
     const stock = product.stocks.find((s: any) => s.warehouseId === transfer.value.sourceId)
-    return stock ? Number(stock.quantity) : 0
+    return stock ? roundQty(stock.quantity) : 0
   }
 
   // Buscador de productos para el modo edición
@@ -50,7 +52,7 @@ export function useConsumptionDetails() {
     const cols = [
       { name: 'code', label: 'Código', field: (row: any) => row.productCode, align: 'left' as const },
       { name: 'product', label: 'Producto', field: (row: any) => row.productName, align: 'left' as const },
-      { name: 'quantity', label: 'Cantidad', field: 'quantity', align: 'center' as const, classes: 'text-weight-bold text-primary' },
+      { name: 'quantity', label: 'Cantidad', field: 'quantity', align: 'center' as const, classes: 'text-weight-bold text-primary', format: (val: any) => formatQuantity(val) },
       { name: 'unit', label: 'Medida', field: (row: any) => row.unit, align: 'center' as const }
     ]
     if (isEditing.value) {

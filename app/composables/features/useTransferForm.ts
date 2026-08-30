@@ -4,6 +4,7 @@ import { useQuasar } from 'quasar'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductsStore } from '~/stores/products'
 import { useAuthStore } from '~/stores/auth'
+import { roundQty } from '~/composables/shared/useNumberFormatter'
 
 export function useTransferForm() {
   const router = useRouter()
@@ -63,7 +64,7 @@ export function useTransferForm() {
     const product = productsStore.products.find(p => p.id === productId)
     if (!product || !product.stocks) return 0
     const stock = product.stocks.find((s: any) => s.warehouseId === warehouseId)
-    return stock ? Number(stock.quantity) : 0
+    return stock ? roundQty(stock.quantity) : 0
   }
 
   const addItem = (product: any, requestedQty: number = 1) => {

@@ -69,6 +69,8 @@ export function useTransferDetails() {
     return false
   })
 
+import { formatQuantity, formatCurrency, roundQty } from '~/composables/shared/useNumberFormatter'
+
   // Helper para obtener stock del almacén central
   const getCentralStock = (productId: number) => {
     const central = warehousesStore.warehouses.find(w => w.type === 'CENTRAL')
@@ -76,7 +78,7 @@ export function useTransferDetails() {
     const product = productsStore.products.find(p => p.id === productId)
     if (!product || !product.stocks) return 0
     const stock = product.stocks.find((s: any) => s.warehouseId === central.id)
-    return stock ? Number(stock.quantity) : 0
+    return stock ? roundQty(stock.quantity) : 0
   }
 
 
@@ -85,11 +87,11 @@ export function useTransferDetails() {
     const cols = [
       { name: 'code', label: 'Código', field: (row: any) => row.productCode, align: 'left' as const },
       { name: 'product', label: 'Producto', field: (row: any) => row.productName, align: 'left' as const },
-      { name: 'quantity', label: 'Cantidad Enviada', field: 'quantity', align: 'center' as const, classes: 'text-weight-bold text-primary' },
+      { name: 'quantity', label: 'Cantidad Enviada', field: 'quantity', align: 'center' as const, classes: 'text-weight-bold text-primary', format: (val: any) => formatQuantity(val) },
       { name: 'unit', label: 'Medida', field: (row: any) => row.unit, align: 'center' as const }
     ]
     if (showPrices.value) {
-      cols.push({ name: 'price', label: 'Precio', field: 'unitPrice', align: 'right' as const, format: (val: number) => `$${val}` })
+      cols.push({ name: 'price', label: 'Precio', field: 'unitPrice', align: 'right' as const, format: (val: number) => formatCurrency(val) })
     }
     if (isEditing.value) {
       cols.push({ name: 'actions', label: '', field: 'actions', align: 'right' as const })

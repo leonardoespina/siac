@@ -131,7 +131,7 @@
                             <q-icon name="account_balance" size="xs" /> {{ tx.institution?.name || 'Institución Desconocida' }}
                           </q-item-label>
                           <q-item-label caption v-for="det in tx.details" :key="det.id">
-                            • {{ det.quantity }} {{ det.product?.unit?.abbreviation }} - {{ det.product?.name }}
+                            • {{ formatQuantity(det.quantity) }} {{ det.product?.unit?.abbreviation }} - {{ det.product?.name }}
                           </q-item-label>
                         </q-item-section>
                         <q-item-section side>
@@ -202,7 +202,7 @@
                             <q-item-section>
                               <q-item-label class="text-weight-bold">{{ tx.type === 'CONSUMPTION' ? 'Consumo' : (tx.type === 'SUPPORT' ? 'Apoyo' : 'Merma') }} #{{ tx.id }}</q-item-label>
                               <q-item-label caption v-for="det in tx.details" :key="det.id">
-                                • {{ det.quantity }} {{ det.product?.unit?.abbreviation }} - {{ det.product?.name }}
+                                • {{ formatQuantity(det.quantity) }} {{ det.product?.unit?.abbreviation }} - {{ det.product?.name }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side>
@@ -231,6 +231,7 @@
 <script setup lang="ts">
 import { useShiftsReport } from '~/composables/features/useShiftsReport'
 import { useAuthStore } from '~/stores/auth'
+import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 import { onMounted } from 'vue'
 
 const auth = useAuthStore()

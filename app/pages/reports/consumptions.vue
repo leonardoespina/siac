@@ -138,11 +138,11 @@
                 
                 <q-card-section class="bg-grey-1 row justify-between items-center q-py-sm">
                   <div>
-                    <div class="text-caption text-grey-8">Costo: <span class="text-weight-bold">${{ Number(props.row.value || 0).toFixed(2) }}</span></div>
+                    <div class="text-caption text-grey-8">Costo: <span class="text-weight-bold">{{ formatCurrency(props.row.value) }}</span></div>
                     <div class="text-caption text-grey-6" style="font-size: 10px;">Op: {{ props.row.operator }}</div>
                   </div>
                   <div class="text-right">
-                    <span class="text-weight-bold text-h6">{{ props.row.quantity }}</span>
+                    <span class="text-weight-bold text-h6">{{ formatQuantity(props.row.quantity) }}</span>
                     <span class="text-caption text-grey-8 q-ml-xs">{{ props.row.unit }}</span>
                   </div>
                 </q-card-section>
@@ -160,6 +160,7 @@ import { ref, onMounted } from 'vue'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useReports } from '~/composables/features/useReports'
 import { useAuthStore } from '~/stores/auth'
+import { formatQuantity, formatCurrency } from '~/composables/shared/useNumberFormatter'
 import { date } from 'quasar'
 
 const auth = useAuthStore()
@@ -177,10 +178,10 @@ const columns = [
   { name: 'type', label: 'Tipo', field: 'type', align: 'center' as const, sortable: true },
   { name: 'productName', label: 'Producto', field: 'productName', align: 'left' as const, sortable: true },
   { name: 'category', label: 'Rubro', field: 'category', align: 'left' as const, sortable: true },
-  { name: 'quantity', label: 'Cant', field: 'quantity', align: 'right' as const, sortable: true },
-  { name: 'unit', label: 'Und', field: 'unit', align: 'left' as const },
-  { name: 'value', label: 'Costo ($)', field: 'value', align: 'right' as const, format: (val: number) => `$${Number(val || 0).toFixed(2)}`, sortable: true },
-  { name: 'operator', label: 'Registrado Por', field: 'operator', align: 'left' as const }
+  { name: 'quantity', label: 'Cant', field: 'quantity', align: 'right' as const, sortable: true, format: (val: any) => formatQuantity(val) },
+  { name: 'unit', label: 'Und', field: 'unit', align: 'center' as const },
+  { name: 'value', label: 'Costo ($)', field: 'value', align: 'right' as const, sortable: true, format: (val: number) => formatCurrency(val) },
+  { name: 'operator', label: 'Registrado Por', field: 'operator', align: 'left' as const, sortable: true }
 ]
 
 const handleFilter = () => {

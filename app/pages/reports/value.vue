@@ -33,10 +33,10 @@
               <q-item v-for="item in wh.items.slice(0, 5)" :key="item.product.id">
                 <q-item-section>
                   <q-item-label class="text-weight-bold">{{ item.product.name }}</q-item-label>
-                  <q-item-label caption>Cant: {{ item.quantity }} {{ item.product.unit.abbreviation }} | Último Precio: ${{ Number(item.unitPrice).toFixed(2) }}</q-item-label>
+                  <q-item-label caption>Cant: {{ formatQuantity(item.quantity) }} {{ item.product.unit.abbreviation }} | Último Precio: {{ formatCurrency(item.unitPrice) }}</q-item-label>
                 </q-item-section>
                 <q-item-section side class="text-weight-bold text-black">
-                  ${{ item.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+                  {{ formatCurrency(item.totalValue) }}
                 </q-item-section>
               </q-item>
               
@@ -60,6 +60,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useReports } from '~/composables/features/useReports'
+import { formatQuantity, formatCurrency } from '~/composables/shared/useNumberFormatter'
 
 const { loading, totalGlobalValue, warehousesValue, fetchValueReport } = useReports()
 
