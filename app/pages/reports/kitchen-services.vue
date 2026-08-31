@@ -35,10 +35,10 @@
     <q-card bordered flat class="q-mb-md bg-grey-1">
       <q-card-section class="row q-col-gutter-md items-center">
         <div class="col-12 col-sm-6 col-md-3">
-          <q-input v-model="startDate" type="date" label="Desde" outlined dense bg-color="white" />
+          <SharedDateInput v-model="startDate" label="Desde" />
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-          <q-input v-model="endDate" type="date" label="Hasta" outlined dense bg-color="white" />
+          <SharedDateInput v-model="endDate" label="Hasta" />
         </div>
         <div v-if="!auth.user?.warehouseId" class="col-12 col-sm-6 col-md-3">
           <q-select

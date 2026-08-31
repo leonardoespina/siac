@@ -35,12 +35,9 @@ export function useKitchenServicesReport() {
   const fetchReport = async () => {
     loading.value = true
     try {
-      const startISO = startDate.value ? new Date(startDate.value + 'T00:00:00').toISOString() : undefined
-      const endISO = endDate.value ? new Date(endDate.value + 'T23:59:59').toISOString() : undefined
-
       await reportsStore.fetchKitchenServicesReport({
-        startDate: startISO,
-        endDate: endISO,
+        startDate: startDate.value || undefined,
+        endDate: endDate.value || undefined,
         warehouseId: selectedWarehouse.value,
         serviceType: selectedService.value
       })
