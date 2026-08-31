@@ -1,5 +1,6 @@
 import { defineApiHandler } from '../../utils/handler'
 import { prisma } from '../../utils/prisma'
+import { parseDateRange } from '../../utils/dates'
 import { z } from 'zod'
 import { useValidatedQuery } from 'h3-zod'
 
@@ -14,9 +15,7 @@ const querySchema = z.object({
 export default defineApiHandler(async (event) => {
   const query = await useValidatedQuery(event, querySchema)
   
-  const start = new Date(query.startDate)
-  const end = new Date(query.endDate)
-  end.setHours(23, 59, 59, 999)
+  const { startDate: start, endDate: end } = parseDateRange(query.startDate, query.endDate)
 
   const transactions = await prisma.transaction.findMany({
     where: {

@@ -9,10 +9,10 @@
     <q-card bordered flat class="q-mb-md bg-grey-1">
       <q-card-section class="row q-col-gutter-md items-center">
         <div class="col-12 col-md-3">
-          <q-input v-model="startDate" type="date" label="Desde" outlined dense />
+          <SharedDateInput v-model="startDate" label="Desde" />
         </div>
         <div class="col-12 col-md-3">
-          <q-input v-model="endDate" type="date" label="Hasta" outlined dense />
+          <SharedDateInput v-model="endDate" label="Hasta" />
         </div>
         <div v-if="!auth.user?.warehouseId" class="col-12 col-md-3">
           <q-select
@@ -113,9 +113,7 @@ const endDate = ref(date.formatDate(today, 'YYYY-MM-DD'))
 const filterWarehouse = ref<number | null>(null)
 
 const handleFilter = () => {
-  const startISO = startDate.value ? new Date(startDate.value + 'T00:00:00').toISOString() : ''
-  const endISO = endDate.value ? new Date(endDate.value + 'T23:59:59').toISOString() : ''
-  fetchConsumptionsReport(startISO, endISO, filterWarehouse.value)
+  fetchConsumptionsReport(startDate.value || '', endDate.value || '', filterWarehouse.value)
 }
 
 onMounted(async () => {

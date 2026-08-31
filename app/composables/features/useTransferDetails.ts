@@ -4,6 +4,7 @@ import { useQuasar } from 'quasar'
 import { useAuthStore } from '~/stores/auth'
 import { useWarehousesStore } from '~/stores/warehouses'
 import { useProductsStore } from '~/stores/products'
+import { formatQuantity, formatCurrency, roundQty } from '~/composables/shared/useNumberFormatter'
 
 export function useTransferDetails() {
   const route = useRoute()
@@ -68,8 +69,6 @@ export function useTransferDetails() {
     
     return false
   })
-
-import { formatQuantity, formatCurrency, roundQty } from '~/composables/shared/useNumberFormatter'
 
   // Helper para obtener stock del almacén central
   const getCentralStock = (productId: number) => {

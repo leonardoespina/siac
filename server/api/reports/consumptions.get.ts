@@ -1,7 +1,7 @@
 import { defineApiHandler } from '../../utils/handler'
 import { ReportsRepository } from '../../repository/ReportsRepository'
-
 import { requirePermission, requireUserContext } from '../../utils/auth'
+import { parseDateRange } from '../../utils/dates'
 
 const repository = new ReportsRepository()
 
@@ -15,8 +15,7 @@ export default defineApiHandler(async (event) => {
   // RLS: Si el usuario es local, forzar su almacén
   if (user.warehouseId) warehouseId = user.warehouseId
   
-  const startDate = query.startDate ? new Date(query.startDate as string) : undefined
-  const endDate = query.endDate ? new Date(query.endDate as string) : undefined
+  const { startDate, endDate } = parseDateRange(query.startDate as string, query.endDate as string)
 
   return await repository.getConsumptions(warehouseId, startDate, endDate)
 })

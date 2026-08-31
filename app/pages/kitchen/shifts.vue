@@ -10,7 +10,7 @@
     <q-card flat bordered class="q-mb-md">
       <q-card-section class="row q-col-gutter-md items-center">
         <div class="col-12 col-md-3">
-          <q-input v-model="filterDate" type="date" outlined dense label="Fecha del Turno" />
+          <SharedDateInput v-model="filterDate" label="Fecha del Turno" clearable />
         </div>
         <div class="col-12 col-md-4" v-if="!auth.user?.warehouseId">
           <q-select 

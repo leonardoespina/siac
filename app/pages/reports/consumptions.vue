@@ -9,10 +9,10 @@
     <q-card bordered flat class="q-mb-md bg-grey-1">
       <q-card-section class="row q-col-gutter-md items-center">
         <div class="col-12 col-md-3">
-          <q-input v-model="startDate" type="date" label="Desde" outlined dense />
+          <SharedDateInput v-model="startDate" label="Desde" />
         </div>
         <div class="col-12 col-md-3">
-          <q-input v-model="endDate" type="date" label="Hasta" outlined dense />
+          <SharedDateInput v-model="endDate" label="Hasta" />
         </div>
         <div v-if="!auth.user?.warehouseId" class="col-12 col-md-3">
           <q-select
@@ -39,15 +39,15 @@
         <div class="col-12 col-md-6">
           <q-card bordered flat class="bg-blue-8 text-white text-center q-pa-sm">
             <div class="text-subtitle2 text-uppercase">Total Consumido (Cocina)</div>
-            <div class="text-h4 text-weight-bold">{{ totalConsumptionItems.toLocaleString() }} unds</div>
-            <div class="text-subtitle1 text-weight-bold q-mt-xs text-blue-2">${{ Number(totalConsumptionValue || 0).toFixed(2) }}</div>
+            <div class="text-h4 text-weight-bold">{{ formatQuantity(totalConsumptionItems) }} unds</div>
+            <div class="text-subtitle1 text-weight-bold q-mt-xs text-blue-2">{{ formatCurrency(totalConsumptionValue) }}</div>
           </q-card>
         </div>
         <div class="col-12 col-md-6">
           <q-card bordered flat class="bg-red-8 text-white text-center q-pa-sm">
             <div class="text-subtitle2 text-uppercase">Total Mermado (Pérdidas)</div>
-            <div class="text-h4 text-weight-bold">{{ totalLossItems.toLocaleString() }} unds</div>
-            <div class="text-subtitle1 text-weight-bold q-mt-xs text-red-2">${{ Number(totalLossValue || 0).toFixed(2) }}</div>
+            <div class="text-h4 text-weight-bold">{{ formatQuantity(totalLossItems) }} unds</div>
+            <div class="text-subtitle1 text-weight-bold q-mt-xs text-red-2">{{ formatCurrency(totalLossValue) }}</div>
           </q-card>
         </div>
       </div>
@@ -56,18 +56,18 @@
       <div class="row q-col-gutter-md q-mb-lg" v-if="consumptionSummaryByWarehouse.length > 0 || lossSummaryByWarehouse.length > 0">
         
         <!-- DESGLOSE CONSUMOS -->
-        <div class="col-12 col-md-6" v-if="consumptionSummaryByWarehouse.length > 0">
+        <div :class="lossSummaryByWarehouse.length > 0 ? 'col-12 col-md-6' : 'col-12'" v-if="consumptionSummaryByWarehouse.length > 0">
           <div class="text-subtitle1 text-weight-bold q-mb-sm text-grey-8">
              Desglose Financiero por Comedor
           </div>
           <div class="row q-col-gutter-sm">
-            <div v-for="local in consumptionSummaryByWarehouse" :key="local.id" class="col-12 col-sm-6">
+            <div v-for="local in consumptionSummaryByWarehouse" :key="local.id" :class="lossSummaryByWarehouse.length > 0 ? 'col-12 col-sm-6' : 'col-12 col-sm-6 col-md-4'">
               <q-card bordered flat class="bg-white q-pa-md text-center">
                 <div class="text-weight-bold text-grey-9 text-uppercase" style="font-size: 13px;">{{ local.name }}</div>
                 <q-separator class="q-my-sm" />
-                <div class="text-caption text-grey-6">{{ local.items }} artículos consumidos</div>
+                <div class="text-caption text-grey-6">{{ formatQuantity(local.items) }} artículos consumidos</div>
                 <div class="text-h5 text-weight-bold text-green-7 q-mt-xs">
-                   ${{ Number(local.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+                   {{ formatCurrency(local.value) }}
                 </div>
               </q-card>
             </div>
@@ -75,18 +75,18 @@
         </div>
 
         <!-- DESGLOSE MERMAS -->
-        <div class="col-12 col-md-6" v-if="lossSummaryByWarehouse.length > 0">
+        <div :class="consumptionSummaryByWarehouse.length > 0 ? 'col-12 col-md-6' : 'col-12'" v-if="lossSummaryByWarehouse.length > 0">
           <div class="text-subtitle1 text-weight-bold q-mb-sm text-grey-8">
              Desglose Financiero de Mermas por Local
           </div>
           <div class="row q-col-gutter-sm">
-            <div v-for="local in lossSummaryByWarehouse" :key="local.id" class="col-12 col-sm-6">
+            <div v-for="local in lossSummaryByWarehouse" :key="local.id" :class="consumptionSummaryByWarehouse.length > 0 ? 'col-12 col-sm-6' : 'col-12 col-sm-6 col-md-4'">
               <q-card bordered flat class="bg-white q-pa-md text-center">
                 <div class="text-weight-bold text-grey-9 text-uppercase" style="font-size: 13px;">{{ local.name }}</div>
                 <q-separator class="q-my-sm" />
-                <div class="text-caption text-grey-6">{{ local.items }} artículos mermados</div>
+                <div class="text-caption text-grey-6">{{ formatQuantity(local.items) }} artículos mermados</div>
                 <div class="text-h5 text-weight-bold text-red-7 q-mt-xs">
-                   ${{ Number(local.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+                   {{ formatCurrency(local.value) }}
                 </div>
               </q-card>
             </div>
@@ -112,7 +112,7 @@
           
           <template v-slot:body-cell-quantity="props">
             <q-td :props="props" class="text-right text-weight-bold">
-              {{ props.row.quantity }}
+              {{ formatQuantity(props.row.quantity) }}
             </q-td>
           </template>
           
@@ -185,9 +185,7 @@ const columns = [
 ]
 
 const handleFilter = () => {
-  const startISO = startDate.value ? new Date(startDate.value + 'T00:00:00').toISOString() : ''
-  const endISO = endDate.value ? new Date(endDate.value + 'T23:59:59').toISOString() : ''
-  fetchConsumptionsReport(startISO, endISO, filterWarehouse.value)
+  fetchConsumptionsReport(startDate.value || '', endDate.value || '', filterWarehouse.value)
 }
 
 onMounted(async () => {

@@ -9,10 +9,10 @@
     <q-card bordered flat class="q-mb-md bg-grey-1">
       <q-card-section class="row q-col-gutter-md items-center">
         <div class="col-12 col-md-3">
-          <q-input v-model="startDate" type="date" label="Desde" outlined dense />
+          <SharedDateInput v-model="startDate" label="Desde" />
         </div>
         <div class="col-12 col-md-3">
-          <q-input v-model="endDate" type="date" label="Hasta" outlined dense />
+          <SharedDateInput v-model="endDate" label="Hasta" />
         </div>
         <div v-if="!auth.user?.warehouseId" class="col-12 col-md-3">
           <q-select
@@ -39,8 +39,8 @@
         <div class="col-12">
           <q-card bordered flat class="bg-purple-8 text-white text-center q-pa-sm">
             <div class="text-subtitle2 text-uppercase">Total Donado (Apoyos)</div>
-            <div class="text-h4 text-weight-bold">{{ totalSupportItems.toLocaleString() }} unds</div>
-            <div class="text-subtitle1 text-weight-bold q-mt-xs text-purple-2">${{ Number(totalSupportValue || 0).toFixed(2) }}</div>
+            <div class="text-h4 text-weight-bold">{{ formatQuantity(totalSupportItems) }} unds</div>
+            <div class="text-subtitle1 text-weight-bold q-mt-xs text-purple-2">{{ formatCurrency(totalSupportValue) }}</div>
           </q-card>
         </div>
       </div>
@@ -53,9 +53,9 @@
             <q-card bordered flat class="bg-white q-pa-md text-center">
               <div class="text-weight-bold text-grey-9 text-uppercase" style="font-size: 13px;">{{ local.name }}</div>
               <q-separator class="q-my-sm" />
-              <div class="text-caption text-grey-6">{{ local.items }} artículos donados</div>
+              <div class="text-caption text-grey-6">{{ formatQuantity(local.items) }} artículos donados</div>
               <div class="text-h5 text-weight-bold text-purple-7 q-mt-xs">
-                 ${{ Number(local.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
+                 {{ formatCurrency(local.value) }}
               </div>
             </q-card>
           </div>
@@ -92,10 +92,10 @@
                 </q-chip>
               </q-td>
               <q-td key="itemsCount" :props="props">
-                {{ props.row.itemsCount }}
+                {{ formatQuantity(props.row.itemsCount) }}
               </q-td>
               <q-td key="value" :props="props" class="text-right text-weight-bold">
-                ${{ Number(props.row.value || 0).toFixed(2) }}
+                {{ formatCurrency(props.row.value) }}
               </q-td>
               <q-td key="details" :props="props">
                 <q-btn flat round color="primary" :icon="props.expand ? 'visibility_off' : 'visibility'" @click="props.expand = !props.expand">
@@ -109,7 +109,7 @@
                 <div class="text-weight-bold q-mb-sm">Productos Entregados:</div>
                 <div class="row q-gutter-sm">
                   <q-chip v-for="(item, idx) in props.row.details" :key="idx" color="white" text-color="black">
-                    {{ item.quantity }} {{ item.unit }} - {{ item.productName }} <span class="text-grey-7 q-ml-sm">(${{ Number(item.value || 0).toFixed(2) }})</span>
+                    {{ formatQuantity(item.quantity) }} {{ item.unit }} - {{ item.productName }} <span class="text-grey-7 q-ml-sm">({{ formatCurrency(item.value) }})</span>
                   </q-chip>
                 </div>
               </q-td>
@@ -143,7 +143,7 @@
                   </div>
                   <div class="row justify-between q-mb-sm">
                     <div class="text-caption text-grey-7">Cant. Productos</div>
-                    <div class="text-weight-bold">{{ props.row.itemsCount }}</div>
+                    <div class="text-weight-bold">{{ formatQuantity(props.row.itemsCount) }}</div>
                   </div>
                   <div class="row justify-between q-mb-sm bg-grey-1 q-pa-xs">
                     <div class="text-caption text-grey-7">Costo ($)</div>
@@ -230,9 +230,7 @@ const getColorForType = (type: string) => {
 }
 
 const handleFilter = () => {
-  const startISO = startDate.value ? new Date(startDate.value + 'T00:00:00').toISOString() : ''
-  const endISO = endDate.value ? new Date(endDate.value + 'T23:59:59').toISOString() : ''
-  fetchInstitutionsReport(startISO, endISO, filterWarehouse.value)
+  fetchInstitutionsReport(startDate.value || '', endDate.value || '', filterWarehouse.value)
 }
 
 onMounted(async () => {

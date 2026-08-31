@@ -39,13 +39,13 @@
                 <div class="text-subtitle1 text-weight-bold" :class="`text-${alert.color}`">
                   {{ new Date(alert.limit).toLocaleDateString() }}
                 </div>
-                <div class="text-caption text-grey">Stock afectado: {{ alert.currentQty }} {{ alert.product.unit.abbreviation }}</div>
+                <div class="text-caption text-grey">Stock afectado: {{ formatQuantity(alert.currentQty) }} {{ alert.product.unit.abbreviation }}</div>
               </div>
               
               <div v-else>
                 <div class="text-caption text-grey">Stock Actual vs Límite:</div>
                 <div class="text-subtitle1 text-weight-bold" :class="`text-${alert.color}`">
-                  {{ alert.currentQty }} / {{ alert.limit }} {{ alert.product.unit.abbreviation }}
+                  {{ formatQuantity(alert.currentQty) }} / {{ formatQuantity(alert.limit) }} {{ alert.product.unit.abbreviation }}
                 </div>
               </div>
             </q-item-section>
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useReports } from '~/composables/features/useReports'
+import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 
 const { loading, alerts, fetchAlertsReport } = useReports()
 

@@ -284,14 +284,14 @@ export class ReportsRepository {
     }
 
     return { 
-      totalConsumptionItems, 
-      totalLossItems, 
-      totalConsumptionValue, 
-      totalLossValue, 
+      totalConsumptionItems: Number(totalConsumptionItems.toFixed(2)), 
+      totalLossItems: Number(totalLossItems.toFixed(2)), 
+      totalConsumptionValue: Number(totalConsumptionValue.toFixed(2)), 
+      totalLossValue: Number(totalLossValue.toFixed(2)), 
       details: items,
-      summaryByWarehouse: Array.from(summaryMap.values()).sort((a, b) => b.value - a.value),
-      lossSummaryByWarehouse: Array.from(lossSummaryMap.values()).sort((a, b) => b.value - a.value),
-      consumptionSummaryByMonth: Array.from(summaryByMonth.values()).sort((a, b) => a.id.localeCompare(b.id))
+      summaryByWarehouse: Array.from(summaryMap.values()).map(w => ({ ...w, items: Number(w.items.toFixed(2)), value: Number(w.value.toFixed(2)) })).sort((a, b) => b.value - a.value),
+      lossSummaryByWarehouse: Array.from(lossSummaryMap.values()).map(w => ({ ...w, items: Number(w.items.toFixed(2)), value: Number(w.value.toFixed(2)) })).sort((a, b) => b.value - a.value),
+      consumptionSummaryByMonth: Array.from(summaryByMonth.values()).map(m => ({ ...m, items: Number(m.items.toFixed(2)), value: Number(m.value.toFixed(2)) })).sort((a, b) => a.id.localeCompare(b.id))
     }
   }
 
@@ -362,11 +362,52 @@ export class ReportsRepository {
     }
 
     return { 
-      totalSupportItems, 
-      totalSupportValue, 
-      summary: Array.from(summaryByType.values()).sort((a, b) => b.totalValue - a.totalValue), 
-      summaryByWarehouse: Array.from(summaryByWarehouse.values()).sort((a, b) => b.value - a.value),
+      totalSupportItems: Number(totalSupportItems.toFixed(2)), 
+      totalSupportValue: Number(totalSupportValue.toFixed(2)), 
+      summary: Array.from(summaryByType.values()).map(s => ({ ...s, totalItems: Number(s.totalItems.toFixed(2)), totalValue: Number(s.totalValue.toFixed(2)) })).sort((a, b) => b.totalValue - a.totalValue), 
+      summaryByWarehouse: Array.from(summaryByWarehouse.values()).map(w => ({ ...w, items: Number(w.items.toFixed(2)), value: Number(w.value.toFixed(2)) })).sort((a, b) => b.value - a.value),
       details: items 
     }
   }
+
+  /**
+   * Reporte: Consumos Crudos por Cocina y Turno (Base para Servicios)
+   * Responsabilidad pura: Solo consulta y extracción desde base de datos.
+   */
+  async getRawKitchenConsumptions(warehouseId?: number, startDate?: Date, endDate?: Date) {
+    const whereClause: any = {
+      type: 'CONSUMPTION',
+      status: 'CONFIRMED'
+    }
+
+    if (warehouseId) whereClause.sourceId = warehouseId
+    if (startDate && endDate) whereClause.createdAt = { gte: startDate, lte: endDate }
+    else if (startDate) whereClause.createdAt = { gte: startDate }
+    else if (endDate) whereClause.createdAt = { lte: endDate }
+
+    return await prisma.transaction.findMany({
+      where: whereClause,
+      include: {
+        source: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true } },
+        shift: { select: { id: true, shiftType: true, startTime: true, endTime: true, notes: true } },
+        details: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                referencePrice: true,
+                category: { select: { id: true, name: true } },
+                unit: { select: { id: true, abbreviation: true, name: true } }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  }
 }
+

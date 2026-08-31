@@ -2,6 +2,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '~/stores/auth'
+import { formatQuantity, formatCurrency } from '~/composables/shared/useNumberFormatter'
 
 export function useReceptionDetails() {
   const route = useRoute()
@@ -28,8 +29,6 @@ export function useReceptionDetails() {
       return total + (Number(row.quantity) * Number(row.unitPrice))
     }, 0)
   })
-
-import { formatQuantity, formatCurrency } from '~/composables/shared/useNumberFormatter'
 
   const columns = computed(() => {
     const cols = [

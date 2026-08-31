@@ -8,10 +8,10 @@
     <q-card bordered flat class="q-mb-md">
       <q-card-section class="row q-col-gutter-md items-center">
         <div class="col-12 col-md-2">
-          <q-input v-model="dateRange.from" type="date" label="Desde" dense outlined />
+          <SharedDateInput v-model="dateRange.from" label="Desde" />
         </div>
         <div class="col-12 col-md-2">
-          <q-input v-model="dateRange.to" type="date" label="Hasta" dense outlined />
+          <SharedDateInput v-model="dateRange.to" label="Hasta" />
         </div>
         <div class="col-12 col-md-3">
           <q-select v-model="selectedCategory" :options="categoriesStore.categories" option-value="id" option-label="name" emit-value map-options label="Categoría (Opcional)" dense outlined clearable />

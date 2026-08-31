@@ -12,7 +12,7 @@
     <div v-else>
       <q-card bordered flat class="q-mb-xl bg-green-9 text-white text-center q-pa-md">
         <div class="text-subtitle1 text-green-2 text-uppercase text-weight-bold">Valor Total Global (Todo el Sistema)</div>
-        <div class="text-h2 text-weight-bolder">${{ totalGlobalValue.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</div>
+        <div class="text-h2 text-weight-bolder">{{ formatCurrency(totalGlobalValue) }}</div>
         <div class="text-caption text-green-2 q-mt-sm">Basado en el último precio de compra (facturación) de cada producto</div>
       </q-card>
 
@@ -25,7 +25,7 @@
                   <q-icon :name="wh.warehouse.type === 'CENTRAL' ? 'domain' : 'restaurant'" class="q-mr-sm" />
                   {{ wh.warehouse.name }}
                 </div>
-                <div class="text-h6">${{ wh.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</div>
+                <div class="text-h6">{{ formatCurrency(wh.totalValue) }}</div>
               </div>
             </q-card-section>
             
