@@ -67,18 +67,6 @@ model User {
   warehouseId Int?       @map("warehouse_id")
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
 
-  // Aislamiento por Comedor
-  diningRoomId Int?        @map("dining_room_id")
-  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id], onDelete: Restrict)
-
-  // Aislamiento por Dependencia (Para Gerentes, Autoridad sobre todas las subdependencias)
-  dependencyId Int?        @map("dependency_id")
-  dependency   Dependency? @relation(fields: [dependencyId], references: [id], onDelete: Restrict)
-
-  // Aislamiento por Subdependencia (Para Solicitantes/Aprobadores de Comensales)
-  subdependencyId Int?           @map("subdependency_id")
-  subdependency   Subdependency? @relation(fields: [subdependencyId], references: [id], onDelete: Restrict)
-
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
   auditLogs AuditLog[]
@@ -89,14 +77,8 @@ model User {
   notifications        Notification[]
   shifts               Shift[]
 
-  createdDinerRequests  DinerRequest[] @relation("DinerRequestsCreated")
-  approvedDinerRequests DinerRequest[] @relation("DinerRequestsApproved")
-
   @@index([roleId])
   @@index([warehouseId])
-  @@index([diningRoomId])
-  @@index([dependencyId])
-  @@index([subdependencyId])
   @@map("users")
 }
 
@@ -230,7 +212,6 @@ model Warehouse {
   incomingTransactions Transaction[] @relation("DestinationWarehouse")
   users                User[]
   shifts               Shift[]
-  diningRooms          DiningRoom[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -393,180 +374,4 @@ model Notification {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("notifications")
-}
-
-// ── MÓDULO COMENSALES (ESTRUCTURA ORGANIZACIONAL) ─────────────────────────
-
-model DiningRoom {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  active Boolean @default(true)
-
-  // Un comedor saca sus insumos de un almacén o cocina
-  warehouseId Int?       @map("warehouse_id")
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-
-  diners        Diner[]
-  dinerRequests DinerRequest[]
-  users         User[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@index([warehouseId])
-  @@map("dining_rooms")
-}
-
-model Dependency {
-  id              Int             @id @default(autoincrement())
-  name            String          @unique
-  active          Boolean         @default(true)
-  subdependencies Subdependency[]
-  users           User[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("dependencies")
-}
-
-model Subdependency {
-  id           Int        @id @default(autoincrement())
-  name         String
-  active       Boolean    @default(true)
-  dependencyId Int        @map("dependency_id")
-  dependency   Dependency @relation(fields: [dependencyId], references: [id], onDelete: Restrict)
-
-  users  User[]
-  diners Diner[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@unique([dependencyId, name])
-  @@index([dependencyId])
-  @@map("subdependencies")
-}
-
-model Squad {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  active Boolean @default(true)
-
-  diners Diner[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("squads")
-}
-
-model Position {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  active Boolean @default(true)
-
-  diners Diner[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("positions")
-}
-
-model Diner {
-  id         Int     @id @default(autoincrement())
-  cedula     String  @unique
-  name       String
-  rationType String  @default("NORMAL") @map("ration_type") // NORMAL o DIETA
-  active     Boolean @default(true)
-
-  // A qué subdependencia/área pertenece el trabajador
-  subdependencyId Int           @map("subdependency_id")
-  subdependency   Subdependency @relation(fields: [subdependencyId], references: [id], onDelete: Restrict)
-
-  // A qué cuadrilla/turno (catálogo base) está asignado
-  squadId Int   @map("squad_id")
-  squad   Squad @relation(fields: [squadId], references: [id], onDelete: Restrict)
-
-  // Cargo o puesto del trabajador (opcional por retrocompatibilidad)
-  positionId Int?      @map("position_id")
-  position   Position? @relation(fields: [positionId], references: [id], onDelete: SetNull)
-
-  // Comedor Base asignado al trabajador
-  diningRoomId Int?        @map("dining_room_id")
-  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id], onDelete: SetNull)
-
-  fingerprint String? @db.Text // TODO: Eliminar en futura migración cuando todos usen BiometricRecord
-  qrCode      String? @unique @map("qr_code")
-
-  requestDetails  DinerRequestDetail[]
-  biometricRecord BiometricRecord?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@index([subdependencyId])
-  @@index([squadId])
-  @@index([positionId])
-  @@index([diningRoomId])
-  @@map("diners")
-}
-
-model DinerRequest {
-  id        Int      @id @default(autoincrement())
-  date      DateTime @db.Date
-  shiftType String   @map("shift_type") // DESAYUNO, ALMUERZO, CENA, SOBRECENA
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
-
-  createdById Int  @map("created_by_id")
-  createdBy   User @relation(name: "DinerRequestsCreated", fields: [createdById], references: [id], onDelete: Restrict)
-
-  approvedById Int?  @map("approved_by_id")
-  approvedBy   User? @relation(name: "DinerRequestsApproved", fields: [approvedById], references: [id], onDelete: SetNull)
-
-  diningRoomId Int?        @map("dining_room_id")
-  diningRoom   DiningRoom? @relation(fields: [diningRoomId], references: [id], onDelete: SetNull)
-
-  details DinerRequestDetail[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([createdById])
-  @@index([approvedById])
-  @@index([diningRoomId])
-  @@index([date])
-  @@map("diner_requests")
-}
-
-model DinerRequestDetail {
-  id        Int          @id @default(autoincrement())
-  requestId Int          @map("request_id")
-  request   DinerRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-
-  dinerId Int   @map("diner_id")
-  diner   Diner @relation(fields: [dinerId], references: [id])
-
-  rationType String @default("NORMAL") @map("ration_type")
-
-  @@unique([requestId, dinerId])
-  @@index([requestId])
-  @@index([dinerId])
-  @@map("diner_request_details")
-}
-
-model BiometricRecord {
-  id      Int   @id @default(autoincrement())
-  dinerId Int   @unique @map("diner_id")
-  diner   Diner @relation(fields: [dinerId], references: [id], onDelete: Cascade)
-
-  templates String[] // Arreglo de strings con los FMD Base64 ultraligeros
-  active    Boolean  @default(true)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([dinerId])
-  @@map("biometric_records")
 }

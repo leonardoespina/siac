@@ -7,7 +7,6 @@ const {
   dashboardStore,
   canApprove,
   canOperateLocal,
-  canManageDiners,
   canViewReports,
   canManageProducts,
   canManageTransfers,
@@ -258,90 +257,6 @@ const {
                 </q-card>
               </div>
             </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ========================================== -->
-      <!-- WIDGET: MÓDULO DE COMENSALES               -->
-      <!-- ========================================== -->
-      <div class="col-12" v-if="canManageDiners">
-        <div class="text-h6 text-weight-bold text-grey-8 q-mb-md">Gestión de Comensales y Peticiones</div>
-        <div class="row q-col-gutter-lg">
-          
-          <!-- Atajos de Comensales -->
-          <div class="col-12 col-md-6">
-            <div class="row q-col-gutter-md">
-              <div class="col-12" v-if="auth.hasPermission('DINERS', 'canRead')">
-                <q-card flat bordered class="cursor-pointer bg-primary text-white hover-up" @click="goTo('/diners/workers')">
-                  <q-card-section class="row items-center">
-                    <q-icon name="fingerprint" size="xl" class="q-mr-md opacity-80" />
-                    <div>
-                      <div class="text-h6 text-weight-bold">Directorio de Comensales</div>
-                      <div class="text-subtitle2 text-blue-2">Registrar o buscar trabajadores</div>
-                    </div>
-                    <q-space />
-                    <q-icon name="arrow_forward" size="sm" />
-                  </q-card-section>
-                </q-card>
-              </div>
-
-              <div class="col-12 col-md-6" v-if="auth.hasPermission('MY_SQUADS', 'canRead')">
-                <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/diners/squads')">
-                  <q-card-section class="row items-center">
-                    <q-avatar color="blue-1" text-color="blue-7" icon="engineering" class="q-mr-md" />
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold">Mis Cuadrillas</div>
-                      <div class="text-caption text-grey-6">Ver grupos asignados</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-
-              <div class="col-12 col-md-6" v-if="auth.hasPermission('DINERS_REQUESTS', 'canRead') || auth.hasPermission('DINERS_REQUESTS', 'canCreate')">
-                <q-card flat bordered class="cursor-pointer hover-up" @click="goTo('/diners/requests')">
-                  <q-card-section class="row items-center">
-                    <q-avatar color="green-1" text-color="green-7" icon="restaurant_menu" class="q-mr-md" />
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold">Peticiones de Comida</div>
-                      <div class="text-caption text-grey-6">Dieta extra y apoyo</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Panel de Métricas de Comensales (Nuevo) -->
-          <div class="col-12 col-md-6">
-            <q-card flat bordered class="h-full bg-grey-2">
-              <q-card-section class="q-pb-none">
-                <div class="text-h6 text-weight-bold text-dark row items-center">
-                  <q-icon name="analytics" class="q-mr-sm" color="primary" />
-                  Métricas de mi Gerencia
-                </div>
-                <div class="text-caption text-grey-7">Resumen de trabajadores y actividad</div>
-              </q-card-section>
-              
-              <q-card-section class="row q-col-gutter-sm text-center q-pt-md">
-                <!-- Se podrían conectar estas variables al store en el futuro -->
-                <div class="col-6">
-                  <q-card class="bg-white q-pa-md h-full" flat bordered>
-                    <q-icon name="groups" size="xl" color="primary" class="q-mb-sm opacity-80" />
-                    <div class="text-h5 text-weight-bold">Activos</div>
-                    <div class="text-caption text-grey-8">Comensales Registrados</div>
-                  </q-card>
-                </div>
-                <div class="col-6">
-                  <q-card class="bg-white q-pa-md h-full" flat bordered>
-                    <q-icon name="receipt_long" size="xl" color="orange-8" class="q-mb-sm opacity-80" />
-                    <div class="text-h5 text-weight-bold">Gestión</div>
-                    <div class="text-caption text-grey-8">Peticiones al Comedor</div>
-                  </q-card>
-                </div>
-              </q-card-section>
-            </q-card>
           </div>
 
         </div>

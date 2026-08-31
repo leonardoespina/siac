@@ -6,9 +6,9 @@ import { prisma } from './prisma'
 // ── PROTECCIÓN DE RUTAS Y PERMISOS DINÁMICOS ──────────────────────────────
 // Estas funciones se usarán en todos los endpoints (handlers) que requieran seguridad.
 
-export function hasGlobalAccess(user: { warehouseId?: number | null, diningRoomId?: number | null, roleName?: string }): boolean {
+export function hasGlobalAccess(user: { warehouseId?: number | null, roleName?: string }): boolean {
   // Un usuario tiene acceso global a los datos de sedes (ver todo) SOLO si NO tiene un comedor/almacén asignado.
-  return !user.warehouseId && !user.diningRoomId
+  return !user.warehouseId
 }
 
 
@@ -48,10 +48,7 @@ export async function requireUserContext(event: H3Event) {
     id: user.id,
     roleName: user.role.name,
     isGlobal: user.role.permissions?.some(p => p.module.code === 'GLOBAL_ACCESS' && p.canRead) || false,
-    warehouseId: user.warehouseId,
-    diningRoomId: user.diningRoomId,
-    dependencyId: user.dependencyId,
-    subdependencyId: user.subdependencyId
+    warehouseId: user.warehouseId
   }
 }
 
@@ -112,6 +109,57 @@ export async function requirePermission(
 
   if (!hasAccess) {
     throw new ForbiddenError(`No tienes permiso para '${action}' en el módulo ${moduleCode}`)
+  }
+
+  return userId
+}
+
+/**
+ * 2.5. Verifica si el usuario posee AL MENOS UNO de los permisos requeridos en la lista.
+ * Evita múltiples consultas a la base de datos y evalúa en memoria.
+ */
+export async function requireAnyPermission(
+  event: H3Event, 
+  permissionsList: Array<{ moduleCode: string, action: 'create' | 'read' | 'update' | 'delete' }>
+) {
+  const userId = await requireAuth(event)
+  
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: {
+        include: {
+          permissions: {
+            include: { module: true }
+          }
+        }
+      }
+    }
+  })
+
+  if (!user || !user.role) {
+    throw new ForbiddenError('El usuario no tiene un rol asignado')
+  }
+
+  const hasGlobalAccess = user.role.permissions.some(p => p.module.code === 'GLOBAL_ACCESS' && p.canRead)
+  if (hasGlobalAccess) {
+    return userId
+  }
+
+  const hasAccess = permissionsList.some(({ moduleCode, action }) => {
+    const perm = user.role.permissions.find(p => p.module.code === moduleCode)
+    if (!perm) return false
+    return (
+      (action === 'create' && perm.canCreate) ||
+      (action === 'read' && perm.canRead) ||
+      (action === 'update' && perm.canUpdate) ||
+      (action === 'delete' && perm.canDelete)
+    )
+  })
+
+  if (!hasAccess) {
+    const modulesStr = permissionsList.map(p => p.moduleCode).join(' o ')
+    throw new ForbiddenError(`No tienes permiso para ninguna de las acciones requeridas (${modulesStr})`)
   }
 
   return userId

@@ -29,13 +29,6 @@ export function useDashboard() {
     return !!auth.user?.warehouseId && auth.hasPermission('OPERATIONS', 'canCreate')
   })
 
-  const canManageDiners = computed(() => {
-    // Módulo de Comensales: Si puede leer el directorio de comensales, peticiones o sus cuadrillas
-    return auth.hasPermission('DINERS', 'canRead') || 
-           auth.hasPermission('DINERS_REQUESTS', 'canRead') || 
-           auth.hasPermission('MY_SQUADS', 'canRead')
-  })
-
   // Atajos (Ejemplo: Transferencias, Reportes)
   const canViewReports = computed(() => auth.hasPermission('REPORT_DASHBOARD', 'canRead'))
   const canManageProducts = computed(() => auth.hasPermission('PRODUCTS', 'canRead'))
@@ -113,9 +106,7 @@ export function useDashboard() {
       promises.push(productStore.fetchAll()) // Fetch productos (para ver stock local)
     }
 
-    // (Futuro) Si canManageDiners, podríamos hacer fetch de sus métricas de comensales aquí
 
-    await Promise.all(promises)
   }
 
   onMounted(() => {
@@ -128,7 +119,6 @@ export function useDashboard() {
     showAdminDashboard: canApprove, // Mantener para compatibilidad rápida con index.vue (opcional, mejor renombrar luego)
     canApprove,
     canOperateLocal,
-    canManageDiners,
     canViewReports,
     canManageProducts,
     canManageTransfers,

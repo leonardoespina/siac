@@ -14,13 +14,6 @@ export interface UserState {
   cedula: string
   name: string
   warehouseId?: number | null
-  diningRoomId?: number | null
-  subdependencyId?: number | null
-  subdependency?: {
-    name: string
-    dependencyId: number
-    dependency: { name: string }
-  } | null
   role: {
     name: string
     permissions: ModulePermission[]

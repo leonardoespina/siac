@@ -262,20 +262,7 @@ export default defineNitroPlugin((nitroApp) => {
     }
   })
 
-  // 5. Sincronización en tiempo real de Comensales
-  eventBus.on('diner:created', (payload) => {
-    if (io) io.emit('diner:sync', { action: 'create', diner: payload.diner })
-  })
-  
-  eventBus.on('diner:updated', (payload) => {
-    if (io) io.emit('diner:sync', { action: 'update', diner: payload.diner })
-  })
-
-  eventBus.on('diner:deleted', (payload) => {
-    if (io) io.emit('diner:sync', { action: 'delete', diner: { id: payload.id } })
-  })
-
-  // 6. Sincronización en tiempo real de Transacciones
+  // 5. Sincronización en tiempo real de Transacciones
   eventBus.on('transaction:sync', (payload) => {
     if (!io) return
     const tx = payload.transaction

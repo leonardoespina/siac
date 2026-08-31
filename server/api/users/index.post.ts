@@ -25,8 +25,6 @@ export default defineApiHandler(async (event) => {
       name: body.name,
       roleId: parseInt(body.roleId),
       warehouseId: body.warehouseId ? parseInt(body.warehouseId) : null,
-      dependencyId: body.dependencyId ? parseInt(body.dependencyId) : null,
-      subdependencyId: body.subdependencyId ? parseInt(body.subdependencyId) : null,
       passwordHash,
       active: true
     },

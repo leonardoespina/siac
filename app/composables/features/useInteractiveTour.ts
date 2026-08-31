@@ -15,9 +15,6 @@ export function useInteractiveTour() {
     if (authStore.hasPermission('OPERATIONS', 'canRead') || authStore.hasPermission('RECEPTIONS', 'canRead')) {
       return 'warehouse'
     }
-    if (authStore.hasPermission('DINERS', 'canRead') || authStore.hasPermission('SQUADS', 'canRead') || authStore.hasPermission('DINERS_REQUESTS', 'canRead')) {
-      return 'diners'
-    }
     return 'none'
   })
 

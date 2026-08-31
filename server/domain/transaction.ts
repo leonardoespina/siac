@@ -7,7 +7,6 @@ export interface UserContext {
   id: number
   roleName: string
   warehouseId?: number | null
-  diningRoomId?: number | null
 }
 
 /**

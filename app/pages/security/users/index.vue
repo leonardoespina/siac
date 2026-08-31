@@ -102,54 +102,6 @@
             </template>
           </q-select>
         </div>
-        <div class="col-12 col-md-6">
-          <q-select 
-            v-model="form.dependencyId" 
-            :options="dependencyOptions" 
-            option-value="id"
-            option-label="name"
-            emit-value 
-            map-options 
-            label="Dependencia Principal" 
-            outlined 
-            dense
-            clearable
-            use-input
-            hide-selected
-            fill-input
-            input-debounce="0"
-            @filter="filterDependencies"
-            @update:model-value="form.subdependencyId = null"
-          >
-            <template v-slot:no-option>
-              <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
-            </template>
-          </q-select>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-select 
-            v-model="form.subdependencyId" 
-            :options="subdependencyOptions" 
-            option-value="id"
-            option-label="name"
-            emit-value 
-            map-options 
-            label="Subdependencia (Supervisores)" 
-            outlined 
-            dense
-            clearable
-            :disable="!form.dependencyId"
-            use-input
-            hide-selected
-            fill-input
-            input-debounce="0"
-            @filter="filterSubdependencies"
-          >
-            <template v-slot:no-option>
-              <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
-            </template>
-          </q-select>
-        </div>
         <div class="col-12" v-if="isEditing">
           <q-input v-model="form.password" label="Nueva Contraseña (Dejar en blanco si no se cambia)" outlined dense type="password" />
         </div>
@@ -162,11 +114,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useUsersStore } from '~/stores/users'
 import { useRolesStore } from '~/stores/roles'
 import { useWarehousesStore } from '~/stores/warehouses'
-import { useDependenciesStore } from '~/stores/dependencies'
 import { useUserForm } from '~/composables/features/useUserForm'
 import { useQuasar } from 'quasar'
 
@@ -174,7 +125,6 @@ const $q = useQuasar()
 const store = useUsersStore()
 const rolesStore = useRolesStore()
 const warehousesStore = useWarehousesStore()
-const depStore = useDependenciesStore()
 const { isOpen, isEditing, loading, form, openCreate, openEdit, submit } = useUserForm()
 
 const filter = ref('')
@@ -182,18 +132,15 @@ const filter = ref('')
 // -- AUTOCOMPLETE LÓGICA --
 const roleOptions = ref<any[]>([])
 const warehouseOptions = ref<any[]>([])
-const dependencyOptions = ref<any[]>([])
-const subdependencyOptions = ref<any[]>([])
 
 // Inicializamos las opciones cuando se abre el modal para que los selects puedan mapear ID -> Nombre
 watch(isOpen, (val) => {
   if (val) {
     roleOptions.value = rolesStore.roles
-    warehouseOptions.value = [{id: null, name: 'Ninguno'}, ...warehousesStore.localWarehouses]
-    dependencyOptions.value = depStore.dependencies
-    subdependencyOptions.value = filteredSubdependencies.value
+    warehouseOptions.value = [{id: null, name: 'Ninguno (Global)'}, ...warehousesStore.localWarehouses]
   }
 })
+
 const filterRoles = (val: string, update: Function) => {
   update(() => {
     const needle = val.toLowerCase()
@@ -203,28 +150,9 @@ const filterRoles = (val: string, update: Function) => {
 
 const filterWarehouses = (val: string, update: Function) => {
   update(() => {
-    const baseOptions = [{id: null, name: 'Ninguno'}, ...warehousesStore.localWarehouses]
+    const baseOptions = [{id: null, name: 'Ninguno (Global)'}, ...warehousesStore.localWarehouses]
     const needle = val.toLowerCase()
     warehouseOptions.value = baseOptions.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
-  })
-}
-
-const filterDependencies = (val: string, update: Function) => {
-  update(() => {
-    const needle = val.toLowerCase()
-    dependencyOptions.value = depStore.dependencies.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
-  })
-}
-
-const filteredSubdependencies = computed(() => {
-  if (!form.value.dependencyId) return []
-  const dep = depStore.dependencies.find(d => d.id === form.value.dependencyId)
-  return dep?.subdependencies || []
-})
-const filterSubdependencies = (val: string, update: Function) => {
-  update(() => {
-    const needle = val.toLowerCase()
-    subdependencyOptions.value = filteredSubdependencies.value.filter((v: any) => v.name.toLowerCase().indexOf(needle) > -1)
   })
 }
 
@@ -255,9 +183,8 @@ const deleteUser = (id: number) => {
 onMounted(async () => {
   await Promise.all([
     store.fetchUsers(),
-    rolesStore.fetchRoles(), // Necesitamos los roles para llenar el select
-    warehousesStore.fetchAll(), // Necesitamos los comedores para el select
-    depStore.fetchAll() // Necesitamos las subdependencias para el select
+    rolesStore.fetchRoles(),
+    warehousesStore.fetchAll()
   ])
 })
 </script>

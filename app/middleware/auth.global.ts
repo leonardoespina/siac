@@ -38,16 +38,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
       '/reports/alerts': 'REPORT_ALERTS',
       '/reports/minmax': 'REPORT_MINMAX',
       '/reports/consumptions': 'REPORT_CONSUMPTIONS',
-      '/reports/evolution': 'REPORT_CONSUMPTIONS',
+      '/reports/kitchen-services': 'REPORT_CONSUMPTIONS',
+      '/reports/evolution': 'REPORT_EVOLUTION',
       '/reports/institutions': 'REPORT_INSTITUTIONS',
       '/reports/receptions': 'REPORT_RECEPTIONS',
-      '/reports': 'REPORT_DASHBOARD',
-      '/diners/squad-catalog': 'SQUADS',
-      '/diners/squads': 'MY_SQUADS',
-      '/diners/workers': 'DINERS',
-      '/diners/dining-rooms': 'DINING_ROOMS',
-      '/diners/dependencies': 'DEPENDENCIES',
-      '/diners/positions': 'POSITIONS'
+      '/reports': 'REPORT_DASHBOARD'
     }
 
     // Buscamos si la ruta actual requiere algún módulo

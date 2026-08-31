@@ -1,7 +1,6 @@
 import { useQuasar } from 'quasar'
 import { useNotificationsStore, type Notification } from '~/stores/notifications'
 import { useProductsStore } from '~/stores/products'
-import { useDinersStore } from '~/stores/diners'
 import { useAuthStore } from '~/stores/auth'
 
 export function useAppSockets() {
@@ -70,13 +69,6 @@ export function useAppSockets() {
     $socket.off('inventory:update_row')
     $socket.on('inventory:update_row', (payload: { warehouseId: number, productId: number, quantity: string|number }) => {
       productStore.updateProductStock(payload.productId, payload.warehouseId, payload.quantity)
-    })
-
-    // 3. Escuchar actualizaciones de comensales en vivo
-    $socket.off('diner:sync')
-    $socket.on('diner:sync', (payload: { action: 'create' | 'update' | 'delete', diner: any }) => {
-      const dinersStore = useDinersStore()
-      dinersStore.syncDiner(payload.action, payload.diner)
     })
   }
 

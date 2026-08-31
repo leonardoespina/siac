@@ -27,18 +27,10 @@ async function main() {
     { code: 'REPORT_ALERTS', name: 'Reporte: Alertas de Stop' },
     { code: 'REPORT_MINMAX', name: 'Reporte: Mínimos y Máximos' },
     { code: 'REPORT_CONSUMPTIONS', name: 'Reporte: Consumos y Mermas' },
+    { code: 'REPORT_SERVICES', name: 'Reporte: Consumo por Servicios' },
     { code: 'REPORT_INSTITUTIONS', name: 'Reporte: Apoyos Institucionales' },
     { code: 'REPORT_SHIFTS', name: 'Reporte: Historial de Turnos' },
     { code: 'REPORT_RECEPTIONS', name: 'Reporte: Matriz de Recepciones' },
-    { code: 'POSITIONS', name: 'Catálogo de Cargos' },
-    { code: 'DINERS', name: 'Directorio de Comensales' },
-    { code: 'DISPATCH', name: 'Despacho Rápido' },
-    { code: 'BIOMETRIC', name: 'Gestión Biométrica' },
-    { code: 'DEPENDENCIES', name: 'Estructura Organizacional' },
-    { code: 'SQUADS', name: 'Catálogo de Cuadrillas' },
-    { code: 'MY_SQUADS', name: 'Mis Cuadrillas (Local)' },
-    { code: 'DINERS_REQUESTS', name: 'Solicitud de Comidas' },
-    { code: 'DINING_ROOMS', name: 'Gestión de Comedores' },
     { code: 'SUPPLIERS', name: 'Catálogo de Proveedores' },
     { code: 'INSTITUTIONS', name: 'Instituciones (Apoyos)' },
     { code: 'AUDIT', name: 'Auditoría del Sistema' },
@@ -114,8 +106,8 @@ async function main() {
   })
   console.log('✅ Usuario Administrador creado (Cédula: V-12345678 | Pass: 123456).')
 
-  // 5. Crear Almacén y Comedor de prueba
-  const warehouse = await prisma.warehouse.upsert({
+  // 5. Crear Almacén de prueba
+  await prisma.warehouse.upsert({
     where: { name: 'Almacén Central MSB' },
     update: {},
     create: {
@@ -123,16 +115,7 @@ async function main() {
       type: 'CENTRAL'
     }
   })
-
-  await prisma.diningRoom.upsert({
-    where: { name: 'Comedor MSB' },
-    update: {},
-    create: {
-      name: 'Comedor MSB',
-      warehouseId: warehouse.id
-    }
-  })
-  console.log('✅ Comedor MSB creado y vinculado al Almacén.')
+  console.log('✅ Almacén Central MSB configurado.')
 
   console.log('🚀 Seed terminado exitosamente.')
 }
