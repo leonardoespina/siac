@@ -11,6 +11,7 @@ export default defineApiHandler(async (event) => {
   const status = query.status ? String(query.status) : undefined
   const startDate = query.startDate ? String(query.startDate) : undefined
   const endDate = query.endDate ? String(query.endDate) : undefined
+  const shiftId = query.shiftId ? Number(query.shiftId) : undefined
   
-  return await repo.listConsumptions(targetWarehouseId, status, startDate, endDate)
+  return await repo.listConsumptions(targetWarehouseId, status, startDate, endDate, shiftId)
 })

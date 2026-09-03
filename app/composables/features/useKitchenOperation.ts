@@ -112,8 +112,13 @@ export function useKitchenOperation() {
       const endOfDay = new Date(today)
       endOfDay.setHours(23, 59, 59, 999)
       
-      const data = await $fetch(`/api/consumptions?warehouseId=${activeWarehouseId.value}&startDate=${today.toISOString()}&endDate=${endOfDay.toISOString()}`) as any[]
-      // Ahora shiftConsumptions guarda TODO lo del día (con o sin turno)
+      let url = `/api/consumptions?warehouseId=${activeWarehouseId.value}&startDate=${today.toISOString()}&endDate=${endOfDay.toISOString()}`
+      if (activeShift.value?.id) {
+        url += `&shiftId=${activeShift.value.id}`
+      }
+      
+      const data = await $fetch(url) as any[]
+      // Ahora shiftConsumptions guarda TODO lo del día más cualquier transacción pendiente del turno activo
       shiftConsumptions.value = data
     } catch (e) {
       console.error(e)

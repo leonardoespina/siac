@@ -87,14 +87,24 @@ export async function listReceptions() {
   })
 }
 
-export async function listConsumptions(warehouseId?: number, status?: string, startDate?: string, endDate?: string) {
+export async function listConsumptions(warehouseId?: number, status?: string, startDate?: string, endDate?: string, shiftId?: number) {
   const where: any = {
     type: { in: ['CONSUMPTION', 'LOSS', 'SUPPORT'] }
   }
   if (warehouseId) where.sourceId = warehouseId
   if (status) where.status = status
 
-  if (startDate || endDate) {
+  if (shiftId) {
+    where.OR = [
+      { shiftId },
+      {
+        createdAt: {
+          gte: startDate ? new Date(startDate) : undefined,
+          lte: endDate ? new Date(endDate) : undefined
+        }
+      }
+    ]
+  } else if (startDate || endDate) {
     where.createdAt = {}
     if (startDate) where.createdAt.gte = new Date(startDate)
     if (endDate) where.createdAt.lte = new Date(endDate)
