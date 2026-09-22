@@ -73,16 +73,16 @@ export function useTransferPdfMake() {
             columns: [
               {
                 stack: [
-                  { text: [ { text: 'ID de Transacción: ', bold: true }, `#TRN-${transaction.id}` ] },
+                  { text: [ { text: 'N° Guía: ', bold: true }, `#TRN-${transaction.id}` ] },
                   { text: [ { text: 'Fecha de Salida: ', bold: true }, new Date(transaction.createdAt).toLocaleString() ] },
-                  { text: [ { text: 'Almacén Origen: ', bold: true }, transaction.source?.name || 'Central' ] }
+                  { text: [ { text: 'Origen: ', bold: true }, transaction.source?.location || transaction.source?.name || 'Central' ] }
                 ]
               },
               {
                 alignment: 'right',
                 stack: [
-                  { text: [ { text: 'Almacén Destino: ', bold: true }, transaction.destination?.name || 'Desconocido' ] },
-                  { text: [ { text: 'N° Factura / Guía: ', bold: true }, transaction.referenceNumber || 'N/A' ] },
+                  { text: [ { text: 'Destino: ', bold: true }, transaction.destination?.location || transaction.destination?.name || 'Desconocido' ] },
+                  ...(transaction.referenceNumber ? [{ text: [ { text: 'N° Factura / Ref: ', bold: true }, transaction.referenceNumber ] }] : []),
                   { text: [ { text: 'Operador Despachador: ', bold: true }, transaction.createdBy?.name || 'Desconocido' ] }
                 ]
               }
@@ -128,7 +128,7 @@ export function useTransferPdfMake() {
           { 
             unbreakable: true,
             stack: [
-              { text: 'Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Almacén de Origen y se encuentran en tránsito hacia el Destino.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 40] },
+              { text: 'Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Origen y se encuentran en tránsito hacia el Destino.', fontSize: 8, color: 'gray', alignment: 'center', margin: [0, 0, 0, 40] },
               {
                 columns: [
                   { stack: [ { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1 }] }, { text: 'Despachado Por', bold: true, margin: [0, 5, 0, 0] }, { text: transaction.createdBy?.name || 'Nombre, Cédula y Firma', fontSize: 10 } ], alignment: 'center' },

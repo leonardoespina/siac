@@ -24,9 +24,11 @@ export interface TransferTransaction {
   notes?: string
   source?: {
     name: string
+    location?: string
   }
   destination?: {
     name: string
+    location?: string
   }
   createdBy?: {
     name: string

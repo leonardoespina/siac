@@ -28,13 +28,13 @@
 
       <div class="row justify-between q-mb-lg">
         <div class="col-6">
-          <div><span class="text-weight-bold">ID de Transacción:</span> #TRN-{{ transaction.id }}</div>
+          <div><span class="text-weight-bold">N° Guía:</span> #TRN-{{ transaction.id }}</div>
           <div><span class="text-weight-bold">Fecha de Salida:</span> {{ new Date(transaction.createdAt).toLocaleString() }}</div>
-          <div><span class="text-weight-bold">Almacén Origen:</span> {{ transaction.source?.name || 'Central' }}</div>
+          <div><span class="text-weight-bold">Origen:</span> {{ transaction.source?.location || transaction.source?.name || 'Central' }}</div>
         </div>
         <div class="col-6 text-right">
-          <div><span class="text-weight-bold">Almacén Destino:</span> {{ transaction.destination?.name || 'Desconocido' }}</div>
-          <div><span class="text-weight-bold">N° Factura / Guía:</span> {{ transaction.referenceNumber || 'N/A' }}</div>
+          <div><span class="text-weight-bold">Destino:</span> {{ transaction.destination?.location || transaction.destination?.name || 'Desconocido' }}</div>
+          <div v-if="transaction.referenceNumber"><span class="text-weight-bold">N° Factura / Ref:</span> {{ transaction.referenceNumber }}</div>
           <div><span class="text-weight-bold">Operador Despachador:</span> {{ transaction.createdBy?.name || 'Desconocido' }}</div>
         </div>
       </div>
@@ -74,7 +74,7 @@
       <!-- FIRMAS -->
       <div class="q-mt-xl q-pt-xl">
         <div class="text-center q-mb-xl text-caption text-grey-8">
-          Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Almacén de Origen y se encuentran en tránsito hacia el Destino.
+          Con las firmas expuestas a continuación, se da fe de que los productos detallados en este documento salieron físicamente del Origen y se encuentran en tránsito hacia el Destino.
         </div>
         
         <div class="row justify-between text-center q-mt-xl q-pt-xl q-col-gutter-y-xl">
