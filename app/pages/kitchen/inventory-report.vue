@@ -5,8 +5,9 @@
       <div>
         <q-btn flat icon="close" label="Cerrar Pestaña" color="primary" @click="closeTab" />
       </div>
-      <div>
-        <q-btn color="primary" icon="download" label="Descargar PDF (Vectorial)" @click="printReport" class="q-mr-sm" :loading="isGenerating" />
+      <div class="row q-gutter-x-sm">
+        <q-btn color="positive" icon="table_view" label="Descargar Excel (.xlsx)" @click="downloadExcel" :disable="loading || inventoryList.length === 0" />
+        <q-btn color="primary" icon="download" label="Descargar PDF (Vectorial)" @click="printReport" :loading="isGenerating" :disable="loading || inventoryList.length === 0" />
       </div>
     </div>
 
@@ -103,6 +104,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useKitchenInventory } from '~/composables/features/useKitchenInventory'
 import { useInventoryPdfMake } from '~/composables/features/useInventoryPdfMake'
+import { useKitchenInventoryExcel } from '~/composables/features/useKitchenInventoryExcel'
 
 definePageMeta({
   layout: 'blank'
@@ -125,11 +127,23 @@ if (route.query.warehouseId) {
 }
 
 const { downloadPdf, isGenerating } = useInventoryPdfMake()
+const { exportKitchenInventory } = useKitchenInventoryExcel()
 
 const printReport = async () => {
   if (!inventoryList.value) return
   const operatorName = authStore.user?.name || 'Operador SIAC'
   await downloadPdf(
+    assignedWarehouseName.value,
+    operatorName,
+    inventoryList.value,
+    stats.value
+  )
+}
+
+const downloadExcel = () => {
+  if (!inventoryList.value) return
+  const operatorName = authStore.user?.name || 'Operador SIAC'
+  exportKitchenInventory(
     assignedWarehouseName.value,
     operatorName,
     inventoryList.value,

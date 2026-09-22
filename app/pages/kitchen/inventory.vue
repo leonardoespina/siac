@@ -52,7 +52,7 @@
       <!-- Filtros -->
       <q-card flat bordered class="q-mb-md">
         <q-card-section class="row q-col-gutter-md items-center">
-          <div class="col-12 col-md-4">
+          <div class="col-12 col-md-3">
             <q-input v-model="searchQuery" outlined dense placeholder="Buscar producto, código o categoría..." clearable>
               <template v-slot:append>
                 <q-icon name="search" />
@@ -62,14 +62,22 @@
           <div class="col-12 col-sm-6 col-md-3">
             <q-toggle v-model="hideOutOfStock" color="primary" label="Ocultar productos agotados" />
           </div>
-          <div class="col-12 col-sm-6 col-md-3 text-center">
+          <div class="col-12 col-sm-6 col-md-4 text-center row q-gutter-x-sm no-wrap">
             <q-btn 
               color="secondary" 
               icon="print" 
               label="Imprimir Reporte" 
               @click="openPrintReport" 
               :disable="!hasAssignedWarehouse" 
-              class="full-width"
+              class="col"
+            />
+            <q-btn 
+              color="positive" 
+              icon="table_view" 
+              label="Exportar Excel" 
+              @click="handleExportExcel" 
+              :disable="!hasAssignedWarehouse || inventoryList.length === 0" 
+              class="col"
             />
           </div>
           <div class="col-12 col-md-2 text-right">
@@ -151,17 +159,33 @@
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '~/stores/auth'
 import { useKitchenInventory } from '~/composables/features/useKitchenInventory'
+import { useKitchenInventoryExcel } from '~/composables/features/useKitchenInventoryExcel'
 import { formatQuantity } from '~/composables/shared/useNumberFormatter'
 
+const authStore = useAuthStore()
+const { exportKitchenInventory } = useKitchenInventoryExcel()
+
 const {
-  loading, hasAssignedWarehouse, searchQuery, hideOutOfStock, inventoryList, stats,
+  loading, hasAssignedWarehouse, assignedWarehouseName, searchQuery, hideOutOfStock, inventoryList, stats,
   isGlobalUser, activeWarehouseId, warehouses
 } = useKitchenInventory()
 
 const openPrintReport = () => {
   if (!activeWarehouseId.value) return
   window.open(`/kitchen/inventory-report?warehouseId=${activeWarehouseId.value}`, '_blank')
+}
+
+const handleExportExcel = () => {
+  if (!inventoryList.value || !activeWarehouseId.value) return
+  const operatorName = authStore.user?.name || 'Operador SIAC'
+  exportKitchenInventory(
+    assignedWarehouseName.value,
+    operatorName,
+    inventoryList.value,
+    stats.value
+  )
 }
 
 const columns = [
