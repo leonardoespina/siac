@@ -33,11 +33,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    // Para borrar la cookie HttpOnly, debemos llamar a un endpoint (o recargar y borrar local state)
-    // O mejor, crear un endpoint /api/auth/logout que limpie la cookie.
     user.value = null
-    await $fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
-    navigateTo('/login')
+    try {
+      await $fetch('/api/auth/logout', { method: 'POST' })
+    } catch (_) {
+      // Ignorar error si el token ya no era válido
+    }
+    await navigateTo('/login', { replace: true })
   }
 
   async function login(cedula: string, password: string) {

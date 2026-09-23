@@ -47,9 +47,12 @@ export default defineApiHandler(async (event) => {
   const token = signToken({ userId: user.id }, '24h')
 
   // 4.1. Setear token en Cookie segura (HttpOnly)
+  const isHttps = getRequestProtocol(event) === 'https'
+
   setCookie(event, 'auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    secure: isHttps,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 // 24 horas
   })

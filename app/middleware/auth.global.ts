@@ -3,8 +3,9 @@ import { useAuthStore } from '~/stores/auth'
 export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuthStore()
   
-  // Intentar hidratar el usuario si la página se recarga (F5) o se abre en nueva pestaña
-  if (!auth.isAuthenticated) {
+  // Intentar hidratar el usuario si la página se recarga (F5) o se abre en nueva pestaña,
+  // pero NO si la ruta de destino es /login
+  if (!auth.isAuthenticated && to.path !== '/login') {
     await auth.fetchUser()
   }
 

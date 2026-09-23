@@ -1,12 +1,16 @@
 import { defineApiHandler } from '../../utils/handler'
 
 export default defineApiHandler(async (event) => {
-  // Limpiamos la cookie seteándola con una fecha de expiración en el pasado
+  const isHttps = getRequestProtocol(event) === 'https'
+
+  // Limpiamos la cookie seteándola en la raíz '/' con expiración pasada
   deleteCookie(event, 'auth_token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    secure: isHttps,
     sameSite: 'lax'
   })
 
   return { message: 'Sesión cerrada exitosamente' }
 })
+

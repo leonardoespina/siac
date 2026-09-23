@@ -40,6 +40,10 @@ const submitPasswordChange = async () => {
     changingPassword.value = false
   }
 }
+
+const onLogout = async () => {
+  await auth.logout()
+}
 </script>
 
 <template>
@@ -110,7 +114,7 @@ const submitPasswordChange = async () => {
                 <q-item-section>Cambiar Clave</q-item-section>
               </q-item>
               <q-separator />
-              <q-item clickable v-close-popup @click="auth.logout()">
+              <q-item clickable v-close-popup @click="onLogout">
                 <q-item-section avatar><q-icon name="logout" color="negative" size="sm" /></q-item-section>
                 <q-item-section class="text-negative">Cerrar Sesión</q-item-section>
               </q-item>
